@@ -14,7 +14,10 @@ header included in hcex build.
 
 /* ---------- structures */
 
-/* ---------- prototypes/EXAMPLE.C */
+/* ---------- prototypes/SHELL.C */
+
+boolean shell_initialize(void);
+void shell_dispose(void);
 
 /* ---------- globals */
 

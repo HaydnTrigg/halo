@@ -99,7 +99,32 @@ typedef float real;
 
 /* ---------- prototypes/CSERIES.C */
 
+void cseries_initialize(void);
+void cseries_dispose(void);
+tag string_to_tag(const char *s);
+char *tag_to_string(tag t, char *s);
+long strnlen(const char *string, long n);
+char *strnupr(char *string, long n);
+char *strnlwr(char *string, long n);
+char *strupr(char *string);
+char *strlwr(char *string);
+char *csprintf(char *buffer, char *format, ...);
 void display_assert(char *information, char *file, long line, boolean fatal);
+long csmemcmp(const void *p1, const void *p2, unsigned long size);
+void *csmemmove(void *destination, const void *source, unsigned long size);
+void *csmemset(void *buffer, long c, unsigned long size);
+char *csstrcat(char *s1, const char *s2);
+long csstrcmp(const char *s1, const char *s2);
+char *csstrncat(char *s1, const char *s2, unsigned long size);
+long csstrncmp(const char *s1, const char *s2, unsigned long size);
+char *csstrncpy(char *s1, const char *s2, unsigned long size);
+char *csstrtok(char *s1, const char *s2);
+long csstrlen(const char *s1);
+char *csstrcpy(char *destination, const char *source);
+void *csmemcpy(void *destination, const void *source, unsigned long size);
+long csstrcasecmp(const char *s1, const char *s2);
+char *stristr(char const *haystack, char const *needle);
+unsigned long string_hash(char const *string);
 
 /* ---------- prototypes/CSERIES_WINDOWS.C */
 
@@ -108,5 +133,22 @@ void system_exit(long code);
 /* ---------- prototypes/MAIN.C */
 
 void halt_and_catch_fire(void);
+
+/* ---------- macros */
+
+#ifndef BUILDING_CSERIES
+#define memcmp csmemcmp
+#define memmove csmemmove
+#define memset csmemset
+#define strcat csstrcat
+#define strcmp csstrcmp
+#define strncat csstrncat
+#define strncmp csstrncmp
+#define strncpy csstrncpy
+#define strtok csstrtok
+#define strlen csstrlen
+#define strcpy csstrcpy
+#define memcpy csmemcpy
+#endif
 
 #endif // __CSERIES_H

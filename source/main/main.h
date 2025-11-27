@@ -15,6 +15,7 @@ MAIN.H
 /* ---------- prototypes/MAIN.C */
 
 void main_vertical_blank_interrupt_handler(unsigned long);
+void main_loop(void);
 
 /* ---------- globals */
 

@@ -12,4 +12,8 @@ CSERIES_WINDOWS.H
 #include <xtl.h>
 #include <xbdm.h>
 
+/* ---------- prototypes/CSERIES_WINDOWS.C */
+
+long generic_exception_filter(unsigned long exception_code, PEXCEPTION_POINTERS exception_information);
+
 #endif // __CSERIES_WINDOWS_H

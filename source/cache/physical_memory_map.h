@@ -14,7 +14,10 @@ header included in hcex build.
 
 /* ---------- structures */
 
-/* ---------- prototypes/EXAMPLE.C */
+/* ---------- prototypes/PHYSICAL_MEMORY_MAP.C */
+
+void physical_memory_allocate(void);
+void physical_memory_verify(void);
 
 /* ---------- globals */
 
