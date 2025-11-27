@@ -503,6 +503,12 @@ def generate_solution(sln: SolutionConfig) -> None:
         vc_headers: List[Path] = [relative_root / header for header in proj.options["headers"] or []]
         vc_proj.add_headers(vc_headers)
         
+        vc_extras: List[Path] = [
+            relative_root / sln.config_dir / "config.json",
+            relative_root / sln.config_dir / "symbols.json",
+        ]
+        vc_proj.add_extra_files(vc_extras)
+        
         vc_proj.write()
         vc_projects.append(vc_proj)
     vc_sln = SolutionFile(sln.project_dir / sln.name)
