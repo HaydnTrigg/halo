@@ -14,7 +14,7 @@ header included in hcex build.
 
 /* ---------- structures */
 
-/* ---------- prototypes/EXAMPLE.C */
+/* ---------- prototypes/PLACEHOLDER_DEFINITIONS.C */
 
 void placeholder_initialize(void);
 void placeholder_initialize_for_new_map(void);
