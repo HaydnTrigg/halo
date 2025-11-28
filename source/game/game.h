@@ -14,7 +14,55 @@ header included in hcex build.
 
 /* ---------- structures */
 
-/* ---------- prototypes/EXAMPLE.C */
+/* ---------- prototypes/GAME.C */
+
+void game_initialize(void);
+void game_dispose(void);
+void game_precache_new_map(char *map_name, boolean blocking);
+boolean game_map_loading_in_progress(real *progress);
+void game_unload(void);
+void game_dispose_from_old_map(void);
+void game_frame(real dt);
+void remove_quitting_players_from_game(void);
+void game_tick(int ticks_remaining_this_frame);
+void game_options_new(struct game_options *options);
+boolean game_options_verify(struct game_options *options);
+void game_initial_pulse(void);
+void game_set_players_are_double_speed(boolean players_are_double_speed);
+boolean game_players_are_double_speed(void);
+void game_difficulty_level_set(short difficulty);
+short game_difficulty_level_get(void);
+short game_difficulty_level_get_ignore_easy(void);
+void game_set_game_variant(struct game_variant *variant);
+void game_set_game_engine_index(short index);
+boolean game_all_quiet(void);
+boolean game_safe_to_save(void);
+boolean game_safe_to_speak(void);
+boolean game_is_cooperative(void);
+boolean game_load(struct game_options *options);
+void game_initialize_for_new_map(void);
+void game_set_game_variant_from_name(const char *name);
+
+/* ---------- prototypes/GAME_TIME.C */
+
+boolean game_time_initialized(void);
+void game_time_initialize(void);
+void game_time_initialize_for_new_map(void);
+void game_time_dispose_from_old_map(void);
+void game_time_dispose(void);
+void game_time_end(void);
+long game_time_get(void);
+short game_time_get_elapsed(void);
+long local_time_get(void);
+short local_time_get_elapsed(void);
+boolean game_predicting(void);
+boolean game_in_progress(void);
+boolean game_time_get_paused(void);
+void game_time_set_paused(boolean paused);
+real game_time_get_speed(void);
+void game_time_set_speed(real speed);
+void game_time_start(void);
+void game_time_update(real time_delta_sec);
 
 /* ---------- globals */
 
