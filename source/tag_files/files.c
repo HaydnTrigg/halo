@@ -49,4 +49,55 @@ struct file_reference *file_reference_create(
 	return reference;
 }
 
+long find_files(
+	unsigned long flags,
+	const struct file_reference *directory,
+	long maximum_count,
+	struct file_reference *references)
+{
+	long file_count= 0;
+
+	match_assert("c:\\halo\\SOURCE\\tag_files\\files.c", 257, maximum_count>0);
+	match_assert("c:\\halo\\SOURCE\\tag_files\\files.c", 258, references);
+
+	find_files_start(flags, directory);
+
+	for (file_count; file_count<maximum_count; file_count++, references++)
+	{
+		if (!find_files_next(references, NULL))
+		{
+			break;
+		}
+	}
+
+	return file_count;
+}
+
+void *file_read_into_memory(
+	struct file_reference *reference,
+	unsigned long *size)
+{
+	void *buffer= NULL;
+
+	if (file_open(reference, FLAG(_permission_read_bit)))
+	{
+		unsigned long eof= file_get_eof(reference);
+		*size= eof;
+		buffer= match_malloc(eof, "c:\\halo\\SOURCE\\tag_files\\files.c", 280);
+
+		if (buffer)
+		{
+			if (!file_read(reference, *size, buffer))
+			{
+				match_free(buffer, "c:\\halo\\SOURCE\\tag_files\\files.c", 286);
+				buffer= NULL;
+			}
+		}
+
+		file_close(reference);
+	}
+
+	return buffer;
+}
+
 /* ---------- private code */
