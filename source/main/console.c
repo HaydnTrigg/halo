@@ -272,7 +272,7 @@ static void console_complete(
 			short size= MIN(last_similar_character_index, strlen(matching_items[token_num]) - 1);
 
 			short index= 0;
-			if(tolower(matching_items[token_num][0]) == tolower(matching_items[0][0]))
+			if (tolower(matching_items[token_num][0]) == tolower(matching_items[0][0]))
 			{
 				do
 				{
@@ -282,7 +282,7 @@ static void console_complete(
 					}
 					++index;
 				}
-				while(tolower(matching_items[token_num][index]) == tolower(matching_items[0][index]) );
+				while (tolower(matching_items[token_num][index]) == tolower(matching_items[0][index]) );
 			}
 			last_similar_character_index= index - 1;
 
