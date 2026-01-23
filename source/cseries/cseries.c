@@ -433,7 +433,7 @@ char *csstrtok(
 	return strtok(s1, s2);
 }
 
-long csstrlen(
+unsigned long csstrlen(
 	const char *s1)
 {
 	long size;
