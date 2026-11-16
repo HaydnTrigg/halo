@@ -133,8 +133,8 @@ class SolutionConfig:
         # Tooling
         self.ninja_path: Optional[Path] = None  # If None, use system PATH
         self.ml_path: Optional[Path] = None  # Microsoft Macro Assembler for .asm units
-        self.csplit_tag: Optional[str] = None  # Git tag
-        self.csplit_path: Optional[Path] = None  # If None, download
+        self.csplit_commit: Optional[str] = None  # Git commit SHA to build
+        self.csplit_path: Optional[Path] = None  # If None, build from source
         self.objdiff_tag: Optional[str] = None  # Git tag
         self.objdiff_path: Optional[Path] = None  # If None, download
         self.wibo_tag: Optional[str] = None # Git tag
@@ -299,19 +299,24 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
 
     if sln.csplit_path:
         csplit = sln.csplit_path
-    elif sln.csplit_tag:
+    elif sln.csplit_commit:
+        build_csplit = sln.tools_dir / "build_csplit.py"
+        n.rule(
+            name="build_csplit",
+            command=f"$python {build_csplit} $out --commit $commit",
+            description="BUILD $out",
+        )
         csplit = build_tools_path / f"csplit{EXE}"
         n.build(
             outputs=csplit,
-            rule="download_tool",
-            implicit=download_tool,
+            rule="build_csplit",
+            implicit=build_csplit,
             variables={
-                "tool": "csplit",
-                "tag": sln.csplit_tag,
+                "commit": sln.csplit_commit,
             },
         )
     else:
-        sys.exit("SolutionConfig.csplit_tag missing")
+        sys.exit("SolutionConfig.csplit_commit missing")
 
     wrapper = sln.compiler_wrapper()
     if wrapper is not None and sln.use_wibo():

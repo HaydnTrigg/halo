@@ -175,7 +175,7 @@ if not is_windows():
 
 # Tool versions
 sln.objdiff_tag = "v3.8.2"
-sln.csplit_tag = "v0.0.4"
+sln.csplit_commit = "a49a9e038670958f332e54500565b8ecfed60c43"
 sln.wibo_tag = "1.2.0-crypt"
 
 sln.projects = []
