@@ -1,28 +1,17 @@
 /*
 SORT.C
-
-symbols in this file:
-00080360 0060:
-	_code_00080360 (0000)
-000803C0 0050:
-	_code_000803c0 (0000)
-00080410 0150:
-	_qsort_2byte (0000)
-00080560 0140:
-	_qsort_4byte (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-#include "sort.h"
 
 /* ---------- constants */
 
 enum
 {
-	QSORT_STACK_SIZE = 30,
-	QSORT_CUTOFF = 8
+	CUTOFF = 8, /* from the CRT qsort.c */
+	STKSIZ = 30, /* from the CRT qsort.c */
 };
 
 /* ---------- macros */
@@ -31,218 +20,236 @@ enum
 
 /* ---------- prototypes */
 
-static void shortsort_2byte(
-	word *hi,
-	word *lo,
-	boolean (*compare)(word, word));
-static void shortsort_4byte(
-	long *hi,
-	long *lo,
-	boolean (*compare)(long, long));
+static void shortsort_2byte(char *lo, char *hi, compare_function_2byte compare);
+static void shortsort_4byte(char *lo, char *hi, compare_function_4byte compare);
 
 /* ---------- globals */
 
 /* ---------- public code */
 
 void qsort_2byte(
-	word *elements,
-	unsigned long element_count,
-	boolean (*compare)(word, word))
+	void *base,
+	unsigned long num,
+	compare_function_2byte compare)
 {
-	word *lo_stack[QSORT_STACK_SIZE];
-	word *hi_stack[QSORT_STACK_SIZE];
-	word *lo, *hi, *i, *j, *mid;
-	long depth;
+	char *lo;
+	char *hi;
+	char *mid;
+	char *loguy;
+	char *higuy;
 	unsigned long size;
-	word temp;
+	char *lostk[STKSIZ];
+	char *histk[STKSIZ];
+	long stkptr;
+	short swap_space;
 
-	if (element_count<2)
-		return;
-
-	lo = elements;
-	depth = 0;
-	hi = elements+element_count-1;
-
-	for (;;)
+	if (num < 2)
 	{
-		size = hi-lo+1;
-		if (size<=QSORT_CUTOFF)
+		return;
+	}
+
+	stkptr = 0;
+
+	lo = base;
+	hi = (char *)base + sizeof(short) * (num - 1);
+
+recurse:
+
+	size = ((short *)hi - (short *)lo) + 1;
+
+	if (size <= CUTOFF)
+	{
+		shortsort_2byte(lo, hi, compare);
+	}
+	else
+	{
+		mid = lo + (size / 2) * sizeof(short);
+		swap_space = *(short *)mid;
+		*(short *)mid = *(short *)lo;
+		*(short *)lo = swap_space;
+
+		loguy = lo;
+		higuy = hi + sizeof(short);
+
+		for (;;)
 		{
-			shortsort_2byte(hi, lo, compare);
+			do
+			{
+				loguy += sizeof(short);
+			} while (loguy <= hi && !compare(*(short *)loguy, *(short *)lo));
+
+			do
+			{
+				higuy -= sizeof(short);
+			} while (higuy > lo && compare(*(short *)higuy, *(short *)lo));
+
+			if (higuy < loguy)
+			{
+				break;
+			}
+
+			swap_space = *(short *)loguy;
+			*(short *)loguy = *(short *)higuy;
+			*(short *)higuy = swap_space;
+		}
+
+		swap_space = *(short *)lo;
+		*(short *)lo = *(short *)higuy;
+		*(short *)higuy = swap_space;
+
+		if (higuy - 1 - lo >= hi - loguy)
+		{
+			if (lo + sizeof(short) < higuy)
+			{
+				lostk[stkptr] = lo;
+				histk[stkptr] = higuy - sizeof(short);
+				++stkptr;
+			}
+
+			if (loguy < hi)
+			{
+				lo = loguy;
+				goto recurse;
+			}
 		}
 		else
 		{
-			mid = lo+(size>>1);
-			temp = *mid;
-			*mid = *lo;
-			*lo = temp;
-
-			i = lo;
-			j = hi+1;
-
-			for (;;)
+			if (loguy < hi)
 			{
-				do
-				{
-					i++;
-				}
-				while (i<=hi && !compare(*i, *lo));
-
-				do
-				{
-					j--;
-				}
-				while (j>lo && compare(*j, *lo));
-
-				if (j<i)
-					break;
-
-				temp = *i;
-				*i = *j;
-				*j = temp;
+				lostk[stkptr] = loguy;
+				histk[stkptr] = hi;
+				++stkptr;
 			}
 
-			temp = *lo;
-			*lo = *j;
-			*j = temp;
-
-			if ((char *)j-(char *)lo-1>=(char *)hi-(char *)i)
+			if (lo + sizeof(short) < higuy)
 			{
-				if (lo+1<j)
-				{
-					lo_stack[depth] = lo;
-					hi_stack[depth] = j-1;
-					depth++;
-				}
-				if (i<hi)
-				{
-					lo = i;
-					continue;
-				}
-			}
-			else
-			{
-				if (i<hi)
-				{
-					lo_stack[depth] = i;
-					hi_stack[depth] = hi;
-					depth++;
-				}
-				if (lo+1<j)
-				{
-					hi = j-1;
-					continue;
-				}
+				hi = higuy - sizeof(short);
+				goto recurse;
 			}
 		}
+	}
 
-		if (--depth<0)
-			break;
+	--stkptr;
 
-		lo = lo_stack[depth];
-		hi = hi_stack[depth];
+	if (stkptr >= 0)
+	{
+		lo = lostk[stkptr];
+		hi = histk[stkptr];
+		goto recurse;
 	}
 
 	return;
 }
 
 void qsort_4byte(
-	long *elements,
-	unsigned long element_count,
-	boolean (*compare)(long, long))
+	void *base,
+	unsigned long num,
+	compare_function_4byte compare)
 {
-	long *lo_stack[QSORT_STACK_SIZE];
-	long *hi_stack[QSORT_STACK_SIZE];
-	long *lo, *hi, *i, *j, *mid;
-	long depth;
+	char *lo;
+	char *hi;
+	char *mid;
+	char *loguy;
+	char *higuy;
 	unsigned long size;
-	long temp;
+	char *lostk[STKSIZ];
+	char *histk[STKSIZ];
+	long stkptr;
+	long swap_space;
 
-	if (element_count<2)
-		return;
-
-	lo = elements;
-	depth = 0;
-	hi = elements+element_count-1;
-
-	for (;;)
+	if (num < 2)
 	{
-		size = hi-lo+1;
-		if (size<=QSORT_CUTOFF)
+		return;
+	}
+
+	stkptr = 0;
+
+	lo = base;
+	hi = (char *)base + sizeof(long) * (num - 1);
+
+recurse:
+
+	size = ((long *)hi - (long *)lo) + 1;
+
+	if (size <= CUTOFF)
+	{
+		shortsort_4byte(lo, hi, compare);
+	}
+	else
+	{
+		mid = lo + (size / 2) * sizeof(long);
+		swap_space = *(long *)mid;
+		*(long *)mid = *(long *)lo;
+		*(long *)lo = swap_space;
+
+		loguy = lo;
+		higuy = hi + sizeof(long);
+
+		for (;;)
 		{
-			shortsort_4byte(hi, lo, compare);
+			do
+			{
+				loguy += sizeof(long);
+			} while (loguy <= hi && !compare(*(long *)loguy, *(long *)lo));
+
+			do
+			{
+				higuy -= sizeof(long);
+			} while (higuy > lo && compare(*(long *)higuy, *(long *)lo));
+
+			if (higuy < loguy)
+			{
+				break;
+			}
+
+			swap_space = *(long *)loguy;
+			*(long *)loguy = *(long *)higuy;
+			*(long *)higuy = swap_space;
+		}
+
+		swap_space = *(long *)lo;
+		*(long *)lo = *(long *)higuy;
+		*(long *)higuy = swap_space;
+
+		if (higuy - 1 - lo >= hi - loguy)
+		{
+			if (lo + sizeof(long) < higuy)
+			{
+				lostk[stkptr] = lo;
+				histk[stkptr] = higuy - sizeof(long);
+				++stkptr;
+			}
+
+			if (loguy < hi)
+			{
+				lo = loguy;
+				goto recurse;
+			}
 		}
 		else
 		{
-			mid = lo+(size>>1);
-			temp = *mid;
-			*mid = *lo;
-			*lo = temp;
-
-			i = lo;
-			j = hi+1;
-
-			for (;;)
+			if (loguy < hi)
 			{
-				do
-				{
-					i++;
-				}
-				while (i<=hi && !compare(*i, *lo));
-
-				do
-				{
-					j--;
-				}
-				while (j>lo && compare(*j, *lo));
-
-				if (j<i)
-					break;
-
-				temp = *i;
-				*i = *j;
-				*j = temp;
+				lostk[stkptr] = loguy;
+				histk[stkptr] = hi;
+				++stkptr;
 			}
 
-			temp = *lo;
-			*lo = *j;
-			*j = temp;
-
-			if ((char *)j-(char *)lo-1>=(char *)hi-(char *)i)
+			if (lo + sizeof(long) < higuy)
 			{
-				if (lo+1<j)
-				{
-					lo_stack[depth] = lo;
-					hi_stack[depth] = j-1;
-					depth++;
-				}
-				if (i<hi)
-				{
-					lo = i;
-					continue;
-				}
-			}
-			else
-			{
-				if (i<hi)
-				{
-					lo_stack[depth] = i;
-					hi_stack[depth] = hi;
-					depth++;
-				}
-				if (lo+1<j)
-				{
-					hi = j-1;
-					continue;
-				}
+				hi = higuy - sizeof(long);
+				goto recurse;
 			}
 		}
+	}
 
-		if (--depth<0)
-			break;
+	--stkptr;
 
-		lo = lo_stack[depth];
-		hi = hi_stack[depth];
+	if (stkptr >= 0)
+	{
+		lo = lostk[stkptr];
+		hi = histk[stkptr];
+		goto recurse;
 	}
 
 	return;
@@ -251,54 +258,60 @@ void qsort_4byte(
 /* ---------- private code */
 
 static void shortsort_2byte(
-	word *hi,
-	word *lo,
-	boolean (*compare)(word, word))
+	char *lo,
+	char *hi,
+	compare_function_2byte compare)
 {
-	word *best, *scan;
-	word temp;
+	char *p;
+	char *max;
+	short swap_space;
 
-	while (hi>lo)
+	while (hi > lo)
 	{
-		best = lo;
-		for (scan = lo+1; scan<=hi; scan++)
+		max = lo;
+
+		for (p = lo + sizeof(short); p <= hi; p += sizeof(short))
 		{
-			if (compare(*scan, *best))
-				best = scan;
+			if (compare(*(short *)p, *(short *)max))
+			{
+				max = p;
+			}
 		}
 
-		temp = *best;
-		*best = *hi;
-		*hi = temp;
-
-		hi--;
+		swap_space = *(short *)max;
+		*(short *)max = *(short *)hi;
+		*(short *)hi = swap_space;
+		hi -= sizeof(short);
 	}
 
 	return;
 }
 
 static void shortsort_4byte(
-	long *hi,
-	long *lo,
-	boolean (*compare)(long, long))
+	char *lo,
+	char *hi,
+	compare_function_4byte compare)
 {
-	long *best, *scan;
-	long temp;
+	char *p;
+	char *max;
+	long swap_space;
 
-	while (hi>lo)
+	while (hi > lo)
 	{
-		best = lo;
-		for (scan = lo+1; scan<=hi; scan++)
+		max = lo;
+
+		for (p = lo + sizeof(long); p <= hi; p += sizeof(long))
 		{
-			if (compare(*scan, *best))
-				best = scan;
+			if (compare(*(long *)p, *(long *)max))
+			{
+				max = p;
+			}
 		}
 
-		temp = *best;
-		*best = *hi;
-		*hi = temp;
-
-		hi--;
+		swap_space = *(long *)max;
+		*(long *)max = *(long *)hi;
+		*(long *)hi = swap_space;
+		hi -= sizeof(long);
 	}
 
 	return;

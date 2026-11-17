@@ -10,18 +10,8 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "math/real_math.h"
-#include "tag_files/tag_files.h"
-#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
-
-enum
-{
-	_encounter_braindead_bit = 4,
-	_encounter_3d_firing_positions_bit = 5,
-	_encounter_manual_structure_bsp_index_bit = 6,
-};
 
 enum
 {
@@ -34,41 +24,16 @@ enum
 	NUMBER_OF_SQUAD_FLAGS,
 };
 
-enum actor_major_upgrade
-{
-	_actor_major_upgrade_normal = 0,
-	_actor_major_upgrade_few,
-	_actor_major_upgrade_many,
-	_actor_major_upgrade_none,
-	_actor_major_upgrade_all,
-	NUMBER_OF_ACTOR_MAJOR_UPGRADES,
-};
-
 enum
 {
-	_platoon_flee_upon_maneuver_bit = 0,
-	_platoon_advancing_maneuver_bit,
-	_platoon_initially_defending_bit,
-	NUMBER_OF_PLATOON_FLAGS,
-};
-
-enum
-{
-	_platoon_rule_never = 0,
-	_platoon_rule_75_strength,
-	_platoon_rule_50_strength,
-	_platoon_rule_25_strength,
-	_platoon_rule_anybody_dead,
-	_platoon_rule_25_dead,
-	_platoon_rule_50_dead,
-	_platoon_rule_75_dead,
-	_platoon_rule_all_but_one_dead,
-	_platoon_rule_all_dead,
-};
-
-enum
-{
-	_actor_starting_location_required_bit = 0,
+	_encounter_not_initially_placed_bit = 0,
+	_encounter_respawn_enable_bit,
+	_encounter_blind_bit,
+	_encounter_deaf_bit,
+	_encounter_braindead_bit,
+	_encounter_3d_firing_positions_bit,
+	_encounter_manual_structure_bsp_bit,
+	NUMBER_OF_ENCOUNTER_FLAGS,
 };
 
 enum
@@ -120,162 +85,79 @@ enum
 
 enum
 {
-	_ai_command_list_allow_initiative_bit = 0,
-	_ai_command_list_allow_targeting_bit,
-	_ai_command_list_disable_looking_bit,
-	_ai_command_list_disable_communication_bit,
-	_ai_command_list_disable_falling_damage_bit,
+	_ai_conversation_stop_if_anyone_dies_bit = 0,
+	_ai_conversation_stop_if_damaged_bit,
+	_ai_conversation_stop_if_visible_enemy_bit,
+	_ai_conversation_stop_if_alerted_to_enemy_bit,
+	_ai_conversation_player_must_be_visible_bit,
+	_ai_conversation_stop_other_actions_bit,
+	_ai_conversation_keep_trying_to_play_bit,
+	_ai_conversation_player_must_be_looking_at_bit,
+	NUMBER_OF_CONVERSATION_DEFINITION_FLAGS,
 };
 
 enum
 {
-	_ai_atom_loop_modifier_until_told_to_advance = 1,
-};
-
-/* Descriptive names for January's four movement-facing modifier values. */
-enum
-{
-	_ai_atom_move_facing_forwards = 0,
-	_ai_atom_move_facing_backwards,
-	_ai_atom_move_facing_left,
-	_ai_atom_move_facing_right,
-};
-
-/* command-list atom modifiers (HCEX PDB enumerator names; values match
-   January's action_obey command dispatch) */
-enum
-{
-	_ai_atom_go_to_modifier_stop_at_point = 0,
-	_ai_atom_go_to_modifier_keep_moving,
-	NUMBER_OF_AI_ATOM_GO_TO_MODIFIERS
+	_ai_conversation_participant_optional_bit = 0,
+	_ai_conversation_participant_has_alternate_bit,
+	_ai_conversation_participant_is_alternate_bit,
+	NUMBER_OF_CONVERSATION_PARTICIPANT_DEFINITION_FLAGS,
 };
 
 enum
 {
-	_ai_atom_look_modifier_idle_aim = 0,
-	_ai_atom_look_modifier_idle_turn_around,
-	_ai_atom_look_modifier_idle_look,
-	_ai_atom_look_modifier_force_facing,
-	_ai_atom_look_modifier_force_aim_weapon,
-	NUMBER_OF_AI_ATOM_LOOK_MODIFIERS
+	_ai_conversation_selection_friendly_actor = 0,
+	_ai_conversation_selection_disembodied,
+	_ai_conversation_selection_in_player_vehicle,
+	_ai_conversation_selection_not_in_vehicle,
+	_ai_conversation_selection_sargeant,
+	_ai_conversation_selection_any_actor,
+	_ai_conversation_selection_radio,
+	_ai_conversation_selection_radio_sargeant,
+	NUMBER_OF_CONVERSATION_SELECTION_TYPES,
 };
 
 enum
 {
-	_ai_atom_animation_mode_modifier_noncombat = 0,
-	_ai_atom_animation_mode_modifier_asleep,
-	_ai_atom_animation_mode_modifier_combat,
-	_ai_atom_animation_mode_modifier_panic,
-	NUMBER_OF_AI_ATOM_ANIMATION_MODE_MODIFIERS
+	_ai_conversation_line_addressee_look_back_bit = 0,
+	_ai_conversation_line_everyone_look_at_speaker_bit,
+	_ai_conversation_line_everyone_look_at_addressee_bit,
+	_ai_conversation_line_wait_after_until_told_to_advance_bit,
+	_ai_conversation_line_wait_until_speaker_nearby_bit,
+	_ai_conversation_line_wait_until_everyone_nearby_bit,
+	NUMBER_OF_CONVERSATION_LINE_FLAGS,
 };
 
 enum
 {
-	_ai_atom_crouch_modifier_disable = 0,
-	_ai_atom_crouch_modifier_enable,
-	NUMBER_OF_AI_ATOM_CROUCH_MODIFIERS
+	_ai_conversation_address_none = 0,
+	_ai_conversation_address_player,
+	_ai_conversation_address_participant,
+	NUMBER_OF_CONVERSATION_ADDRESS_TYPES,
 };
 
-enum
-{
-	_actor_atom_grenade_modifier_toss = 0,
-	_actor_atom_grenade_modifier_lob,
-	_actor_atom_grenade_modifier_bounce,
-	NUMBER_OF_AI_ATOM_GRENADE_MODIFIERS
-};
-
-enum
-{
-	_ai_atom_vehicle_modifier_any_non_driver = 0,
-	_ai_atom_vehicle_modifier_gunner,
-	_ai_atom_vehicle_modifier_passenger,
-	_ai_atom_vehicle_modifier_driver,
-	_ai_atom_vehicle_modifier_any_seat,
-	NUMBER_OF_AI_ATOM_VEHICLE_MODIFIERS
-};
-
-enum
-{
-	_ai_atom_animate_modifier_relative_movement = 0,
-	_ai_atom_animate_modifier_absolute_movement,
-	_ai_atom_animate_modifier_absolute_movement_no_collision,
-	_ai_atom_animate_modifier_no_interpolation_relative_movement,
-	_ai_atom_animate_modifier_no_interpolation_absolute_movement,
-	_ai_atom_animate_modifier_no_interpolation_absolute_movement_no_collision,
-	NUMBER_OF_AI_ATOM_ANIMATE_MODIFIERS
-};
-
-enum
-{
-	_ai_atom_action_modifier_berserk = 0,
-	_ai_atom_action_modifier_surprise_front,
-	_ai_atom_action_modifier_surprise_back,
-	_ai_atom_action_modifier_evade_left,
-	_ai_atom_action_modifier_evade_right,
-	_ai_atom_action_modifier_dive_forward,
-	_ai_atom_action_modifier_dive_back,
-	_ai_atom_action_modifier_dive_left,
-	_ai_atom_action_modifier_dive_right,
-	_ai_atom_action_modifier_vehicle_woohoo,
-	_ai_atom_action_modifier_vehicle_scared,
-	NUMBER_OF_AI_ATOM_ACTION_MODIFIERS
-};
-
-enum
-{
-	_ai_atom_targeting_modifier_enable = 0,
-	_ai_atom_targeting_modifier_disable,
-	NUMBER_OF_AI_ATOM_TARGETING_MODIFIERS
-};
-
-enum
-{
-	_ai_atom_initiative_modifier_enable = 0,
-	_ai_atom_initiative_modifier_disable,
-	NUMBER_OF_AI_ATOM_INITIATIVE_MODIFIERS
-};
-
-enum
-{
-	_ai_atom_wait_modifier_alerted = 0,
-	_ai_atom_wait_modifier_visible_enemy,
-	_ai_atom_wait_modifier_told_to_advance,
-	NUMBER_OF_AI_ATOM_WAIT_MODIFIERS
-};
-
-enum
-{
-	_ai_atom_die_modifier_normal = 0,
-	_ai_atom_die_modifier_silent,
-	NUMBER_OF_AI_ATOM_DIE_MODIFIERS
-};
+#define MAXIMUM_CONVERSATIONS_PER_MAP 128
+#define MAXIMUM_PARTICIPANTS_PER_CONVERSATION 8
+#define MAXIMUM_DIALOGUE_VARIANTS_PER_CONVERSATION_PARTICIPANT 6
 
 /* ---------- macros */
 
+#define ai_conversation_definition_get(index) TAG_BLOCK_GET_ELEMENT(&global_scenario_get()->ai_conversations, (index), struct ai_conversation) /* fake name */
+
 /* ---------- structures */
 
-/* scenario ai animation/script/recording references; element sizes 0x3C,
-   0x28 and 0x28 are pushed by January's action_obey command code */
-struct ai_animation_reference_definition
+struct actor_starting_location_definition
 {
-	char animation_name[TAG_STRING_LENGTH + 1];
-	struct tag_reference animation_graph;
-	unsigned long unused[3];
+	real_point3d position;
+	real facing;
+	short cluster_index;
+	char sequence_id;
+	byte flags;
+	short default_state;
+	short initial_state;
+	short actor_palette_index;
+	short command_list_index;
 };
-
-struct ai_script_reference_definition
-{
-	char script_name[TAG_STRING_LENGTH + 1];
-	unsigned long unused[2];
-};
-
-struct ai_recording_reference_definition
-{
-	char recording_name[TAG_STRING_LENGTH + 1];
-	unsigned long unused[2];
-};
-
-struct scenario;
 
 struct squad_definition
 {
@@ -309,14 +191,32 @@ struct squad_definition
 	struct tag_block unused_block;
 };
 
-/* element of encounter_definition.firing_positions; 0x18 from the call site,
-group_index at 0xc and the tag index at 0x14 from code_00041220 */
+struct platoon_rule
+{
+	short rule_type;
+	short platoon_index;
+	long pad;
+};
+
+struct platoon_definition
+{
+	char name[TAG_STRING_LENGTH+1];
+	unsigned long flags;
+	unsigned long unused1[3];
+	struct platoon_rule attacking_defending_rule;
+	unsigned long unused2;
+	struct platoon_rule maneuvering_rule;
+	unsigned long unused3;
+	unsigned long unused4[16];
+	struct tag_block unused_blocks[3];
+};
+
 struct firing_position_definition
 {
 	real_point3d position;
 	short group_index;
 	short cluster_index;
-	byte unresolved[4];
+	long pad;
 	long surface_index;
 };
 
@@ -333,70 +233,11 @@ struct encounter_definition
 	unsigned long unused[18];
 	word pad2;
 	short runtime_structure_bsp_reference_index;
-	struct tag_block squads;
+	struct tag_block squads;					// struct squad_definition
 	struct tag_block platoons;
 	struct tag_block firing_positions;
 	struct tag_block player_starting_locations;
 };
-
-// element of squad_definition.starting_locations
-struct actor_starting_location
-{
-	real_point3d position;
-	real facing;
-	short cluster_index;
-	signed char noncombat_sequence_id;
-	byte flags;
-	short default_state;
-	short initial_state;
-	short actor_variant_index;
-	short command_list_index;
-};
-
-typedef char actor_starting_location_size_assert[
-	sizeof(struct actor_starting_location) == 0x1C ? 1 : -1];
-typedef char actor_starting_location_noncombat_sequence_id_offset_assert[
-	offsetof(struct actor_starting_location, noncombat_sequence_id) == 0x12 ? 1 : -1];
-typedef char actor_starting_location_default_state_offset_assert[
-	offsetof(struct actor_starting_location, default_state) == 0x14 ? 1 : -1];
-typedef char actor_starting_location_initial_state_offset_assert[
-	offsetof(struct actor_starting_location, initial_state) == 0x16 ? 1 : -1];
-typedef char actor_starting_location_actor_variant_index_offset_assert[
-	offsetof(struct actor_starting_location, actor_variant_index) == 0x18 ? 1 : -1];
-typedef char actor_starting_location_command_list_index_offset_assert[
-	offsetof(struct actor_starting_location, command_list_index) == 0x1A ? 1 : -1];
-
-struct platoon_rule
-{
-	short rule_type;
-	short platoon_index;
-	long pad;
-};
-
-typedef char platoon_rule_size_assert[
-	sizeof(struct platoon_rule) == 8 ? 1 : -1];
-typedef char platoon_rule_platoon_index_offset_assert[
-	offsetof(struct platoon_rule, platoon_index) == 2 ? 1 : -1];
-
-struct platoon_definition
-{
-	char name[TAG_STRING_LENGTH+1];
-	unsigned long flags;
-	unsigned long unused1[3];
-	struct platoon_rule attacking_defending_rule;
-	unsigned long unused2;
-	struct platoon_rule maneuvering_rule;
-	unsigned char reserved[0x68];
-};
-
-typedef char platoon_definition_size_assert[
-	sizeof(struct platoon_definition) == 0xAC ? 1 : -1];
-typedef char platoon_definition_flags_offset_assert[
-	offsetof(struct platoon_definition, flags) == 0x20 ? 1 : -1];
-typedef char platoon_definition_attacking_defending_rule_offset_assert[
-	offsetof(struct platoon_definition, attacking_defending_rule) == 0x30 ? 1 : -1];
-typedef char platoon_definition_maneuvering_rule_offset_assert[
-	offsetof(struct platoon_definition, maneuvering_rule) == 0x3C ? 1 : -1];
 
 struct ai_command_definition
 {
@@ -434,41 +275,50 @@ struct ai_command_list_definition
 	struct tag_block unused_blocks[2];
 };
 
+struct ai_conversation_participant
+{
+	word pad;
+	word flags;
+	short selection_type;
+	short actor_type;
+	short preexisting_object_name_index;
+	short new_attach_object_name_index;
+	unsigned long unused[3];
+	short dialogue_variants[MAXIMUM_DIALOGUE_VARIANTS_PER_CONVERSATION_PARTICIPANT];
+	char ai_index_name[TAG_STRING_LENGTH+1];
+	long runtime_ai_index;
+	unsigned long unused2[3];
+};
+
+struct ai_conversation_line
+{
+	word flags;
+	short participant_index;
+	short address_type;
+	short address_participant_index;
+	unsigned long unused;
+	real delay_time;
+	unsigned long unused2[3];
+	struct tag_reference dialogue[MAXIMUM_DIALOGUE_VARIANTS_PER_CONVERSATION_PARTICIPANT];
+};
+
 struct ai_conversation
 {
-	char name[32];
+	char name[TAG_STRING_LENGTH+1];
 	word flags;
-	word pad22;
-	real trigger_distance;
+	word pad;
+	real trigger_dist;
 	real run_to_player_dist;
-	byte __unknown2C[0x24];
-	struct tag_block participants;
-	struct tag_block lines;
-	struct tag_block unused;
+	unsigned long unused[9];
+	struct tag_block participants;		// ai_conversation_participant
+	struct tag_block lines;				// ai_conversation_line
+	struct tag_block unused_block;
 };
 
 /* ---------- prototypes/AI_SCENARIO_DEFINITIONS.C */
 
 /* ---------- globals */
 
-extern char const *global_ai_default_state_names[12];
-
 /* ---------- public code */
-
-long scenario_get_encounter_by_name(
-	struct scenario *scenario,
-	char const *name);
-long encounter_definition_get_squad_by_name(
-	struct encounter_definition *encounter,
-	char const *name);
-long encounter_definition_get_platoon_by_name(
-	struct encounter_definition *encounter,
-	char const *name);
-short choose_random_array_element(
-	void const *array,
-	short element_size,
-	short element_count,
-	short weight_offset,
-	unsigned long const *excluded_elements);
 
 #endif // __AI_SCENARIO_DEFINITIONS_H

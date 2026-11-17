@@ -1,251 +1,127 @@
 /*
 GAME_ENGINE_MULTIPLAYER_SOUNDS.C
 
-symbols in this file:
-000A1460 0060:
-	_code_000a1460 (0000)
-000A14C0 0020:
-	_code_000a14c0 (0000)
-000A14E0 0050:
-	_game_engine_update_multiplayer_sound (0000)
-000A1530 0080:
-	_code_000a1530 (0000)
-000A15B0 0050:
-	_game_engine_play_multiplayer_sound (0000)
-000A1600 0030:
-	_game_engine_intialize_queued_sounds (0000)
-002DE530 002b:
-	_data_002de530 (0000)
-0043EB78 002c:
-	_bss_0043eb78 (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-
-#include "game/game_globals.h"
-#include "objects/objects.h"
-#include "scenario/scenario.h"
-#include "sound/game_sound.h"
-#include "sound/sound_definitions.h"
-
-/* ---------- constants */
-
-enum multiplayer_information_sound
-{
-	_multiplayer_sound_play_ball,
-	_multiplayer_sound_game_over,
-	_multiplayer_sound_one_minute_to_win,
-	_multiplayer_sound_30_seconds_to_win,
-	_multiplayer_sound_red_team_minute_to_win,
-	_multiplayer_sound_red_team_30_seconds_to_win,
-	_multiplayer_sound_blue_team_minute_to_win,
-	_multiplayer_sound_blue_team_30_seconds_to_win,
-	_multiplayer_sound_blue_team_has_the_flag,
-	_multiplayer_sound_blue_team_flag_returned,
-	_multiplayer_sound_blue_team_score,
-	_multiplayer_sound_red_team_has_the_flag,
-	_multiplayer_sound_red_team_flag_returned,
-	_multiplayer_sound_red_team_score,
-	_multiplayer_sound_double_kill,
-	_multiplayer_sound_triple_kill,
-	_multiplayer_sound_killtacular,
-	_multiplayer_sound_running_riot,
-	_multiplayer_sound_killing_spree,
-	_multiplayer_sound_oddball,
-	_multiplayer_sound_race,
-	_multiplayer_sound_slayer,
-	_multiplayer_sound_capture_the_flag,
-	_multiplayer_sound_warthog,
-	_multiplayer_sound_ghost,
-	_multiplayer_sound_scorpion,
-	_multiplayer_sound_countdown_timer,
-	_multiplayer_sound_teleporter_activate,
-	_multiplayer_sound_flag_failure,
-	_multiplayer_sound_countdown_for_respawn,
-	_multiplayer_sound_hill_move,
-	_multiplayer_sound_player_respawn,
-	_multiplayer_sound_team_king_of_the_hill,
-	_multiplayer_sound_team_oddball,
-	_multiplayer_sound_team_race,
-	_multiplayer_sound_team_slayer,
-	_multiplayer_sound_king_of_the_hill,
-	_multiplayer_sound_blue_team_ctf,
-	_multiplayer_sound_red_team_ctf,
-	_multiplayer_sound_hill_contested,
-	_multiplayer_sound_hill_controlled,
-	_multiplayer_sound_hill_occupied,
-	_multiplayer_sound_countdown_timer_end,
-	_multiplayer_sound_ting,
-	NUMBER_OF_MULTIPLAYER_INFORMATION_SOUNDS
-};
-
-enum
-{
-	MAXIMUM_QUEUED_MULTIPLAYER_SOUNDS = 5,
-	MULTIPLAYER_SOUND_QUEUE_INITIAL_DELAY_TICKS = 2 * TICKS_PER_SECOND,
-};
-
-/* ---------- macros */
+#include "players.h"
+#include "network_game_globals.h"
+#include "units.h"
+#include "network_messages.h"
+#include "sound_manager.h"
+#include "game_sound.h"
+#include "sound_definitions.h"
+#include "network_server_message_handler.h"
+#include "network_server_manager.h"
 
 /* ---------- structures */
 
-struct queued_multiplayer_sound
+struct queued_mp_sound
 {
-	long sound_index;
-	long delay_ticks;
+	long index;
+	long ticks_left;
 };
-
-struct multiplayer_sound_queue
-{
-	long count;
-	struct queued_multiplayer_sound sounds[MAXIMUM_QUEUED_MULTIPLAYER_SOUNDS];
-};
-
-struct game_globals_multiplayer_sound_view
-{
-	byte unused[0x164];
-	struct tag_block multiplayer_information;
-};
-
-typedef char verify_multiplayer_sound_queue_size[sizeof(struct multiplayer_sound_queue) == 0x2C ? 1 : -1];
-typedef char verify_game_globals_multiplayer_information_offset[
-	offsetof(struct game_globals_multiplayer_sound_view, multiplayer_information) == 0x164 ? 1 : -1];
 
 /* ---------- prototypes */
 
-/* game_engine_play_multiplayer_sound_immediate */
-static void _game_engine_play_multiplayer_sound(
-	long sound_index);
-/* game_engine_queue_multiplayer_sound */
-static void push_queued_sound(
-	long sound_index,
-	long delay_ticks);
-/* game_engine_get_multiplayer_sound_duration */
-static long get_sound_length_in_ticks(
-	long sound_index);
+static void _game_engine_play_multiplayer_sound(long index);
+static void push_queued_sound(long index, long length);
+static long get_sound_length_in_ticks(long index);
 
 /* ---------- globals */
 
-static boolean sound_is_queueable[_multiplayer_sound_ting] =
+static boolean sound_is_queueable[NUMBER_OF_MULTIPLAYER_SOUNDS] =
 {
-	TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
-	TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
-	TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
-	TRUE, TRUE,
-	FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-	TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,
-	TRUE, TRUE, FALSE,
+	TRUE,  // _multiplayer_sound_oddball_spawn
+	TRUE,  // _multiplayer_sound_game_over
+	TRUE,  // _multiplayer_sound_60_seconds
+	TRUE,  // _multiplayer_sound_30_seconds
+	TRUE,  // _multiplayer_sound_red_60_seconds
+	TRUE,  // _multiplayer_sound_red_30_seconds
+	TRUE,  // _multiplayer_sound_blue_60_seconds
+	TRUE,  // _multiplayer_sound_blue_30_seconds
+	TRUE,  // _multiplayer_sound_ctf_blue_took_flag
+	TRUE,  // _multiplayer_sound_ctf_blue_returned_flag
+	TRUE,  // _multiplayer_sound_ctf_blue_captured_flag
+	TRUE,  // _multiplayer_sound_ctf_red_took_flag
+	TRUE,  // _multiplayer_sound_ctf_red_returned_flag
+	TRUE,  // _multiplayer_sound_ctf_red_captured_flag
+	TRUE,  // _multiplayer_sound_double_kill
+	TRUE,  // _multiplayer_sound_triple_kill
+	TRUE,  // _multiplayer_sound_killtacular_kill
+	TRUE,  // _multiplayer_sound_running_riot
+	TRUE,  // _multiplayer_sound_killing_spree
+	TRUE,  // _multiplayer_sound_oddball
+	TRUE,  // _multiplayer_sound_race
+	TRUE,  // _multiplayer_sound_slayer
+	TRUE,  // _multiplayer_sound_ctf
+	TRUE,  // _multiplayer_sound_warthog
+	TRUE,  // _multiplayer_sound_ghost
+	TRUE,  // _multiplayer_sound_scorpion
+	FALSE, // _multiplayer_sound_countdown_timer
+	FALSE, // _multiplayer_sound_teleporter_activate
+	FALSE, // _multiplayer_sound_flag_failure
+	FALSE, // _multiplayer_sound_countdown_for_respawn
+	FALSE, // _multiplayer_sound_hill_move
+	FALSE, // _multiplayer_sound_respawn
+	TRUE,  // _multiplayer_sound_team_king
+	TRUE,  // _multiplayer_sound_team_oddball
+	TRUE,  // _multiplayer_sound_team_race
+	TRUE,  // _multiplayer_sound_team_slayer
+	TRUE,  // _multiplayer_sound_king
+	TRUE,  // _multiplayer_sound_blue_team_ctf
+	TRUE,  // _multiplayer_sound_red_team_ctf
+	TRUE,  // _multiplayer_sound_hill_contested
+	TRUE,  // _multiplayer_sound_hill_controlled
+	TRUE,  // _multiplayer_sound_hill_occupied
+	FALSE  // _multiplayer_sound_countdown_timer_end
 };
 
 static long mp_sound_queue_count = 0;
-static struct queued_multiplayer_sound mp_sound_queue[
-	MAXIMUM_QUEUED_MULTIPLAYER_SOUNDS] = { 0 };
+static struct queued_mp_sound mp_sound_queue[5] = {0};
 
 /* ---------- public code */
-
-static void _game_engine_play_multiplayer_sound(
-	long sound_index)
-{
-	struct game_globals_multiplayer_sound_view *game_globals;
-	struct game_globals_multiplayer_information *multiplayer_information;
-	struct tag_reference *sound;
-
-	global_scenario_get();
-	game_globals = (struct game_globals_multiplayer_sound_view *)scenario_get_game_globals();
-	multiplayer_information = TAG_BLOCK_GET_ELEMENT(
-		&game_globals->multiplayer_information,
-		0,
-		struct game_globals_multiplayer_information);
-	if (multiplayer_information && sound_index < multiplayer_information->sounds.count)
-	{
-		sound = TAG_BLOCK_GET_ELEMENT(
-			&multiplayer_information->sounds,
-			sound_index,
-			struct tag_reference);
-		if (sound && sound->index != NONE)
-			unspatialized_impulse_sound_new(sound->index, 1.0f);
-	}
-
-	return;
-}
-
-static void push_queued_sound(
-	long sound_index,
-	long delay_ticks)
-{
-	if (mp_sound_queue_count < MAXIMUM_QUEUED_MULTIPLAYER_SOUNDS)
-	{
-		mp_sound_queue[mp_sound_queue_count].sound_index = sound_index;
-		mp_sound_queue[mp_sound_queue_count].delay_ticks = delay_ticks;
-		mp_sound_queue_count++;
-	}
-
-	return;
-}
 
 void game_engine_update_multiplayer_sound(
 	void)
 {
-	long i;
-
-	if (mp_sound_queue_count && --mp_sound_queue[0].delay_ticks == 0)
+	if (mp_sound_queue_count)
 	{
-		for (i = 1; i < mp_sound_queue_count; i++)
-			mp_sound_queue[i - 1] = mp_sound_queue[i];
+		if (!--mp_sound_queue[0].ticks_left)
+		{
+			long i;
 
-		if (--mp_sound_queue_count)
-			_game_engine_play_multiplayer_sound(mp_sound_queue[0].sound_index);
+			for (i = 1; i < mp_sound_queue_count; i++)
+			{
+				mp_sound_queue[i - 1] = mp_sound_queue[i];
+			}
+			mp_sound_queue_count--;
+			if (mp_sound_queue_count)
+			{
+				_game_engine_play_multiplayer_sound(mp_sound_queue[0].index);
+			}
+		}
 	}
 
 	return;
 }
 
-static long get_sound_length_in_ticks(
-	long sound_index)
-{
-	struct game_globals_multiplayer_sound_view *game_globals;
-	struct game_globals_multiplayer_information *multiplayer_information;
-	struct tag_reference *sound;
-
-	global_scenario_get();
-	game_globals = (struct game_globals_multiplayer_sound_view *)scenario_get_game_globals();
-	multiplayer_information = TAG_BLOCK_GET_ELEMENT(
-		&game_globals->multiplayer_information,
-		0,
-		struct game_globals_multiplayer_information);
-	if (!multiplayer_information)
-		return 0;
-	if (sound_index >= multiplayer_information->sounds.count)
-		return 0;
-
-	sound = TAG_BLOCK_GET_ELEMENT(
-		&multiplayer_information->sounds,
-		sound_index,
-		struct tag_reference);
-	if (!sound)
-		return 0;
-	if (sound->index == NONE)
-		return 0;
-
-	return (long)(sound_definition_get(sound->index)->longest_permutation_length * TICKS_PER_SECOND) / 1000;
-}
-
 void game_engine_play_multiplayer_sound(
-	long sound_index)
+	long index)
 {
-	if (sound_is_queueable[sound_index])
+	if (sound_is_queueable[index])
 	{
-		push_queued_sound(
-			sound_index,
-			get_sound_length_in_ticks(sound_index) + 5);
+		push_queued_sound(index, get_sound_length_in_ticks(index) + 5);
 		if (mp_sound_queue_count == 1)
-			_game_engine_play_multiplayer_sound(sound_index);
+		{
+			_game_engine_play_multiplayer_sound(index);
+		}
 	}
 	else
 	{
-		_game_engine_play_multiplayer_sound(sound_index);
+		_game_engine_play_multiplayer_sound(index);
 	}
 
 	return;
@@ -254,15 +130,86 @@ void game_engine_play_multiplayer_sound(
 void game_engine_intialize_queued_sounds(
 	void)
 {
-	csmemset(
-		mp_sound_queue,
-		0,
-		sizeof(mp_sound_queue));
+	memset(mp_sound_queue, 0, sizeof(mp_sound_queue));
 	mp_sound_queue_count = 1;
-	mp_sound_queue[0].sound_index = NONE;
-	mp_sound_queue[0].delay_ticks = MULTIPLAYER_SOUND_QUEUE_INITIAL_DELAY_TICKS;
+	mp_sound_queue[0].index = NONE;
+	mp_sound_queue[0].ticks_left = 2 * TICKS_PER_SECOND;
 
 	return;
 }
 
 /* ---------- private code */
+
+static void _game_engine_play_multiplayer_sound(
+	long index)
+{
+	struct scenario *scenario = global_scenario_get();
+	struct game_globals *globals = scenario_get_game_globals();
+	struct game_globals_multiplayer_information *multiplayer = TAG_BLOCK_GET_ELEMENT(&globals->multiplayer_information, 0, struct game_globals_multiplayer_information);
+
+	if (multiplayer)
+	{
+		if (index < multiplayer->sounds.count)
+		{
+			struct tag_reference *sound = TAG_BLOCK_GET_ELEMENT(&multiplayer->sounds, index, struct tag_reference);
+
+			if (sound)
+			{
+				if (sound->index != NONE)
+				{
+					unspatialized_impulse_sound_new(sound->index, 1.f);
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+static void push_queued_sound(
+	long index,
+	long length)
+{
+	if (mp_sound_queue_count < (long)NUMBEROF(mp_sound_queue))
+	{
+		mp_sound_queue[mp_sound_queue_count].index = index;
+		mp_sound_queue[mp_sound_queue_count].ticks_left = length;
+		mp_sound_queue_count++;
+	}
+
+	return;
+}
+
+static long get_sound_length_in_ticks(
+	long index)
+{
+	struct scenario *scenario = global_scenario_get();
+	struct game_globals *globals = scenario_get_game_globals();
+	struct game_globals_multiplayer_information *multiplayer = TAG_BLOCK_GET_ELEMENT(&globals->multiplayer_information, 0, struct game_globals_multiplayer_information);
+
+	struct tag_reference *sound;
+
+	if (!multiplayer)
+	{
+		return 0;
+	}
+
+	if (index >= multiplayer->sounds.count)
+	{
+		return 0;
+	}
+
+	sound = TAG_BLOCK_GET_ELEMENT(&multiplayer->sounds, index, struct tag_reference);
+
+	if (!sound)
+	{
+		return 0;
+	}
+
+	if (sound->index == NONE)
+	{
+		return 0;
+	}
+
+	return TICKS_PER_SECOND * sound_definition_get(sound->index)->runtime_maximum_play_time / MILLISECONDS_PER_SECOND;
+}

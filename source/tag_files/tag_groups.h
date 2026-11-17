@@ -10,30 +10,159 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "memory/byte_swapping.h"
 
 /* ---------- constants */
 
-enum tag_field_type
+enum
 {
-	_tag_field_string = 0,
-	_tag_field_char_integer = 1,
-	_tag_field_short_integer = 2,
-	_tag_field_long_integer = 3,
-	_tag_field_enum = 6,
-	_tag_field_word_flags = 8,
-	_tag_field_byte_flags = 9,
-	_tag_field_real_point3d = 17,
-	_tag_field_real_plane2d = 23,
-	_tag_field_real_plane3d = 24,
-	_tag_field_tag_reference = 33,
-	_tag_field_block = 34,
-	_tag_field_data = 37,
-	_tag_field_pad = 40,
-	_tag_field_terminator = 44,
+	_field_string = 0,
+	_field_char_integer,
+	_field_short_integer,
+	_field_long_integer,
+	_field_angle,
+	_field_tag,
+	_field_enum,
+	_field_flags,
+	_field_word_flags,
+	_field_byte_flags,
+	_field_point2d,
+	_field_rectangle2d,
+	_field_rgb_pixel32,
+	_field_argb_pixel32,
+	_field_real,
+	_field_real_fraction,
+	_field_real_point2d,
+	_field_real_point3d,
+	_field_real_vector2d,
+	_field_real_vector3d,
+	_field_real_quaternion,
+	_field_real_euler_angles2d,
+	_field_real_euler_angles3d,
+	_field_real_plane2d,
+	_field_real_plane3d,
+	_field_real_rgb_color,
+	_field_real_argb_color,
+	_field_real_hsv_color,
+	_field_real_ahsv_color,
+	_field_short_integer_bounds,
+	_field_angle_bounds,
+	_field_real_bounds,
+	_field_real_fraction_bounds,
+	_field_tag_reference,
+	_field_block,
+	_field_short_block_index,
+	_field_long_block_index,
+	_field_data,
+	_field_start_array,
+	_field_end_array,
+	_field_pad,
+	_field_skip,
+	_field_explanation,
+	_field_custom,
+	_field_terminator,
+	NUMBER_OF_TAG_FIELD_TYPES
+};
+
+enum
+{
+	_tag_data_cached_bit = 0,
+	_tag_data_string_bit,
+	_tag_data_not_added_to_monolithic_file_bit,
+	NUMBER_OF_TAG_DATA_DEFINITION_FLAGS
+};
+
+enum
+{
+	_tag_group_is_game_critical_bit = 0,
+	_tag_group_is_local_bit,
+	_tag_group_is_not_editable_bit,
+	_tag_group_can_be_reloaded_bit,
+	NUMBER_OF_TAG_GROUP_FLAGS
 };
 
 /* ---------- macros */
+
+#define TAG_GROUP(name, prefix, size, flags, parent_tag, postprocess)	\
+														\
+extern struct tag_field name##_fields[];				\
+														\
+static struct tag_block_definition name##_block =		\
+{														\
+	#name,												\
+	0,													\
+	1,													\
+	(size),												\
+	NULL,												\
+	name##_fields										\
+};														\
+														\
+struct tag_group name##_group =							\
+{														\
+	#name,												\
+	(flags),											\
+	prefix##_TAG,										\
+	(parent_tag),										\
+	prefix##_VERSION,									\
+	(postprocess),										\
+	&name##_block										\
+};														\
+														\
+static struct tag_field name##_fields[] =
+
+
+#define TAG_BLOCK_NAMED(name, string, maximum_count, size, byte_swap_block, postprocess_block, format_block, delete_block)	\
+														\
+extern struct tag_field name##_fields[];				\
+														\
+struct tag_block_definition name =						\
+{														\
+	(string),											\
+	0,													\
+	(maximum_count),									\
+	(size),												\
+	NULL,												\
+	name##_fields,										\
+	(byte_swap_block),									\
+	(postprocess_block),								\
+	(format_block),										\
+	(delete_block)										\
+};														\
+														\
+static struct tag_field name##_fields[] =
+
+#define TAG_BLOCK(name, maximum_count, size, byte_swap_block, postprocess_block, format_block, delete_block)	\
+TAG_BLOCK_NAMED(name, #name, maximum_count, size, byte_swap_block, postprocess_block, format_block, delete_block)
+
+#define TAG_REFERENCE_DEFINITION(name, group_tag) struct tag_reference_definition name = { 0, (group_tag) }
+
+#define FIELD_CUSTOM(id) {_field_custom, NULL, (void *)(id)}
+#define FIELD_PAD(size) {_field_pad, NULL, (void *)(size)}
+
+#define TAG_ENUM(name, size)			\
+										\
+extern char *name##_strings[];			\
+										\
+static struct enum_definition name =	\
+{										\
+	size,								\
+	name##_strings						\
+};										\
+										\
+static char *name##_strings[] =			\
+
+
+#define TAG_FLAGS(name, size)			\
+										\
+extern char *name##_strings[];			\
+										\
+static struct flags_definition name =	\
+{										\
+	size,								\
+	name##_strings						\
+};										\
+										\
+static char *name##_strings[] =			\
+
 
 #define TAG_BLOCK_GET_ELEMENT(block_address, index, type) ((type *)tag_block_get_element_with_size((block_address), (index), sizeof(type)))
 
@@ -43,21 +172,25 @@ typedef void (*byte_swap_block_proc)(void *);
 typedef boolean (*postprocess_block_proc)(void *, boolean);
 typedef byte *(*format_block_proc)(long, struct tag_block *, long, byte *);
 typedef void (*delete_block_proc)(struct tag_block *, long);
-typedef void (*byte_swap_data_proc)(void *, void *, long);
-
-struct tag_enum_definition
-{
-	long count;
-	char **names;
-	void *unused;
-};
 
 struct tag_field
 {
 	short type;
-	word pad;
 	char *name;
 	void *definition;
+};
+
+struct flags_definition
+{
+	short count;
+	char **strings;
+};
+
+struct enum_definition
+{
+	short count;
+	char **strings;
+	union real_rgb_color *colors;
 };
 
 struct tag_data_definition
@@ -65,7 +198,7 @@ struct tag_data_definition
 	char *name;
 	unsigned long flags;
 	long maximum_size;
-	byte_swap_data_proc byte_swap_data;
+	void (*byte_swap_data)(void *, void *, long);
 };
 
 struct tag_block_definition
@@ -100,13 +233,10 @@ struct tag_reference
 
 struct tag_reference_definition
 {
-	unsigned long flags;
-	unsigned long group_tag;
-	unsigned long *group_tags;
+    unsigned long flags;
+    unsigned long group_tag;
+    unsigned long *group_tags;
 };
-
-typedef char tag_reference_definition_size_assert[
-	sizeof(struct tag_reference_definition) == 0xC ? 1 : -1];
 
 struct tag_data
 {
@@ -117,20 +247,54 @@ struct tag_data
 	struct tag_data_definition *definition;
 };
 
+struct tag_iterator
+{
+	struct data_iterator iterator;
+	unsigned long key_group_tag;
+};
+
+typedef boolean (*postprocess_tag_proc)(long, boolean);
+
+struct tag_group
+{
+	char *name;
+	unsigned long flags;
+	unsigned long group_tag;
+	unsigned long parent_tag;
+	short version;
+	postprocess_tag_proc postprocess_tag;
+	struct tag_block_definition *header_block_definition;
+	unsigned long child_tags[16];
+	short child_count;
+};
+
 /* ---------- prototypes/TAG_GROUPS.C */
 
 long verify_tag_reference(struct tag_reference const *reference);
 void *tag_data_get_pointer(struct tag_data const *data, long offset, long size);
 void *tag_block_get_element_with_size(struct tag_block const *block, long index, long element_size);
+long tag_block_add_element(struct tag_block *block);
+boolean tag_block_resize(struct tag_block *block, long element_count);
+boolean tag_data_resize(struct tag_data *data, long size);
 
 /* ---------- prototypes/CACHE_FILES.C */
 
 long tag_loaded(long group_tag, const char *name);
 
 void *tag_get(long group_tag, long tag_index);
+void tag_block_delete_element(struct tag_block *block, long index);
+
+void tag_iterator_new(struct tag_iterator *iterator, unsigned long key_group_tag);
+long tag_iterator_next(struct tag_iterator *iterator);
 
 /* ---------- globals */
 
 /* ---------- public code */
+
+__inline void *tag_data_get_address(
+	struct tag_data const *data)
+{
+	return data->address;
+}
 
 #endif // __TAG_GROUPS_H

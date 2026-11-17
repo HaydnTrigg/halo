@@ -8,10 +8,6 @@ header included in hcex build.
 #define __BORED_CAMERA_H
 #pragma once
 
-/* ---------- headers */
-
-#include "cseries/cseries.h"
-
 /* ---------- constants */
 
 /* ---------- macros */
@@ -20,28 +16,17 @@ header included in hcex build.
 
 struct bored_camera
 {
-	unsigned long last_update_milliseconds;
-	long timer_milliseconds;
-	long boredom_count;
+	unsigned long last_update_time; /* fake name */
+	long timer; /* fake name */
+	long camera_count; /* fake name */
 };
-
-struct camera_action;
-struct camera_command;
 
 /* ---------- prototypes/BORED_CAMERA.C */
 
-void bored_camera_new(
-	struct bored_camera *camera);
-void bored_camera_update(
-	struct bored_camera *camera,
-	struct camera_action const *action,
-	struct camera_command *result);
-
-boolean is_bored(
-	void);
-
-boolean is_still_bored(
-	void);
+void bored_camera_new(struct bored_camera *camera);
+boolean is_bored(void);
+boolean is_still_bored(void);
+void bored_camera_update(struct bored_camera *camera, struct camera_control const *controls, struct observer_command *result);
 
 /* ---------- globals */
 

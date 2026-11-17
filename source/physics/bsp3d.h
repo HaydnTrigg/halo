@@ -11,12 +11,25 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "tag_files/tag_groups.h"
-#include "math/real_math.h"
 
 /* ---------- constants */
 
-/* ---------- macros */
+enum
+{
+	MAXIMUM_NODES_PER_BSP3D = 131072,
+	MAXIMUM_LEAVES_PER_BSP3D = UNSIGNED_SHORT_MAX+1,
+	MAXIMUM_PLANES_PER_BSP3D = UNSIGNED_SHORT_MAX+1,
+	MAXIMUM_BSP3D_DEPTH = 128,
+	BSP3D_ROOT_NODE_INDEX = 0,
+};
+
+enum
+{
+	_contents_unknown = 0,
+	_contents_empty,
+	_contents_semi_empty,
+	_contents_solid
+};
 
 /* ---------- structures */
 
@@ -28,18 +41,43 @@ struct bsp3d
 
 struct bsp3d_node
 {
-	long plane_designator;
-	long children[2];
+	long plane;
+	long child_indices[2];
 };
 
-typedef char bsp3d_node_size_check[
-	sizeof(struct bsp3d_node) == 0xC ? 1 : -1];
+typedef void (*line_proc)(
+	real_point3d const *p0,
+	real_point3d const *p1,
+	long leaf_index,
+	void *data);
+
+typedef void (*polygon_proc)(
+	real_point3d const *vertices,
+	short vertex_count,
+	long leaf_index,
+	long on_node_designator,
+	void *data);
 
 /* ---------- prototypes/BSP3D.C */
 
-long bsp3d_test_point(struct bsp3d const *bsp, long node_index, union real_point3d const *point);
+long bsp3d_test_point(struct bsp3d const *bsp, long node_index, real_point3d const *point);
 
-/* ---------- globals */
+long bsp3d_clip_line_to_leaves(
+	struct bsp3d const *bsp,
+	long node_index,
+	real_point3d const *p0,
+	real_point3d const *p1,
+	line_proc handler,
+	void *user_data);
+
+long bsp3d_clip_polygon_to_leaves(
+	struct bsp3d const *bsp,
+	long node_index,
+	real_point3d const *vertices,
+	short vertex_count,
+	real epsilon,
+	polygon_proc handler,
+	void *user_data);
 
 /* ---------- public code */
 

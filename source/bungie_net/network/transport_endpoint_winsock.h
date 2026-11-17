@@ -10,37 +10,58 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include <xtl.h>
-#include "transport_endpoint.h"
+#include "transport.h"
 
 /* ---------- constants */
+
+enum
+{
+	MICROSECONDS_PER_MILLISECOND = 1000, /* fake name */
+};
+
+enum
+{
+	_endpoint_connected_bit = 0, /* fake name */
+	_endpoint_listening_bit, /* fake name */
+	_endpoint_readable_bit, /* fake name */
+	_endpoint_in_set_bit, /* fake name */
+	_endpoint_nonblocking_bit, /* fake name */
+	_endpoint_client_bit, /* fake name */
+	NUMBER_OF_ENDPOINT_FLAGS,
+};
 
 /* ---------- macros */
 
 /* ---------- structures */
 
-/* ---------- prototypes/TRANSPORT_ENDPOINT_SET_WINSOCK.C */
+struct transport_endpoint
+{
+	SOCKET socket;
+	char flags;
+	char type;
+	short error;
+};
 
-void transport_client_stop(
-	void);
-void transport_client_start(
-	XNADDR const *xnaddr,
-	XNKEY const *key,
-	XNKID const *key_id,
-	word port,
-	struct transport_address *address);
-short transport_server_initialize(
-	void);
-short transport_server_terminate(
-	void);
-XNADDR *transport_get_xnaddr(
-	XNADDR *address);
-XNKID transport_get_key_id(
-	void);
-XNKEY transport_get_key(
-	void);
+struct transport_endpoint_set
+{
+	fd_set sockets; /* fake name */
+	struct transport_endpoint **ep_array;
+	long max_endpoints;
+	long last_index; /* fake name */
+	long current_index; /* fake name */
+	long needs_compaction; /* fake name */
+};
+
+/* ---------- prototypes/EXAMPLE.C */
 
 /* ---------- globals */
+
+// uninitialized globals
+extern XNKEY global_key;
+extern XNKID global_key_id;
+extern unsigned __int64 global_nonce;
+extern XNADDR global_address;
+extern boolean server_transport_globals;
 
 /* ---------- public code */
 

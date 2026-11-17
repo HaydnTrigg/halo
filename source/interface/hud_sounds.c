@@ -1,116 +1,79 @@
 /*
 HUD_SOUNDS.C
-
-symbols in this file:
-000C6430 0160:
-	_hud_play_sound (0000)
-00270240 0026:
-	??_C@_0CG@LACJPAPB@c?3?2halo?2SOURCE?2interface?2hud_sou@ (0000)
 */
-
 /* ---------- headers */
 
 #include "cseries.h"
-
-#include "interface/hud.h"
-#include "objects/objects.h"
-#include "sound/sound_definitions.h"
-#include "sound/game_sound.h"
-#include "sound/sound_manager.h"
-#include "tag_files/tag_groups.h"
-
-/* ---------- constants */
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-struct hud_sound_definition
-{
-	struct tag_reference sound;
-	unsigned long state_flags;
-	real scale;
-	/* Reserved by the tag format; the original block accessor proves the 0x38-byte element size. */
-	byte reserved[32];
-};
-
-/* ---------- prototypes */
-
-/* ---------- globals */
+#include "interface.h"
+#include "hud_definitions.h"
+#include "ai_scenario_definitions.h"
+#include "game_globals.h"
+#include "damage.h"
+#include "breakable_surfaces.h"
+#include "scenario.h"
+#include "network_game_globals.h"
+#include "sound_manager.h"
+#include "game_sound.h"
+#include "sound_definitions.h"
 
 /* ---------- public code */
 
 void hud_play_sound(
 	short local_player_index,
-	unsigned long state_flags,
-	struct tag_block const *sounds,
-	long *sound_indices,
-	word *played_flags)
+	long type_flags,
+	struct tag_block *sounds,
+	long *sound_handles,
+	word *sound_flags)
 {
-	long absolute_sound_index = 0;
-	short sound_index = 0;
-
-	if (sounds->count > 0)
-		do
+	short sound_index;
+	for (sound_index = 0; sound_index < sounds->count; sound_index++)
+	{
+		struct sound_hud_element_definition *sound = TAG_BLOCK_GET_ELEMENT(sounds, sound_index, struct sound_hud_element_definition);
+		if (sound->type_flags & type_flags)
 		{
-			struct hud_sound_definition const *sound =
-				TAG_BLOCK_GET_ELEMENT(sounds, absolute_sound_index, struct hud_sound_definition);
-
-			if (state_flags & sound->state_flags)
+			switch (sound->sound.group_tag)
 			{
-				switch (sound->sound.group_tag)
+			case SOUND_DEFINITION_TAG:
+				if (sound_handles[sound_index] == NONE || !TEST_FLAG(*sound_flags, sound_index))
 				{
-				default:
-					match_assert("c:\\halo\\SOURCE\\interface\\hud_sounds.c", 47, !"unreachable");
-					break;
-
-				case SOUND_DEFINITION_TAG:
-					if (sound_indices[absolute_sound_index] == NONE ||
-						!TEST_FLAG(*played_flags, absolute_sound_index))
+					if (sound_handles[sound_index] != NONE)
 					{
-						if (sound_indices[absolute_sound_index] != NONE)
-							sound_stop_impulse(sound_indices[absolute_sound_index]);
-						sound_indices[absolute_sound_index] =
-							unspatialized_impulse_sound_new(sound->sound.index, sound->scale);
+						sound_stop_impulse(sound_handles[sound_index]);
 					}
-					break;
-
-				case LOOPING_SOUND_DEFINITION_TAG:
-					if (sound_indices[absolute_sound_index] == NONE)
-						sound_indices[absolute_sound_index] =
-							unattached_looping_sound_start(sound->sound.index, NONE, sound->scale);
-					break;
+					sound_handles[sound_index] = unspatialized_impulse_sound_new(sound->sound.index, sound->scale);
 				}
-
-				SET_FLAG(*played_flags, absolute_sound_index, TRUE);
-			}
-			else
-			{
-				if (sound_indices[absolute_sound_index] != NONE)
+				break;
+			case LOOPING_SOUND_DEFINITION_TAG:
+				if (sound_handles[sound_index] == NONE)
 				{
-					switch (sound->sound.group_tag)
-					{
-					default:
-						match_assert("c:\\halo\\SOURCE\\interface\\hud_sounds.c", 64, !"unreachable");
-						break;
-					case SOUND_DEFINITION_TAG:
-						break;
-					case LOOPING_SOUND_DEFINITION_TAG:
-						unattached_looping_sound_stop(sound_indices[absolute_sound_index]);
-						break;
-					}
-
-					sound_indices[absolute_sound_index] = NONE;
-					SET_FLAG(*played_flags, absolute_sound_index, FALSE);
+					sound_handles[sound_index] = unattached_looping_sound_start(sound->sound.index, NONE, sound->scale);
 				}
+				break;
+			default:
+				match_unreachable("c:\\halo\\SOURCE\\interface\\hud_sounds.c", 47);
+				break;
 			}
-
-			sound_index++;
-			absolute_sound_index = sound_index;
+			SET_FLAG(*sound_flags, sound_index, TRUE);
 		}
-		while (absolute_sound_index < sounds->count);
+		else if (sound_handles[sound_index] != NONE)
+		{
+			switch (sound->sound.group_tag)
+			{
+			case SOUND_DEFINITION_TAG:
+				break;
+
+			case LOOPING_SOUND_DEFINITION_TAG:
+				unattached_looping_sound_stop(sound_handles[sound_index]);
+				break;
+
+			default:
+				match_unreachable("c:\\halo\\SOURCE\\interface\\hud_sounds.c", 64);
+				break;
+			}
+			sound_handles[sound_index] = NONE;
+			SET_FLAG(*sound_flags, sound_index, FALSE);
+		}
+	}
 
 	return;
 }
-
-/* ---------- private code */

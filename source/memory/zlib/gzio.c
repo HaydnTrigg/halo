@@ -11,10 +11,6 @@
 
 #include "zutil.h"
 
-extern int * __cdecl _errno(void);
-
-#line 13 "c:\\halo\\SOURCE\\memory\\zlib\\gzio.c"
-
 struct internal_state {int dummy;}; /* for buggy compilers */
 
 #ifndef Z_BUFSIZE
@@ -30,8 +26,9 @@ struct internal_state {int dummy;}; /* for buggy compilers */
 
 #define ALLOC(size) malloc(size)
 #define TRYFREE(p) {if (p) free(p);}
+#define match_TRYFREE(file, line, p) {if (p) match_free(file, line, p);}
 
-local int gz_magic[2] = {0x1f, 0x8b}; /* gzip magic header */
+static int gz_magic[2] = {0x1f, 0x8b}; /* gzip magic header */
 
 /* gzip flag byte */
 #define ASCII_FLAG   0x01 /* bit 0 set: file probably ascii text */
@@ -89,7 +86,7 @@ local gzFile gz_open (path, mode, fd)
 
     if (!path || !mode) return Z_NULL;
 
-    s = (gz_stream *)ALLOC(sizeof(gz_stream));
+    s = (gz_stream *)match_malloc("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 88, sizeof(gz_stream));
     if (!s) return Z_NULL;
 
     s->stream.zalloc = (alloc_func)0;
@@ -105,7 +102,7 @@ local gzFile gz_open (path, mode, fd)
     s->msg = NULL;
     s->transparent = 0;
 
-    s->path = (char*)ALLOC(strlen(path)+1);
+    s->path = (char*)match_malloc("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 104, strlen(path)+1);
     if (s->path == NULL) {
         return destroy(s), (gzFile)Z_NULL;
     }
@@ -135,13 +132,13 @@ local gzFile gz_open (path, mode, fd)
                            Z_DEFLATED, -MAX_WBITS, DEF_MEM_LEVEL, strategy);
         /* windowBits is passed < 0 to suppress zlib header */
 
-        s->stream.next_out = s->outbuf = (Byte*)ALLOC(Z_BUFSIZE);
+        s->stream.next_out = s->outbuf = (Byte*)match_malloc("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 134, Z_BUFSIZE);
 #endif
         if (err != Z_OK || s->outbuf == Z_NULL) {
             return destroy(s), (gzFile)Z_NULL;
         }
     } else {
-        s->stream.next_in  = s->inbuf = (Byte*)ALLOC(Z_BUFSIZE);
+        s->stream.next_in  = s->inbuf = (Byte*)match_malloc("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 140, Z_BUFSIZE);
 
         err = inflateInit2(&(s->stream), -MAX_WBITS);
         /* windowBits is passed < 0 to tell that there is no zlib header.
@@ -156,7 +153,7 @@ local gzFile gz_open (path, mode, fd)
     }
     s->stream.avail_out = Z_BUFSIZE;
 
-    (*_errno()) = 0;
+    errno = 0;
     s->file = fd < 0 ? F_OPEN(path, fmode) : (FILE*)fdopen(fd, fmode);
 
     if (s->file == NULL) {
@@ -242,7 +239,7 @@ local int get_byte(s)
 {
     if (s->z_eof) return EOF;
     if (s->stream.avail_in == 0) {
-	(*_errno()) = 0;
+	errno = 0;
 	s->stream.avail_in = fread(s->inbuf, 1, Z_BUFSIZE, s->file);
 	if (s->stream.avail_in == 0) {
 	    s->z_eof = 1;
@@ -324,7 +321,7 @@ local int destroy (s)
 
     if (!s) return Z_STREAM_ERROR;
 
-    TRYFREE(s->msg);
+    match_TRYFREE("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 323, s->msg);
 
     if (s->stream.state != NULL) {
 	if (s->mode == 'w') {
@@ -339,16 +336,16 @@ local int destroy (s)
     }
     if (s->file != NULL && fclose(s->file)) {
 #ifdef ESPIPE
-	if ((*_errno()) != ESPIPE) /* fclose is broken for pipes in HP/UX */
+	if (errno != ESPIPE) /* fclose is broken for pipes in HP/UX */
 #endif
 	    err = Z_ERRNO;
     }
     if (s->z_err < 0) err = s->z_err;
 
-    TRYFREE(s->inbuf);
-    TRYFREE(s->outbuf);
-    TRYFREE(s->path);
-    TRYFREE(s);
+    match_TRYFREE("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 344, s->inbuf);
+    match_TRYFREE("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 345, s->outbuf);
+    match_TRYFREE("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 346, s->path);
+    match_TRYFREE("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 347, s);
     return err;
 }
 
@@ -400,7 +397,7 @@ int ZEXPORT gzread (file, buf, len)
 	}
         if (s->stream.avail_in == 0 && !s->z_eof) {
 
-            (*_errno()) = 0;
+            errno = 0;
             s->stream.avail_in = fread(s->inbuf, 1, Z_BUFSIZE, s->file);
             if (s->stream.avail_in == 0) {
                 s->z_eof = 1;
@@ -684,7 +681,7 @@ z_off_t ZEXPORT gzseek (file, offset, whence)
 
 	/* At this point, offset is the number of zero bytes to write. */
 	if (s->inbuf == Z_NULL) {
-	    s->inbuf = (Byte*)ALLOC(Z_BUFSIZE); /* for seeking */
+	    s->inbuf = (Byte*)match_malloc("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 683, Z_BUFSIZE); /* for seeking */
 	    zmemzero(s->inbuf, Z_BUFSIZE);
 	}
 	while (offset > 0)  {
@@ -726,7 +723,7 @@ z_off_t ZEXPORT gzseek (file, offset, whence)
     /* offset is now the number of bytes to skip. */
 
     if (offset != 0 && s->outbuf == Z_NULL) {
-	s->outbuf = (Byte*)ALLOC(Z_BUFSIZE);
+	s->outbuf = (Byte*)match_malloc("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 725, Z_BUFSIZE);
     }
     while (offset > 0)  {
 	int size = Z_BUFSIZE;
@@ -870,8 +867,8 @@ const char*  ZEXPORT gzerror (file, errnum)
 
     if (m == NULL || *m == '\0') m = (char*)ERR_MSG(s->z_err);
 
-    TRYFREE(s->msg);
-    s->msg = (char*)ALLOC(strlen(s->path) + strlen(m) + 3);
+    match_TRYFREE("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 869, s->msg);
+    s->msg = (char*)match_malloc("c:\\halo\\SOURCE\\memory\\zlib\\gzio.c", 870, strlen(s->path) + strlen(m) + 3);
     strcpy(s->msg, s->path);
     strcat(s->msg, ": ");
     strcat(s->msg, m);

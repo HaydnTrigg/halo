@@ -1,66 +1,27 @@
 /*
 CONSOLE.C
-
-symbols in this file:
-000EEC10 0060:
-	_console_initialize (0000)
-000EEC70 0010:
-	_console_initialize_for_new_map (0000)
-000EEC80 0030:
-	_console_open (0000)
-000EECB0 0020:
-	_console_close (0000)
-000EECD0 0010:
-	_console_is_active (0000)
-000EECE0 0080:
-	_console_printf (0000)
-000EED60 0080:
-	_console_warning (0000)
-000EEDE0 0070:
-	_code_000eede0 (0000)
-000EEE50 0040:
-	_code_000eee50 (0000)
-000EEE90 0220:
-	_code_000eee90 (0000)
-000EF0B0 0120:
-	_console_startup (0000)
-000EF1D0 0020:
-	_console_dispose (0000)
-000EF1F0 0220:
-	_console_update (0000)
-0027944C 0007:
-	??_C@_06IFDPLABP@halo?$CI?5?$AA@ (0000)
-00279454 0009:
-	??_C@_08NDPNIJOB@init?3?5?$CFs?$AA@ (0000)
-00279460 0004:
-	??_C@_03PAIEMGKB@?$AN?6?7?$AA@ (0000)
-00279464 0013:
-	??_C@_0BD@MEEDMDNF@editor_d?3?2init?4txt?$AA@ (0000)
-00279478 000c:
-	??_C@_0M@PGLCPLJK@d?3?2init?4txt?$AA@ (0000)
-00279484 0014:
-	??_C@_0BE@PBECEFPN@key?9?$DOkey_code?$CB?$DNNONE?$AA@ (0000)
-00279498 001e:
-	??_C@_0BO@NFBJJCKH@c?3?2halo?2SOURCE?2main?2console?4c?$AA@ (0000)
-00307740 0010:
-	_data_00307740 (0000)
-00454D80 09c5:
-	_bss_00454d80 (0000)
-	_console_dump_to_file (09c4)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
 #include "console.h"
-
-#include "cseries/errors.h"
-#include "cseries/profile.h"
-#include "editor/editor_stubs.h"
-#include "hs/hs.h"
-#include "input/input.h"
-#include "interface/terminal.h"
-#include "math/real_math.h"
+#include "main.h"
+#include "cheats.h"
+#include "game.h"
+#include "network_game_globals.h"
+#include "game_engine.h"
+#include "text_group.h"
+#include "player_profile.h"
+#include "saved_game_files.h"
+#include "editor_stubs.h"
+#include "terminal.h"
+#include "player_ui.h"
+#include "shell.h"
+#include "hs.h"
+#include "build_number.h"
+#include "virtual_keyboard.h"
+#include "shell_windows.h"
 
 /* ---------- constants */
 
@@ -88,7 +49,7 @@ struct console_globals
 
 static boolean console_process_command(const char *command);
 
-static char *console_get_text_to_autocomplete(void);
+static char *console_get_token(void);
 
 static void console_complete(void);
 
@@ -224,7 +185,7 @@ static boolean console_process_command(
 	return hs_compile_and_evaluate(command);
 }
 
-static char *console_get_text_to_autocomplete(
+static char *console_get_token(
 	void)
 {
 	char *result = console_globals.input_state.result;
@@ -254,7 +215,7 @@ static void console_complete(
 	char *matching_items[256];
 	char print_buffer[1024];
 
-	char *token = console_get_text_to_autocomplete();
+	char *token = console_get_token();
 	short count = hs_tokens_enumerate(token, NONE, matching_items, NUMBEROF(matching_items));
 
 	if (count)

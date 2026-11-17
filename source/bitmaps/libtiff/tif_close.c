@@ -31,8 +31,6 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_close.c,v 1
  */
 #include "tiffioP.h"
 
-void debug_free(void *pointer, const char *file, long line);
-
 #if USE_PROTOTYPES
 extern	int TIFFFreeDirectory(TIFF*);
 #else
@@ -52,11 +50,11 @@ TIFFClose(tif)
 		(*tif->tif_cleanup)(tif);
 	TIFFFreeDirectory(tif);
 	if (tif->tif_rawdata && (tif->tif_flags&TIFF_MYBUFFER))
-		debug_free(tif->tif_rawdata, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_close.c", 55);
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_close.c", 55, tif->tif_rawdata);
 #ifdef MMAP_SUPPORT
 	if (isMapped(tif))
 		TIFFUnmapFileContents(tif->tif_base, tif->tif_size);
 #endif
-	(void) _close(tif->tif_fd);
-	debug_free((char *)tif, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_close.c", 61);
+	(void) close(tif->tif_fd);
+	match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_close.c", 61, (char *)tif);
 }

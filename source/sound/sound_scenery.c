@@ -11,9 +11,7 @@ symbols in this file:
 /* ---------- headers */
 
 #include "cseries.h"
-#include "object_types.h"
-#include "objects.h"
-#include "sound/sound_scenery.h"
+#include "sound_scenery.h"
 
 /* ---------- constants */
 
@@ -30,16 +28,15 @@ symbols in this file:
 boolean sound_scenery_new(
 	long object_index)
 {
-	struct object_datum *object;
+	struct sound_scenery_datum *sound_scenery = sound_scenery_get(object_index);
 
-	object = sound_scenery_get(object_index);
-	object->object.flags |= FLAG(_object_shadowless_bit);
+	SET_FLAG(sound_scenery->object.flags, _object_shadowless_bit, TRUE);
 
 	return TRUE;
 }
 
 void sound_scenery_delete(
-	long object_index)
+	long sound_scenery_index)
 {
 	return;
 }

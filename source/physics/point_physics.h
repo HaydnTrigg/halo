@@ -10,7 +10,6 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "real_math.h"
 
 /* ---------- constants */
 
@@ -49,11 +48,6 @@ enum
 	NUMBER_OF_POINT_PHYSICS_FLAGS,
 };
 
-/* ---------- macros */
-
-#define point_physics_definition_get(index) \
-	((struct point_physics_definition *)tag_get(POINT_PHYSICS_DEFINITION_TAG, (index)))
-
 /* ---------- structures */
 
 struct point_physics_definition
@@ -71,18 +65,12 @@ struct point_physics_definition
 	long unused2[3];
 };
 
-typedef char point_physics_definition_size_assert[
-	sizeof(struct point_physics_definition) == 0x40 ? 1 : -1];
-
 /* ---------- prototypes/POINT_PHYSICS.C */
 
-void point_physics_initialize_for_new_map(
-	void);
-void point_physics_dispose_from_old_map(
-	void);
-real point_physics_definition_get_mass(
-	struct point_physics_definition *definition,
-	real radius);
+void point_physics_initialize_for_new_map(void);
+void point_physics_dispose_from_old_map(void);
+
+real point_physics_definition_get_mass(struct point_physics_definition *definition, real radius);
 
 struct point_physics_definition *point_physics_definition_interpolate(
 	struct point_physics_definition const *physics1,

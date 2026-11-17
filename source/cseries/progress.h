@@ -10,31 +10,34 @@ header included in hcex build.
 
 /* ---------- constants */
 
+enum
+{
+	PROGRESS_STRING_LENGTH = 255,
+	PROGRESS_UPDATE_FREQUENCY_IN_MILLISECONDS = 125,
+};
+
 /* ---------- macros */
 
 /* ---------- structures */
 
-typedef void (*progress_update_proc)(void *context, const char *description, long status, long percent_complete);
-
-struct progress_callback
+struct progress_callbacks
 {
-	progress_update_proc update;
-	void *context;
+	void (*update_proc)(void *user_data, char const *description, char const *status, long percent);
+	void *user_data;
 };
 
-struct progress_data
+struct progress /* fake name */
 {
-	progress_update_proc update;
-	void *context;
-	char description[256];
-	long total;
-	unsigned long last_update_milliseconds;
+	struct progress_callbacks callbacks; /* fake name */
+	char description[PROGRESS_STRING_LENGTH + 1];
+	long maximum; /* fake name */
+	unsigned long last_milliseconds;
 };
 
 /* ---------- prototypes/PROGRESS.C */
 
-void progress_new(struct progress_data *data, const struct progress_callback *callback, const char *description, long total);
-void progress_update(struct progress_data *data, long status, long completed, boolean force_update);
+void progress_new(struct progress *progress, struct progress_callbacks const *callbacks, char const *description, long maximum);
+void progress_update(struct progress *progress, char const *status, long current, boolean force);
 
 /* ---------- globals */
 

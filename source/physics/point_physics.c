@@ -5,14 +5,12 @@ POINT_PHYSICS.C
 /* ---------- headers */
 
 #include "cseries.h"
-#include "real_math.h"
 #include "point_physics.h"
-#include "physics.h"
 #include "collisions.h"
-#include "collision_usage.h"
+#include "physics_constants.h"
+#include "physics.h"
 #include "objects.h"
 #include "render_debug.h"
-#include "scenario.h"
 
 /* ---------- constants */
 
@@ -30,19 +28,21 @@ static void render_debug_point_physics(
 
 /* ---------- globals */
 
-struct tag_reference_definition global_point_physics_reference = { 0, POINT_PHYSICS_DEFINITION_TAG, NULL };
+TAG_REFERENCE_DEFINITION(global_point_physics_reference, POINT_PHYSICS_DEFINITION_TAG);
 
-static real global_water_mass_over_radius_cubed = 0.0f;
+boolean debug_point_physics = FALSE;
+
 static real global_air_mass_over_radius_cubed = 0.0f;
-boolean debug_point_physics;
+static real global_water_mass_over_radius_cubed = 0.0f;
 
 /* ---------- public code */
 
 void point_physics_initialize_for_new_map(
 	void)
 {
-	global_air_mass_over_radius_cubed = global_air_density * 118613.34f;
-	global_water_mass_over_radius_cubed = global_water_density * 118613.34f;
+	// /*118613.34f*/ kilograms of water (1000 kg/m^3) in a sphere with a radius of one world unit, scaled by density relative to water
+	global_air_mass_over_radius_cubed = global_air_density * ((4.f/3.f*_pi)*(METERS_PER_UNIT*METERS_PER_UNIT*METERS_PER_UNIT)*1000.f);
+	global_water_mass_over_radius_cubed = global_water_density * ((4.f/3.f*_pi)*(METERS_PER_UNIT*METERS_PER_UNIT*METERS_PER_UNIT)*1000.f);
 
 	return;
 }
@@ -165,8 +165,7 @@ unsigned long point_physics_update(
 		SET_FLAG(collision_flags, _collision_test_media_bit, TEST_FLAG(definition->flags, _point_physics_water_collisions_bit) && !TEST_FLAG(flags, _point_physics_force_no_collisions_bit));
 		SET_FLAG(collision_flags, _collision_test_structure_bit, TEST_FLAG(definition->flags, _point_physics_structure_collisions_bit) && !TEST_FLAG(flags, _point_physics_force_no_collisions_bit));
 
-		match_assert("c:\\halo\\SOURCE\\physics\\point_physics.c", 269, global_current_collision_user_depth < MAXIMUM_COLLISION_USER_STACK_DEPTH);
-		global_current_collision_users[global_current_collision_user_depth++] = _collision_user_point_physics;
+		match_collision_log_begin_user("c:\\halo\\SOURCE\\physics\\point_physics.c", 269, _collision_user_point_physics);
 
 		for (i = 0; dt != 0.0f && i < MAXIMUM_POINT_PHYSICS_COLLISIONS; i++)
 		{
@@ -223,8 +222,7 @@ unsigned long point_physics_update(
 			dt -= collision.t * dt;
 		}
 
-		match_assert("c:\\halo\\SOURCE\\physics\\point_physics.c", 312, global_current_collision_user_depth > 1);
-		--global_current_collision_user_depth;
+		match_collision_log_end_user("c:\\halo\\SOURCE\\physics\\point_physics.c", 312);
 	}
 
 	if (debug_point_physics)

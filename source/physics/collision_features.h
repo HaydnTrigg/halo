@@ -10,14 +10,12 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "cseries.h"
-#include "math/real_math.h"
+#include "collision_bsp.h"
 
 /* ---------- constants */
 
 enum
 {
-	MAXIMUM_COLLISION_FEATURES_PER_TEST = 256,
 	MAXIMUM_POINTS_PER_COLLISION_PRISM = 8,
 };
 
@@ -100,21 +98,6 @@ struct collision_plane
 	byte breakable_surface_index;
 	short material_index;
 };
-
-typedef char collision_feature_size_assert[
-	sizeof(struct collision_feature) == 0x0C ? 1 : -1];
-typedef char collision_sphere_size_assert[
-	sizeof(struct collision_sphere) == 0x1C ? 1 : -1];
-typedef char collision_cylinder_size_assert[
-	sizeof(struct collision_cylinder) == 0x28 ? 1 : -1];
-typedef char collision_prism_size_assert[
-	sizeof(struct collision_prism) == 0x68 ? 1 : -1];
-typedef char collision_feature_list_spheres_offset_assert[
-	offsetof(struct collision_feature_list, spheres) == 0x08 ? 1 : -1];
-typedef char collision_feature_list_cylinders_offset_assert[
-	offsetof(struct collision_feature_list, cylinders) == 0x1C08 ? 1 : -1];
-typedef char collision_feature_list_prisms_offset_assert[
-	offsetof(struct collision_feature_list, prisms) == 0x4408 ? 1 : -1];
 
 /* ---------- prototypes/COLLISION_FEATURES.C */
 
@@ -257,29 +240,6 @@ void render_debug_collision_prism(
 
 void render_debug_collision_features(
 	struct collision_feature_list const *features);
-
-/* ---------- prototypes/COLLISIONS.C */
-
-boolean collision_test_sphere(
-	real_point3d const *center,
-	real radius,
-	long ignore_object_index);
-boolean collision_get_features_in_sphere(
-	unsigned long flags,
-	real_point3d const *center,
-	real enclosing_radius,
-	real height,
-	real radius,
-	long ignore_object_index,
-	struct collision_feature_list *features);
-short collision_move_point(
-	real_point3d const *position,
-	real_vector3d const *velocity,
-	struct collision_feature_list const *features,
-	real_point3d *clipped_position,
-	real_vector3d *clipped_velocity,
-	short maximum_collision_count,
-	struct collision_plane *collisions);
 
 /* ---------- globals */
 

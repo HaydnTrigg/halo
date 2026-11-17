@@ -1,53 +1,41 @@
 /*
 MULTIPLAYER_SCENARIO_DESCRIPTION.H
-
-header included in hcex build.
 */
 
 #ifndef __MULTIPLAYER_SCENARIO_DESCRIPTION_H
 #define __MULTIPLAYER_SCENARIO_DESCRIPTION_H
 #pragma once
 
-/* ---------- headers */
-
-#include "tag_files/tag_groups.h"
-
 /* ---------- constants */
 
 enum
 {
-	MULTIPLAYER_SCENARIO_DESCRIPTION_TAG = 'mply',
+	MULTIPLAYER_SCENARIO_DESCRIPTION_TAG = 'mply' /* fake name */
 };
 
 /* ---------- macros */
 
-#define multiplayer_scenario_description_get(index) ((struct multiplayer_scenario_description *)tag_get(MULTIPLAYER_SCENARIO_DESCRIPTION_TAG, (index)))
+#define multiplayer_scenario_description_definition_get(index) ((struct multiplayer_scenario_description *)tag_get(MULTIPLAYER_SCENARIO_DESCRIPTION_TAG, index)) /* fake name */
 
 /* ---------- structures */
 
-struct multiplayer_scenario_description_item
+struct scenario_description
 {
-	struct tag_reference descriptive_bitmap;
-	struct tag_reference displayed_map_name;
-	char scenario_tag_path[1];
+	struct tag_reference descriptive_bitmap;	// bitmap_group
+	struct tag_reference displayed_map_name;	// unicode_string_list_group_header
+	char scenario_tag_directory_path[TAG_STRING_LENGTH+1];
+	long unused[1];
 };
 
 struct multiplayer_scenario_description
 {
-	struct tag_block scenarios;
+	struct tag_block multiplayer_scenarios;	// scenario_description
 };
-
-typedef char multiplayer_scenario_description_item_path_offset_assert[
-	offsetof(struct multiplayer_scenario_description_item, scenario_tag_path) == 0x20 ? 1 : -1];
 
 /* ---------- prototypes/MULTIPLAYER_SCENARIO_DESCRIPTION.C */
 
-struct multiplayer_scenario_description_item *multiplayer_scenario_description_get_list(
-	short *count);
-boolean map_name_from_multiplayer_scenario_description_item(
-	struct multiplayer_scenario_description_item const *item,
-	char *map_name,
-	unsigned long map_name_size);
+struct scenario_description *multiplayer_scenario_description_get_list(short *count);
+boolean map_name_from_multiplayer_scenario_description_item(struct scenario_description const *item, char *buffer, long buffer_size);
 
 /* ---------- globals */
 

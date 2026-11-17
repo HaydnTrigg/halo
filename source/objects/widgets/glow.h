@@ -10,7 +10,7 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "objects/widgets/widget_types.h"
+#include "glow_definitions.h"
 
 /* ---------- constants */
 
@@ -19,24 +19,6 @@ header included in hcex build.
 /* ---------- structures */
 
 /* ---------- prototypes/EXAMPLE.C */
-
-void glow_initialize(
-	void);
-void glow_initialize_for_new_map(
-	void);
-void glow_dispose_from_old_map(
-	void);
-void glow_dispose(
-	void);
-long glow_new(
-	long definition_index);
-void glow_delete(
-	long glow_index);
-void glow_submit(
-	long object_index,
-	long glow_index,
-	struct render_lighting const *lighting,
-	struct render_animation const *animation);
 
 /* ---------- globals */
 

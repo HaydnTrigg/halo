@@ -1,85 +1,33 @@
 /*
 KEY_AGREEMENT.C
-
-symbols in this file:
-0006E9A0 0050:
-	_key_agreement_get_packet_type (0000)
-0006E9F0 0030:
-	_key_agreement_decode_packet (0000)
-0006EA20 0020:
-	_key_agreement_encode_packet (0000)
-0006EA40 00a0:
-	_key_agreement_build_message (0000)
-0006EAE0 0070:
-	_build_initiate_key_agreement_message (0000)
-0006EB50 0050:
-	_build_finalize_key_agreement_message (0000)
-0006EBA0 0070:
-	_is_message_encryption_key_message (0000)
-0006EC10 0080:
-	_initiate_key_exchange (0000)
-0006EC90 01a0:
-	_complete_key_exchange (0000)
-0006EE30 0010:
-	_initialize_key_agreement_packets (0000)
-0025565C 001c:
-	??_C@_0BM@CDLIOKHM@key_agreement_packets_group?$AA@ (0000)
-00255678 0026:
-	??_C@_0CG@MLKFMCKI@message_finalize_key_agreement_p@ (0000)
-002556A0 0026:
-	??_C@_0CG@GCJFJJDO@message_initiate_key_agreement_p@ (0000)
-002556C8 0042:
-	??_C@_0EC@PKJCEKIE@?$CImessage_type?$DN?5GET_MESSAGE_TYPE?$CI@ (0000)
-0025570C 0031:
-	??_C@_0DB@CMOIKFEE@c?3?2halo?2SOURCE?2bungie_net?2common@ (0000)
-00255740 0012:
-	??_C@_0BC@PHJNCMNB@prime?5?$CG?$CG?5g?5?$CG?$CG?5key?$AA@ (0000)
-00255754 0004:
-	??_C@_03ICHNJLJF@key?$AA@ (0000)
-00255758 0016:
-	??_C@_0BG@DBBMADFN@msgptr?5?$CG?$CG?5packet_type?$AA@ (0000)
-00255770 0029:
-	??_C@_0CJ@IKOFDDIL@msgptr?5?$CG?$CG?5prime?5?$CG?$CG?5secret?5?$CG?$CG?5pri@ (0000)
-002DCAD4 0028:
-	_message_initiate_key_agreement_packet_fields (0000)
-002DCAFC 0014:
-	_message_initiate_key_agreement_packet (0000)
-002DCB10 0014:
-	_message_finalize_key_agreement_packet_fields (0000)
-002DCB24 0014:
-	_message_finalize_key_agreement_packet (0000)
-002DCB38 0010:
-	_key_agreement_packets_group_packets (0000)
-002DCB48 0014:
-	_key_agreement_packets_group (0000)
-0031C520 0200:
-	_key_agreement_message_buffer (0000)
 */
 
 /* ---------- headers */
 
-#include "bungie_net/common/key_agreement.h"
-
-#include "bungie_net/common/message_header.h"
-#include "bungie_net/common/public_key_crypt.h"
-#include "bungie_net/common/random_numbers.h"
-#include "bungie_net/network/transport_endpoint_winsock.h"
-#include "memory/data_packet_groups.h"
+#include "cseries.h"
+#include "key_agreement.h"
+#include "message_header.h"
+#include "public_key_crypt.h"
+#include "random_numbers.h"
+#include "bungie_net/network/transport.h"
+#include "data_packet_groups.h"
 
 /* ---------- constants */
 
 enum
 {
-	KEY_AGREEMENT_ENCODED_PACKET_SIZE = 0x80,
-	KEY_AGREEMENT_MESSAGE_BUFFER_SIZE = 0x200,
-	KEY_AGREEMENT_PACKET_VERSION = 1,
+	_key_agreement_initiate = 0, /* fake name */
+	_key_agreement_finalize, /* fake name */
+	NUMBER_OF_KEY_AGREEMENT_PACKETS, /* fake name */
 };
 
-enum key_agreement_packet_type
+enum
 {
-	_key_agreement_packet_type_initiate = 0,
-	_key_agreement_packet_type_finalize,
-	NUMBER_OF_KEY_AGREEMENT_PACKET_TYPES,
+	KEY_AGREEMENT_PACKET_VERSION = 1, /* fake name */
+	NUMBER_OF_KEY_AGREEMENT_PACKET_CLASSES = 1, /* fake name */
+	MAXIMUM_KEY_AGREEMENT_DECODED_PACKET_SIZE = 96, /* fake name */
+	MAXIMUM_KEY_AGREEMENT_PACKET_SIZE = 128, /* fake name */
+	KEY_AGREEMENT_BUFFER_SIZE = 512, /* fake name */
 };
 
 /* ---------- macros */
@@ -90,139 +38,118 @@ enum key_agreement_packet_type
 
 /* ---------- structures */
 
-struct message_initiate_key_agreement
+struct message_initiate_key_agreement /* fake name */
 {
 	struct public_key prime;
-	struct public_key generator;
+	struct public_key g;
 	struct public_key key;
 };
 
-struct message_finalize_key_agreement
+struct message_finalize_key_agreement /* fake name */
 {
 	struct public_key key;
-};
-
-union key_agreement_packet_value
-{
-	long value;
-	short encoded;
 };
 
 /* ---------- prototypes */
 
-static char key_agreement_get_packet_type(
-	word const *msgptr);
-static boolean key_agreement_decode_packet(
-	void *decoded_packet,
-	void const *encoded_packet,
-	short *encoded_packet_size,
-	short *packet_type,
-	short *packet_version,
-	short expected_packet_class);
-static boolean key_agreement_encode_packet(
-	void const *decoded_packet,
-	void *encoded_packet,
-	short *encoded_packet_size,
-	short packet_type,
-	long packet_version);
-static word *key_agreement_build_message(
-	short packet_type,
-	void const *packet,
-	void *buffer,
-	word buffer_size);
-static word *build_initiate_key_agreement_message(
-	struct public_key const *prime,
-	struct public_key const *g,
-	struct public_key const *key,
-	void *buffer,
-	word buffer_size);
-static word *build_finalize_key_agreement_message(
-	struct public_key const *key,
-	void *buffer,
-	word buffer_size);
+static char get_key_agreement_packet_type(message_header const *msgptr);
+static boolean decode_key_agreement_packet(void *decoded_packet, void const *encoded_packet, short *encoded_packet_size, short *packet_type, short *packet_version, short expected_packet_class);
+static boolean encode_key_agreement_packet(void const *decoded_packet, void *encoded_packet, short *encoded_packet_size, short packet_type, short packet_version);
+static message_header *create_key_agreement_message(short packet_type, void const *packet, void *buffer, word buffer_size);
+static message_header *create_message_initiate_key_agreement(struct public_key const *prime, struct public_key const *g, struct public_key const *key, void *buffer, word buffer_size);
+static message_header *create_message_finalize_key_agreement(struct public_key const *key, void *buffer, word buffer_size);
 
 /* ---------- globals */
 
-/* Names and types of these six file statics are attested by a later first-party build (the 2003 PC demo PDB's
-key_agreement.obj; its packet-array tag is data_packet_group_packet, our data_packet_entry); January's own PDB has
-no static names. Their offsets and January's single 4-byte-aligned .data contribution agree with that build. */
-
-static struct data_packet_field message_initiate_key_agreement_packet_fields[4] =
+static struct data_packet_field initiate_fields[] = /* fake name */
 {
-	DATA_PACKET_FIELD(_data_packet_field_longs, 2),
-	DATA_PACKET_FIELD(_data_packet_field_longs, 2),
-	DATA_PACKET_FIELD(_data_packet_field_longs, 2),
-	DATA_PACKET_FIELD_END,
+	{__pack_long, NUMBER_OF_PUBLIC_KEY_DWORDS, 0, 0, 0},
+	{__pack_long, NUMBER_OF_PUBLIC_KEY_DWORDS, 0, 0, 0},
+	{__pack_long, NUMBER_OF_PUBLIC_KEY_DWORDS, 0, 0, 0},
+	{__pack_end, 0, 0, 0, 0},
 };
 
-static struct data_packet_definition message_initiate_key_agreement_packet =
+static struct data_packet_definition initiate_definition = /* fake name */
 {
 	"message_initiate_key_agreement_packet",
 	0,
 	sizeof(struct message_initiate_key_agreement),
 	KEY_AGREEMENT_PACKET_VERSION,
-	message_initiate_key_agreement_packet_fields,
+	initiate_fields,
 	FALSE,
 };
 
-static struct data_packet_field message_finalize_key_agreement_packet_fields[2] =
+static struct data_packet_field finalize_fields[] = /* fake name */
 {
-	DATA_PACKET_FIELD(_data_packet_field_longs, 2),
-	DATA_PACKET_FIELD_END,
+	{__pack_long, NUMBER_OF_PUBLIC_KEY_DWORDS, 0, 0, 0},
+	{__pack_end, 0, 0, 0, 0},
 };
 
-static struct data_packet_definition message_finalize_key_agreement_packet =
+static struct data_packet_definition finalize_definition = /* fake name */
 {
 	"message_finalize_key_agreement_packet",
 	0,
 	sizeof(struct message_finalize_key_agreement),
 	KEY_AGREEMENT_PACKET_VERSION,
-	message_finalize_key_agreement_packet_fields,
+	finalize_fields,
 	FALSE,
 };
 
-static struct data_packet_entry key_agreement_packets_group_packets[NUMBER_OF_KEY_AGREEMENT_PACKET_TYPES] =
+static struct data_packet_group_packet key_agreement_packets[NUMBER_OF_KEY_AGREEMENT_PACKETS] = /* fake name */
 {
-	{ 0, 0, &message_initiate_key_agreement_packet },
-	{ 0, 0, &message_finalize_key_agreement_packet },
+	{0, &initiate_definition},
+	{0, &finalize_definition},
 };
 
 static struct data_packet_group_definition key_agreement_packets_group =
 {
 	"key_agreement_packets_group",
-	NUMBER_OF_KEY_AGREEMENT_PACKET_TYPES,
-	1,
-	0x60,
-	KEY_AGREEMENT_ENCODED_PACKET_SIZE,
-	key_agreement_packets_group_packets,
+	NUMBER_OF_KEY_AGREEMENT_PACKETS,
+	NUMBER_OF_KEY_AGREEMENT_PACKET_CLASSES,
+	MAXIMUM_KEY_AGREEMENT_DECODED_PACKET_SIZE,
+	MAXIMUM_KEY_AGREEMENT_PACKET_SIZE,
+	key_agreement_packets,
 };
 
-static byte key_agreement_message_buffer[KEY_AGREEMENT_MESSAGE_BUFFER_SIZE];
+static byte key_agreement_buffer[KEY_AGREEMENT_BUFFER_SIZE]; /* fake name */
 
 /* ---------- public code */
 
 long is_message_encryption_key_message(
-	word const *msgptr,
+	message_header const *msgptr,
 	word message_size,
 	byte *packet_type)
 {
-	word message_flags;
-	byte message_type;
+	long result;
+	word flags;
+	char encoded_packet_type;
 
-	match_assert(KEY_AGREEMENT_FILE, 0xC4, msgptr && packet_type);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\key_agreement.c", 196, msgptr && packet_type);
 
-	message_flags = GET_MESSAGE_FLAGS(*msgptr);
-	*packet_type = ((byte const *)msgptr)[message_size - 1];
-	message_type = GET_MESSAGE_TYPE(*msgptr);
-	if (TEST_FLAG(message_flags, 1) &&
-		message_type == _message_type_packet &&
-		(*packet_type == _key_agreement_packet_type_initiate ||
-		*packet_type == _key_agreement_packet_type_finalize))
+	flags = GET_MESSAGE_FLAGS(*msgptr);
+	encoded_packet_type = ((char const *)msgptr)[message_size - 1];
+	*packet_type = encoded_packet_type;
+
+	if (TEST_FLAG(flags, _message_key_agreement_bit))
 	{
-		return TRUE;
+		byte message_type = GET_MESSAGE_TYPE(*msgptr);
+
+		if (message_type == _message_type_packet &&
+			(encoded_packet_type == _key_agreement_initiate || encoded_packet_type == _key_agreement_finalize))
+		{
+			result = TRUE;
+		}
+		else
+		{
+			result = FALSE;
+		}
+	}
+	else
+	{
+		result = FALSE;
 	}
 
-	return FALSE;
+	return result;
 }
 
 boolean initiate_key_exchange(
@@ -231,29 +158,28 @@ boolean initiate_key_exchange(
 	struct public_key *prime,
 	struct public_key *secret)
 {
+	struct public_key g;
+	message_header *message;
 	boolean success = TRUE;
-	struct public_key generator;
-	word *message;
-	short message_size;
 
-	generate_key_parameters(prime, secret, &generator);
-	generate_public_key(prime, secret, &generator, key);
-	message = build_initiate_key_agreement_message(
-		prime,
-		&generator,
-		key,
-		key_agreement_message_buffer,
-		sizeof(key_agreement_message_buffer));
-	if (!message)
+	generate_key_parameters(prime, secret, &g);
+	generate_public_key(prime, secret, &g, key);
+	message = create_message_initiate_key_agreement(prime, &g, key, key_agreement_buffer, sizeof(key_agreement_buffer));
+
+	if (message)
 	{
-		success = FALSE;
+		short length = GET_MESSAGE_SIZE(*message);
+
+		byte_swap_message_header(message, _byte_order_network);
+
+		if (write_endpoint(endpoint, message, length) != length)
+		{
+			success = FALSE;
+		}
 	}
 	else
 	{
-		message_size = GET_MESSAGE_SIZE(*message);
-		byte_swap_message_header(message, _byte_order_network);
-		if (write_endpoint(endpoint, message, message_size) != message_size)
-			success = FALSE;
+		success = FALSE;
 	}
 
 	return success;
@@ -261,80 +187,64 @@ boolean initiate_key_exchange(
 
 boolean complete_key_exchange(
 	struct transport_endpoint *endpoint,
-	word const *msgptr,
+	message_header const *msgptr,
 	struct public_key const *prime,
 	struct public_key *secret,
 	struct public_key *private_key)
 {
+	word length;
+	short packet_size;
+	short packet_type;
+	byte message_type;
 	struct message_initiate_key_agreement initiate_packet;
 	struct message_finalize_key_agreement finalize_packet;
-	struct public_key key;
-	short encoded_packet_size;
-	short packet_type;
+	struct public_key public_key;
 	short packet_version = KEY_AGREEMENT_PACKET_VERSION;
-	word *message;
-	short message_size;
-	byte message_type;
 
-	match_assert(KEY_AGREEMENT_FILE, 0x105, msgptr && prime && secret && private_key);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\key_agreement.c", 261, msgptr && prime && secret && private_key);
 
-	message_size = GET_MESSAGE_SIZE(*msgptr);
-	encoded_packet_size = message_size - sizeof(word);
+	length = GET_MESSAGE_SIZE(*msgptr);
 	message_type = GET_MESSAGE_TYPE(*msgptr);
+	packet_size = length - sizeof(message_header);
+
 	if (message_type == _message_type_packet)
 	{
-		packet_type = key_agreement_get_packet_type(msgptr);
+		packet_type = get_key_agreement_packet_type(msgptr);
 
 		switch (packet_type)
 		{
-		case _key_agreement_packet_type_initiate:
+		case _key_agreement_initiate:
+			if (decode_key_agreement_packet(&initiate_packet, msgptr + 1, &packet_size, &packet_type, &packet_version, 0))
 			{
-				if (!key_agreement_decode_packet(
-					&initiate_packet,
-					msgptr + 1,
-					&encoded_packet_size,
-					&packet_type,
-					&packet_version,
-					0))
+				message_header *message;
+
+				secret->dwords[0] = randomrange(MINIMUM_KEY_SECRET, initiate_packet.prime.dwords[0] - 2);
+				secret->dwords[1] = randomrange(MINIMUM_KEY_SECRET, initiate_packet.prime.dwords[1] - 2);
+
+				generate_public_key(&initiate_packet.prime, secret, &initiate_packet.g, &public_key);
+				message = create_message_finalize_key_agreement(&public_key, key_agreement_buffer, sizeof(key_agreement_buffer));
+
+				if (message)
 				{
-					return FALSE;
+					short message_length = GET_MESSAGE_SIZE(*message);
+
+					byte_swap_message_header(message, _byte_order_network);
+
+					if (write_endpoint(endpoint, message, message_length) == message_length)
+					{
+						generate_private_key(&initiate_packet.key, &initiate_packet.prime, secret, private_key);
+						return TRUE;
+					}
 				}
-
-				secret->dwords[0] = randomrange(0xFF, initiate_packet.prime.dwords[0] - 2);
-				secret->dwords[1] = randomrange(0xFF, initiate_packet.prime.dwords[1] - 2);
-				generate_public_key(&initiate_packet.prime, secret, &initiate_packet.generator, &key);
-				message = build_finalize_key_agreement_message(
-					&key,
-					key_agreement_message_buffer,
-					sizeof(key_agreement_message_buffer));
-				if (!message)
-					return FALSE;
-
-				message_size = GET_MESSAGE_SIZE(*message);
-				byte_swap_message_header(message, _byte_order_network);
-				if (write_endpoint(endpoint, message, message_size) != message_size)
-					return FALSE;
-
-				generate_private_key(&initiate_packet.key, &initiate_packet.prime, secret, private_key);
-				return TRUE;
 			}
-
-		case _key_agreement_packet_type_finalize:
+			break;
+		case _key_agreement_finalize:
+			if (decode_key_agreement_packet(&finalize_packet, msgptr + 1, &packet_size, &packet_type, &packet_version, 0))
 			{
-				if (!key_agreement_decode_packet(
-					&finalize_packet,
-					msgptr + 1,
-					&encoded_packet_size,
-					&packet_type,
-					&packet_version,
-					0))
-				{
-					return FALSE;
-				}
-
 				generate_private_key(&finalize_packet.key, prime, secret, private_key);
 				return TRUE;
 			}
+			break;
 		}
 	}
 
@@ -351,21 +261,18 @@ void initialize_key_agreement_packets(
 
 /* ---------- private code */
 
-static char key_agreement_get_packet_type(
-	word const *msgptr)
+static char get_key_agreement_packet_type(
+	message_header const *msgptr)
 {
 	byte message_type;
-	word message_size = GET_MESSAGE_SIZE(*msgptr);
+	word length = GET_MESSAGE_SIZE(*msgptr);
 
-	match_assert(
-		KEY_AGREEMENT_FILE,
-		0x4D,
-		(message_type= GET_MESSAGE_TYPE(*msgptr)) == _message_type_packet);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\key_agreement.c", 77, (message_type= GET_MESSAGE_TYPE(*msgptr)) == _message_type_packet);
 
-	return ((char const *)msgptr)[message_size - 1];
+	return ((char const *)msgptr)[length - 1];
 }
 
-static boolean key_agreement_decode_packet(
+static boolean decode_key_agreement_packet(
 	void *decoded_packet,
 	void const *encoded_packet,
 	short *encoded_packet_size,
@@ -383,12 +290,12 @@ static boolean key_agreement_decode_packet(
 		expected_packet_class);
 }
 
-static boolean key_agreement_encode_packet(
+static boolean encode_key_agreement_packet(
 	void const *decoded_packet,
 	void *encoded_packet,
 	short *encoded_packet_size,
 	short packet_type,
-	long packet_version)
+	short packet_version)
 {
 	return data_packet_group_encode_packet(
 		&key_agreement_packets_group,
@@ -399,38 +306,30 @@ static boolean key_agreement_encode_packet(
 		packet_version);
 }
 
-static word *key_agreement_build_message(
+static message_header *create_key_agreement_message(
 	short packet_type,
 	void const *packet,
 	void *buffer,
 	word buffer_size)
 {
-	byte encoded_packet[KEY_AGREEMENT_ENCODED_PACKET_SIZE] = { 0 };
-	union key_agreement_packet_value encoded_packet_size;
-	word *message = NULL;
+	byte encoded_packet[MAXIMUM_KEY_AGREEMENT_PACKET_SIZE] = {0};
+	message_header *message = NULL;
+	short packet_size = sizeof(encoded_packet);
 
-	encoded_packet_size.value = sizeof(encoded_packet);
-	if (key_agreement_encode_packet(
-		packet,
-		encoded_packet,
-		&encoded_packet_size.encoded,
-		packet_type,
-		KEY_AGREEMENT_PACKET_VERSION))
+	if (encode_key_agreement_packet(packet, encoded_packet, &packet_size, packet_type, KEY_AGREEMENT_PACKET_VERSION))
 	{
-		message = create_message(
-			_message_type_packet,
-			encoded_packet,
-			encoded_packet_size.value,
-			buffer,
-			buffer_size);
+		message = create_message(_message_type_packet, encoded_packet, packet_size, buffer, buffer_size);
+
 		if (message)
-			SET_MESSAGE_FLAGS(*message, FLAG(1));
+		{
+			SET_MESSAGE_FLAGS(*message, FLAG(_message_key_agreement_bit));
+		}
 	}
 
 	return message;
 }
 
-static word *build_initiate_key_agreement_message(
+static message_header *create_message_initiate_key_agreement(
 	struct public_key const *prime,
 	struct public_key const *g,
 	struct public_key const *key,
@@ -439,33 +338,25 @@ static word *build_initiate_key_agreement_message(
 {
 	struct message_initiate_key_agreement packet;
 
-	match_assert(KEY_AGREEMENT_FILE, 0xA2, prime && g && key);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\key_agreement.c", 162, prime && g && key);
 
 	packet.prime = *prime;
-	packet.generator = *g;
+	packet.g = *g;
 	packet.key = *key;
 
-	return key_agreement_build_message(
-		_key_agreement_packet_type_initiate,
-		&packet,
-		buffer,
-		buffer_size);
+	return create_key_agreement_message(_key_agreement_initiate, &packet, buffer, buffer_size);
 }
 
-static word *build_finalize_key_agreement_message(
+static message_header *create_message_finalize_key_agreement(
 	struct public_key const *key,
 	void *buffer,
 	word buffer_size)
 {
 	struct message_finalize_key_agreement packet;
 
-	match_assert(KEY_AGREEMENT_FILE, 0xB3, key);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\key_agreement.c", 179, key);
 
 	packet.key = *key;
 
-	return key_agreement_build_message(
-		_key_agreement_packet_type_finalize,
-		&packet,
-		buffer,
-		buffer_size);
+	return create_key_agreement_message(_key_agreement_finalize, &packet, buffer, buffer_size);
 }

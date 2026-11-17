@@ -1,31 +1,11 @@
 /*
 64BIT_MATH.C
-
-symbols in this file:
-0006E5B0 00a0:
-	_add64 (0000)
-0006E650 0090:
-	_code_0006e650 (0000)
-0006E6E0 0060:
-	_subtract64 (0000)
-0006E740 0140:
-	_multiply64 (0000)
-0006E880 0120:
-	_divide64 (0000)
-002555F0 0011:
-	??_C@_0BB@DKGDPHMB@a?5?$CG?$CG?5b?5?$CG?$CG?5result?$AA@ (0000)
-00255604 002e:
-	??_C@_0CO@LBKBEIL@c?3?2halo?2SOURCE?2bungie_net?2common@ (0000)
-00255634 000c:
-	??_C@_0M@DAFMGHCE@a?5?$CG?$CG?5result?$AA@ (0000)
-00255640 0019:
-	??_C@_0BJ@DCPIPMGA@numerator?5?$CG?$CG?5denominator?$AA@ (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-#include "bungie_net/common/64bit_math.h"
+#include "64bit_math.h"
 
 /* ---------- constants */
 
@@ -35,9 +15,7 @@ symbols in this file:
 
 /* ---------- prototypes */
 
-static void negate64(
-	struct qword_value const *a,
-	struct qword_value *result);
+static void negate64(struct qword_value const *a, struct qword_value *result);
 
 /* ---------- globals */
 
@@ -48,21 +26,26 @@ void add64(
 	struct qword_value const *b,
 	struct qword_value *result)
 {
-	long carry;
-	long value;
 	long i;
+	long sum;
+	long carry = 0;
 
 	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\64bit_math.c", 33, a && b && result);
 
-	carry = 0;
 	for (i = 0; i < 4; i++)
 	{
-		value = a->words[i] + b->words[i] + carry;
-		if (value > 0xFFFF)
+		sum = a->words[i] + b->words[i] + carry;
+
+		if (sum > UNSIGNED_SHORT_MAX)
+		{
 			carry = 1;
+		}
 		else
+		{
 			carry = 0;
-		result->words[i] = (word)value;
+		}
+
+		result->words[i] = (word)sum;
 	}
 
 	return;
@@ -88,10 +71,9 @@ void multiply64(
 	struct qword_value const *b,
 	struct qword_value *result)
 {
-	unsigned long accumulator[7] = { 0, 1, 2, 3, 4, 5, 6 };
-	unsigned long product;
 	unsigned long i;
 	unsigned long j;
+	unsigned long products[7] = {0, 1, 2, 3, 4, 5, 6};
 
 	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\64bit_math.c", 95, a && b && result);
 
@@ -99,16 +81,17 @@ void multiply64(
 	{
 		for (j = 0; j < 4; j++)
 		{
-			product = a->words[i] * b->words[j];
-			accumulator[i + j] += product & 0xFFFF;
-			accumulator[i + j + 1] += product >> 16;
+			unsigned long product = a->words[i] * b->words[j];
+
+			products[i + j] += product & UNSIGNED_SHORT_MAX;
+			products[i + j + 1] += product >> SHORT_BITS;
 		}
 	}
 
-	result->words[0] = (word)accumulator[0];
-	result->words[1] = (word)accumulator[1];
-	result->words[2] = (word)accumulator[2];
-	result->words[3] = (word)accumulator[3];
+	for (i = 0; i < 4; i++)
+	{
+		result->words[i] = (word)products[i];
+	}
 
 	return;
 }
@@ -119,10 +102,9 @@ void divide64(
 	struct qword_value *quotient,
 	struct qword_value *remainder)
 {
-	word work[8];
-	struct qword_value current;
+	word division[8];
 	struct qword_value difference;
-	unsigned long carry;
+	struct qword_value high;
 	unsigned long i;
 	unsigned long bit;
 
@@ -130,33 +112,40 @@ void divide64(
 
 	for (i = 0; i < 4; i++)
 	{
-		work[i] = denominator->words[i];
-		work[i + 4] = 0;
+		division[i] = denominator->words[i];
+		division[i + 4] = 0;
 	}
 
 	for (bit = 0; bit < 64; bit++)
 	{
-		carry = 0;
+		unsigned long carry = 0;
+
 		for (i = 0; i < 8; i++)
 		{
-			carry += 2 * work[i];
-			work[i] = (word)carry;
-			carry >>= 16;
+			carry += division[i] * 2;
+			division[i] = (word)carry;
+			carry >>= SHORT_BITS;
 		}
 
-		current = *(struct qword_value *)&work[4];
-		subtract64(&current, numerator, &difference);
-		if (!(difference.words[3] & 0x8000))
+		high = *(struct qword_value *)&division[4];
+		subtract64(&high, numerator, &difference);
+
+		if (!(difference.words[3] & FLAG(SHORT_BITS - 1)))
 		{
-			*(struct qword_value *)&work[4] = difference;
-			work[0]++;
+			*(struct qword_value *)&division[4] = difference;
+			division[0]++;
 		}
 	}
 
 	if (quotient)
-		*quotient = *(struct qword_value *)&work[0];
+	{
+		*quotient = *(struct qword_value *)&division[0];
+	}
+
 	if (remainder)
-		*remainder = *(struct qword_value *)&work[4];
+	{
+		*remainder = *(struct qword_value *)&division[4];
+	}
 
 	return;
 }
@@ -167,20 +156,20 @@ static void negate64(
 	struct qword_value const *a,
 	struct qword_value *result)
 {
-	unsigned long carry = 0;
+	long i;
+	word carry = 0;
 
 	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\64bit_math.c", 58, a && result);
 
-	result->words[0] = (word)-a->words[0];
-	if (a->words[0])
-		carry = 1;
-	result->words[1] = (word)-(a->words[1] + carry);
-	if (a->words[1])
-		carry = 1;
-	result->words[2] = (word)-(a->words[2] + carry);
-	if (a->words[2])
-		carry = 1;
-	result->words[3] = (word)-(a->words[3] + carry);
+	for (i = 0; i < 4; i++)
+	{
+		result->words[i] = (word)-(a->words[i] + carry);
+
+		if (a->words[i])
+		{
+			carry = 1;
+		}
+	}
 
 	return;
 }

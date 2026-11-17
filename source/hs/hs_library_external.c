@@ -89,21 +89,17 @@ symbols in this file:
 /* ---------- headers */
 
 #include "cseries.h"
-#include "cseries/errors.h"
-#include "interface/terminal.h"
-#include "main/console.h"
-#include "memory/data.h"
-#include "models/model_definitions.h"
-#include "objects/damage.h"
-#include "objects/objects.h"
-#include "effects/effects.h"
-#include "game/players.h"
-#include "items/items.h"
-#include "scenario/scenario.h"
-#include "scenario/scenario_definitions.h"
-#include "sound/sound_definitions.h"
-#include "units/units.h"
+#include "hs_library_external.h"
 #include "object_lists.h"
+#include "network_game_globals.h"
+#include "units.h"
+#include "players.h"
+#include "console.h"
+#include "items.h"
+#include "sound_definitions.h"
+#include "effects.h"
+#include "terminal.h"
+#include "object_types.h"
 
 /* ---------- constants */
 

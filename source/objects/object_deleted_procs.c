@@ -1,19 +1,16 @@
 /*
 OBJECT_DELETED_PROCS.C
-
-symbols in this file:
-00128700 0030:
-	_object_deleted_procs_call (0000)
-0030B378 000c:
-	_object_deleted_procs (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-#include "ai/ai.h"
+#include "object_types.h"
+#include "network_game_globals.h"
+#include "units.h"
+#include "players.h"
 #include "objects.h"
-#include "game/players.h"
+#include "ai.h"
 
 /* ---------- constants */
 
@@ -25,7 +22,7 @@ symbols in this file:
 
 /* ---------- globals */
 
-object_deleted_proc object_deleted_procs[3] =
+object_deleted_proc object_deleted_procs[] =
 {
 	objects_fix_for_deleted_object,
 	ai_handle_deleted_object,
@@ -37,15 +34,14 @@ object_deleted_proc object_deleted_procs[3] =
 void object_deleted_procs_call(
 	long deleted_object_index)
 {
-	object_deleted_proc *deleted_proc = object_deleted_procs;
-	long deleted_proc_count = NUMBEROF(object_deleted_procs);
+	short proc_index;
 
-	do
+	for (proc_index = 0; proc_index < NUMBEROF(object_deleted_procs); proc_index++)
 	{
-		(*deleted_proc)(deleted_object_index);
-		deleted_proc++;
+		object_deleted_procs[proc_index](deleted_object_index);
 	}
-	while (--deleted_proc_count);
+
+	return;
 }
 
 /* ---------- private code */

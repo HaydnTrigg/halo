@@ -1,12 +1,14 @@
 /*
 PRIME_NUMBERS.H
-
-header included in hcex build.
 */
 
 #ifndef __PRIME_NUMBERS_H
 #define __PRIME_NUMBERS_H
 #pragma once
+
+/* ---------- headers */
+
+#include "64bit_math.h"
 
 /* ---------- constants */
 
@@ -14,15 +16,10 @@ header included in hcex build.
 
 /* ---------- structures */
 
-struct qword_value;
-
 /* ---------- prototypes/PRIME_NUMBERS.C */
 
-unsigned long randomprime(
-	unsigned long maximum);
-
-void probable_prime64(
-	struct qword_value *result);
+unsigned long randomprime(unsigned long maximum);
+void probable_prime64(struct qword_value *result);
 
 /* ---------- globals */
 

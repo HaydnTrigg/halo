@@ -1,56 +1,25 @@
 /*
 WIND.C
-
-symbols in this file:
-0017F740 0010:
-	_wind_dispose_from_old_map (0000)
-0017F750 00e0:
-	_wind_variance_get (0000)
-0017F830 0260:
-	_wind_update (0000)
-0017FA90 0140:
-	_scenario_get_current_from_weather_palette (0000)
-0017FBD0 0180:
-	_wind_variance_initialize (0000)
-0017FD50 0050:
-	_wind_initialize_for_new_map (0000)
-0017FDA0 0120:
-	_scenario_get_current (0000)
-0017FEC0 0020:
-	_scenario_get_wind (0000)
-0017FEE0 0020:
-	_scenario_get_water_current (0000)
-002A07CC 0004:
-	__real@4b000000 (0000)
-002A07D0 0004:
-	__real@bc23d70a (0000)
-002A07D4 0019:
-	??_C@_0BJ@MOOMLFGA@wind_globals?4initialized?$AA@ (0000)
-002A07F0 001f:
-	??_C@_0BP@GCGLBDOK@c?3?2halo?2SOURCE?2scenario?2wind?4c?$AA@ (0000)
-002A0810 001a:
-	??_C@_0BK@OAAHBDPL@?$CBwind_globals?4initialized?$AA@ (0000)
-0030E7FC 0004:
-	_global_environment_index (0000)
 */
 
 /* ---------- headers */
 
-#define uniform_cubic_spline wind_uniform_cubic_spline_inline
-#define uniform_cubic_spline_vector3d wind_uniform_cubic_spline_vector3d_inline
-#include "scenario/wind.h"
-#undef uniform_cubic_spline_vector3d
-#undef uniform_cubic_spline
-
-#include "cseries/cseries.h"
-#include "objects/objects.h"
-#include "scenario/fog_definitions.h"
-#include "scenario/scenario.h"
-#include "scenario/wind_definitions.h"
-#include "structures/structure_bsp_definitions.h"
-#include "tag_files/tag_groups.h"
+#include "cseries.h"
+#include "scenario.h"
+#include "wind_definitions.h"
+#include "fog_definitions.h"
+#include "structure_bsp_definitions.h"
 
 /* ---------- constants */
+
+enum
+{
+	WIND_VARIANCE_BOX_RESOLUTION = 64,
+	WIND_VARIANCE_BOX_SIZE = 8,
+	WIND_VARIANCE_BOX_SCALE = 8,
+	NUMBER_OF_WIND_VARIANCE_BOX_CONTROL_POINTS = 8,
+	WIND_VARIANCE_RESOLUTION_PER_CONTROL_POINT = 8
+};
 
 /* ---------- macros */
 
@@ -65,69 +34,37 @@ struct wind_state
 	real_vector3d velocity3d;
 };
 
-typedef char wind_state_size_assert[
-	sizeof(struct wind_state) == 0x20 ? 1 : -1];
-
-struct structure_weather_palette_entry
-{
-	char name[32];
-	struct tag_reference particle_system;
-	word pad30;
-	short runtime_particle_system_global_function_index;
-	char particle_system_global_function_name[32];
-	long particle_system_unused[11];
-	struct tag_reference wind;
-	real_vector3d wind_direction;
-	real wind_magnitude;
-	word padA0;
-	short wind_global_function_index;
-	char wind_global_function_name[32];
-	long wind_unused[11];
-};
-
-typedef char structure_weather_palette_entry_size_assert[
-	sizeof(struct structure_weather_palette_entry) == 0xF0 ? 1 : -1];
-typedef char structure_weather_palette_entry_wind_offset_assert[
-	offsetof(struct structure_weather_palette_entry, wind) == 0x80 ? 1 : -1];
-typedef char structure_weather_palette_entry_direction_offset_assert[
-	offsetof(struct structure_weather_palette_entry, wind_direction) == 0x90 ? 1 : -1];
-
 /* ---------- prototypes */
 
-static void wind_variance_get(
-	real_point3d const *position,
-	real_vector3d *wind,
-	real local_variation_rate,
-	real maximum_magnitude);
-static void wind_variance_initialize(
-	void);
-void uniform_cubic_spline_vector3d(
-	real_vector3d *result,
-	real_vector3d const *f0,
-	real_vector3d const *f1,
-	real_vector3d const *f2,
-	real_vector3d const *f3,
-	real t0,
-	real h,
-	real t);
+static void wind_variance_initialize(void);
+static void wind_variance_get(real_point3d const *position, real_vector3d *wind, real wind_local_variation_rate, real max_magnitude);
 
 /* ---------- globals */
 
+long global_environment_index = NONE;
 struct
 {
 	boolean initialized;
-	real_vector3d variance[3][64];
+	real_vector3d variance[3][WIND_VARIANCE_BOX_RESOLUTION];
 	short count;
-	struct wind_state wind_states[32];
+	struct wind_state wind_states[MAXIMUM_WEATHER_PALETTE_ENTRIES_PER_STRUCTURE];
 	long time;
 } wind_globals;
 
-typedef char wind_globals_size_assert[
-	sizeof(wind_globals) == 0xD0C ? 1 : -1];
-
-long global_environment_index = NONE;
-
 /* ---------- public code */
+
+void wind_initialize_for_new_map(
+	void)
+{
+	struct structure_bsp *structure_bsp = global_structure_bsp_get();
+
+	match_assert("c:\\halo\\SOURCE\\scenario\\wind.c", 65, !wind_globals.initialized);
+	memset(&wind_globals, 0, sizeof(wind_globals));
+	wind_globals.initialized = TRUE;
+	wind_variance_initialize();
+
+	return;
+}
 
 void wind_dispose_from_old_map(
 	void)
@@ -137,124 +74,37 @@ void wind_dispose_from_old_map(
 	return;
 }
 
-static void wind_variance_get(
-	real_point3d const *position,
-	real_vector3d *wind,
-	real local_variation_rate,
-	real maximum_magnitude)
-{
-	real const axis_scale[3] = { 0.1f, 0.2f, 0.07f };
-	real magnitude = maximum_magnitude * (1.f / 3.f);
-	long axis_index;
-	long axes_remaining = 3;
-
-	*wind = *global_zero_vector3d;
-	axis_index = 0;
-	do
-	{
-		union
-		{
-			real value;
-			long bits;
-		} sample_key;
-		long sample_index;
-
-		sample_key.value =
-			((axis_scale[axis_index] * wind_globals.time * local_variation_rate)
-				+ position->n[axis_index]) * 8.f;
-		sample_key.bits &= 0x7FFFFFFF;
-		sample_key.value += 8388608.f;
-		sample_index = (byte)sample_key.bits;
-
-		sample_index &= 0x3F;
-		wind->i += wind_globals.variance[axis_index][(short)sample_index].i;
-		wind->j += wind_globals.variance[axis_index][(short)sample_index].j;
-		wind->k += wind_globals.variance[axis_index][(short)sample_index].k;
-		axis_index++;
-	}
-	while (--axes_remaining);
-
-	wind->i *= magnitude;
-	wind->j *= magnitude;
-	wind->k *= magnitude;
-
-	return;
-}
-
 void wind_update(
 	void)
 {
-	short weather_palette_index;
+	short i;
 	struct structure_bsp *structure_bsp = global_structure_bsp_get();
-	struct tag_block *weather_palette_block;
 
-	match_assert(
-		"c:\\halo\\SOURCE\\scenario\\wind.c",
-		89,
-		wind_globals.initialized);
+	match_assert("c:\\halo\\SOURCE\\scenario\\wind.c", 89, wind_globals.initialized);
 	wind_globals.time++;
-	weather_palette_index = 0;
-	weather_palette_block = &structure_bsp->weather_palette;
 
-	for (;
-		weather_palette_index < weather_palette_block->count;
-		weather_palette_index++)
+	for (i = 0; i < structure_bsp->weather_palette.count; i++)
 	{
-		struct structure_weather_palette_entry *weather_palette =
-			TAG_BLOCK_GET_ELEMENT(
-				weather_palette_block,
-				weather_palette_index,
-				struct structure_weather_palette_entry);
-		struct wind_state *state = &wind_globals.wind_states[weather_palette_index];
+		struct structure_weather_palette_entry *weather = TAG_BLOCK_GET_ELEMENT(&structure_bsp->weather_palette, i, struct structure_weather_palette_entry);
+		struct wind_state *state = &wind_globals.wind_states[i];
 
-		if (weather_palette->wind.index != NONE)
+		if (weather->wind.index != NONE)
 		{
-			struct wind_definition *definition =
-				wind_definition_get(weather_palette->wind.index);
 			real_euler_angles2d direction;
-			real_vector3d *velocity;
-			real scale;
+			struct wind_definition *wind = wind_definition_get(weather->wind.index);
 
-			state->velocity_variance += seed_random_range(
-					get_global_local_random_seed_address(),
-					0,
-					2) ? 0.01f : -0.01f;
-			state->velocity_variance =
-				PIN(state->velocity_variance, 0.f, 1.f);
-
-			state->angular_variance.pitch += seed_random_range(
-					get_global_local_random_seed_address(),
-					0,
-					2) ? 0.01f : -0.01f;
-			state->angular_variance.pitch =
-				PIN(state->angular_variance.pitch, -1.f, 1.f);
-
-			state->angular_variance.yaw += seed_random_range(
-					get_global_local_random_seed_address(),
-					0,
-					2) ? 0.01f : -0.01f;
-			state->angular_variance.yaw =
-				PIN(state->angular_variance.yaw, -1.f, 1.f);
-
-			state->velocity =
-				(definition->velocity_upper_bound - definition->velocity_lower_bound)
-					* state->velocity_variance
-				+ definition->velocity_lower_bound;
-
-			euler_angles2d_from_vector3d(
-				&direction,
-				&weather_palette->wind_direction);
-			direction.pitch += definition->variation_area.pitch
-				* state->angular_variance.pitch * 0.5f;
-			direction.yaw += definition->variation_area.yaw
-				* state->angular_variance.yaw * 0.5f;
-
-			velocity = &state->velocity3d;
-			vector3d_from_euler_angles2d(velocity, &direction);
-			scale = weather_palette->wind_magnitude * state->velocity;
-			velocity->i *= scale;
-			velocity->j *= scale;
-			velocity->k *= scale;
+			state->velocity_variance += local_random_range(0, 2) ? 0.01f : -0.01f;
+			state->velocity_variance = PIN(state->velocity_variance, 0.f, 1.f);
+			state->angular_variance.pitch += local_random_range(0, 2) ? 0.01f : -0.01f;
+			state->angular_variance.pitch = PIN(state->angular_variance.pitch, -1.f, 1.f);
+			state->angular_variance.yaw += local_random_range(0, 2) ? 0.01f : -0.01f;
+			state->angular_variance.yaw = PIN(state->angular_variance.yaw, -1.f, 1.f);
+			state->velocity = wind->velocity_lower_bound + (wind->velocity_upper_bound - wind->velocity_lower_bound) * state->velocity_variance;
+			euler_angles2d_from_vector3d(&direction, &weather->wind_direction);
+			direction.pitch += wind->variation_area.pitch * state->angular_variance.pitch * 0.5f;
+			direction.yaw += wind->variation_area.yaw * state->angular_variance.yaw * 0.5f;
+			vector3d_from_euler_angles2d(&state->velocity3d, &direction);
+			scale_vector3d(&state->velocity3d, weather->wind_magnitude * state->velocity, &state->velocity3d);
 			state->valid = TRUE;
 		}
 		else
@@ -263,164 +113,19 @@ void wind_update(
 		}
 	}
 
-	wind_globals.count = (short)weather_palette_block->count;
+	wind_globals.count = structure_bsp->weather_palette.count;
 
 	return;
-}
-
-void scenario_get_current_from_weather_palette(
-	real_point3d const *position,
-	real_vector3d *current,
-	long flags,
-	short weather_palette_index)
-{
-	struct wind_state *state;
-
-	if (VALID_INDEX(weather_palette_index, wind_globals.count))
-	{
-		state = &wind_globals.wind_states[weather_palette_index];
-		if (state->valid)
-		{
-			struct structure_weather_palette_entry *weather_palette =
-				TAG_BLOCK_GET_ELEMENT(
-					&global_structure_bsp_get()->weather_palette,
-					weather_palette_index,
-					struct structure_weather_palette_entry);
-			struct wind_definition *definition =
-				wind_definition_get(weather_palette->wind.index);
-			real local_variation_weight =
-				TEST_FLAG(flags, _scenario_current_simple_bit)
-					? 0.f
-					: definition->local_variation_weight;
-			real_vector3d variance;
-
-			wind_variance_get(
-				position,
-				&variance,
-				definition->local_variation_rate,
-				definition->local_variation_weight * state->velocity);
-
-			current->i = state->velocity3d.i * (1.f - local_variation_weight)
-				+ variance.i;
-			current->j = state->velocity3d.j * (1.f - local_variation_weight)
-				+ variance.j;
-			current->k = state->velocity3d.k * (1.f - local_variation_weight)
-				+ variance.k;
-
-			if (TEST_FLAG(flags, _scenario_current_damped_bit))
-			{
-				current->i *= 1.f - definition->damping;
-				current->j *= 1.f - definition->damping;
-				current->k *= 1.f - definition->damping;
-			}
-
-			return;
-		}
-
-		*current = *global_zero_vector3d;
-
-		return;
-	}
-
-	*current = *global_zero_vector3d;
-
-	return;
-}
-
-void wind_initialize_for_new_map(
-	void)
-{
-	global_structure_bsp_get();
-	match_assert(
-		"c:\\halo\\SOURCE\\scenario\\wind.c",
-		65,
-		!wind_globals.initialized);
-	memset(&wind_globals, 0, sizeof(wind_globals));
-	wind_globals.initialized = TRUE;
-	wind_variance_initialize();
-
-	return;
-}
-
-boolean scenario_get_current(
-	struct location const *location,
-	real_point3d const *position,
-	real_vector3d *current,
-	long flags)
-{
-	boolean in_water = FALSE;
-	short weather_palette_index = NONE;
-
-	if (location->cluster_index != NONE)
-	{
-		struct structure_bsp *structure_bsp = global_structure_bsp_get();
-		short fog_region_index = scenario_get_fog_region_index(
-			location,
-			TEST_FLAG(flags, _scenario_current_force_water_bit) ? NULL : position);
-		struct structure_cluster *cluster = TAG_BLOCK_GET_ELEMENT(
-			&structure_bsp->clusters,
-			location->cluster_index,
-			struct structure_cluster);
-
-		weather_palette_index = cluster->weather_palette_index;
-		if (fog_region_index != NONE)
-		{
-			struct structure_fog_region *fog_region = TAG_BLOCK_GET_ELEMENT(
-				&structure_bsp->fog_regions,
-				fog_region_index,
-				struct structure_fog_region);
-
-			if (fog_region->fog_palette_index != NONE
-				&& fog_region->weather_palette_index != NONE)
-			{
-				struct structure_fog_palette_entry *fog_palette =
-					TAG_BLOCK_GET_ELEMENT(
-						&structure_bsp->fog_palette,
-						fog_region->fog_palette_index,
-						struct structure_fog_palette_entry);
-
-				if (fog_palette->fog.index != NONE)
-				{
-					struct fog_definition *fog =
-						fog_definition_get(fog_palette->fog.index);
-
-					if (TEST_FLAG(fog->flags, 0))
-					{
-						if (!TEST_FLAG(flags, _scenario_current_force_no_water_bit))
-						{
-							weather_palette_index = fog_region->weather_palette_index;
-							in_water = TRUE;
-						}
-					}
-					else if (!TEST_FLAG(flags, _scenario_current_force_water_bit))
-					{
-						weather_palette_index = fog_region->weather_palette_index;
-					}
-				}
-			}
-		}
-	}
-
-	scenario_get_current_from_weather_palette(
-		position,
-		current,
-		flags,
-		weather_palette_index);
-
-	return in_water;
 }
 
 void scenario_get_wind(
 	struct location const *location,
 	real_point3d const *position,
-	real_vector3d *current,
-	long flags)
+	real_vector3d *wind_vector,
+	unsigned long flags)
 {
-	scenario_get_current(
-		location,
-		position,
-		current,
-		flags | FLAG(_scenario_current_force_no_water_bit));
+	SET_FLAG(flags, _scenario_current_force_no_water_bit, TRUE);
+	scenario_get_current(location, position, wind_vector, flags);
 
 	return;
 }
@@ -428,14 +133,104 @@ void scenario_get_wind(
 void scenario_get_water_current(
 	struct location const *location,
 	real_point3d const *position,
-	real_vector3d *current,
-	long flags)
+	real_vector3d *wind_vector,
+	unsigned long flags)
 {
-	scenario_get_current(
-		location,
-		position,
-		current,
-		flags | FLAG(_scenario_current_force_water_bit));
+	SET_FLAG(flags, _scenario_current_force_water_bit, TRUE);
+	scenario_get_current(location, position, wind_vector, flags);
+
+	return;
+}
+
+boolean scenario_get_current(
+	struct location const *location,
+	real_point3d const *position,
+	real_vector3d *wind_vector,
+	unsigned long flags)
+{
+	boolean result = FALSE;
+	short weather_palette_index = NONE;
+
+	if (location->cluster_index != NONE)
+	{
+		struct structure_bsp *structure_bsp = global_structure_bsp_get();
+		short fog_region_index = scenario_get_fog_region_index(location, TEST_FLAG(flags, _scenario_current_force_water_bit) ? NULL : position);
+		struct structure_cluster *cluster = TAG_BLOCK_GET_ELEMENT(&structure_bsp->clusters, location->cluster_index, struct structure_cluster);
+
+		weather_palette_index = cluster->weather_palette_index;
+
+		if (fog_region_index != NONE)
+		{
+			struct structure_fog_region *region = TAG_BLOCK_GET_ELEMENT(&structure_bsp->fog_regions, fog_region_index, struct structure_fog_region);
+
+			if (region->fog_palette_index != NONE && region->weather_palette_index != NONE)
+			{
+				struct structure_fog_palette_entry *fog = TAG_BLOCK_GET_ELEMENT(&structure_bsp->fog_palette, region->fog_palette_index, struct structure_fog_palette_entry);
+
+				if (fog->fog.index != NONE)
+				{
+					struct fog_definition *definition = fog_definition_get(fog->fog.index);
+
+					if (TEST_FLAG(definition->flags, _fog_definition_is_water_bit))
+					{
+						if (!TEST_FLAG(flags, _scenario_current_force_no_water_bit))
+						{
+							weather_palette_index = region->weather_palette_index;
+							result = TRUE;
+						}
+					}
+					else if (!TEST_FLAG(flags, _scenario_current_force_water_bit))
+					{
+						weather_palette_index = region->weather_palette_index;
+					}
+				}
+			}
+		}
+	}
+
+	scenario_get_current_from_weather_palette(position, wind_vector, flags, weather_palette_index);
+
+	return result;
+}
+
+void scenario_get_current_from_weather_palette(
+	real_point3d const *position,
+	real_vector3d *current_vector,
+	unsigned long flags,
+	short weather_palette_index)
+{
+	if (weather_palette_index >= 0 && weather_palette_index < wind_globals.count)
+	{
+		struct wind_state *state = &wind_globals.wind_states[weather_palette_index];
+
+		if (state->valid)
+		{
+			real_vector3d wind_variance;
+			struct structure_weather_palette_entry *weather = TAG_BLOCK_GET_ELEMENT(&global_structure_bsp_get()->weather_palette, weather_palette_index, struct structure_weather_palette_entry);
+			struct wind_definition *wind = wind_definition_get(weather->wind.index);
+			real local_variation_weight = TEST_FLAG(flags, _scenario_current_simple_bit) ? 0.f : wind->local_variation_weight;
+
+			wind_variance_get(position, &wind_variance, wind->local_variation_rate, wind->local_variation_weight * state->velocity);
+			current_vector->i = (1.f - local_variation_weight) * state->velocity3d.i + wind_variance.i;
+			current_vector->j = (1.f - local_variation_weight) * state->velocity3d.j + wind_variance.j;
+			current_vector->k = (1.f - local_variation_weight) * state->velocity3d.k + wind_variance.k;
+
+			if (TEST_FLAG(flags, _scenario_current_damped_bit))
+			{
+				current_vector->i *= 1.f - wind->damping;
+				current_vector->j *= 1.f - wind->damping;
+				current_vector->k *= 1.f - wind->damping;
+			}
+		}
+		else
+		{
+			*current_vector = *global_zero_vector3d;
+		}
+	}
+	else
+	{
+		*current_vector = *global_zero_vector3d;
+	}
 
 	return;
 }
@@ -445,45 +240,75 @@ void scenario_get_water_current(
 static void wind_variance_initialize(
 	void)
 {
-	short control_point_index;
-	short sample_index;
-	short axis_index;
+	short i;
+	short j;
+	short k;
+	real const h = 1.f;
+	real const sample_step = h / WIND_VARIANCE_RESOLUTION_PER_CONTROL_POINT;
 
-	for (control_point_index = 0; control_point_index < 8; control_point_index++)
+	for (i = 0; i < NUMBER_OF_WIND_VARIANCE_BOX_CONTROL_POINTS; i++)
 	{
-		for (axis_index = 0; axis_index < 3; axis_index++)
+		for (j = 0; j < 3; j++)
 		{
-			seed_random_direction3d(
-				get_global_random_seed_address(),
-				&wind_globals.variance[axis_index][control_point_index * 8]);
+			random_direction3d(&wind_globals.variance[j][i * WIND_VARIANCE_RESOLUTION_PER_CONTROL_POINT]);
 		}
 	}
 
-	for (control_point_index = 0; control_point_index < 8; control_point_index++)
+	for (i = 0; i < NUMBER_OF_WIND_VARIANCE_BOX_CONTROL_POINTS; i++)
 	{
-		for (sample_index = 1; sample_index < 8; sample_index++)
+		for (k = 1; k < WIND_VARIANCE_RESOLUTION_PER_CONTROL_POINT; k++)
 		{
-			for (axis_index = 0; axis_index < 3; axis_index++)
+			for (j = 0; j < 3; j++)
 			{
-				word control_point_indices[4];
+				word control_points[4];
+				real t = i * h + k * sample_step;
 
-				control_point_indices[0] = (control_point_index - 1) & 7;
-				control_point_indices[1] = control_point_index;
-				control_point_indices[2] = (control_point_index + 1) & 7;
-				control_point_indices[3] = (control_point_index + 2) & 7;
-
+				control_points[0] = (i - 1) & (NUMBER_OF_WIND_VARIANCE_BOX_CONTROL_POINTS - 1);
+				control_points[1] = i;
+				control_points[2] = (i + 1) & (NUMBER_OF_WIND_VARIANCE_BOX_CONTROL_POINTS - 1);
+				control_points[3] = (i + 2) & (NUMBER_OF_WIND_VARIANCE_BOX_CONTROL_POINTS - 1);
 				uniform_cubic_spline_vector3d(
-					&wind_globals.variance[axis_index][control_point_index * 8 + sample_index],
-					&wind_globals.variance[axis_index][control_point_indices[0] * 8],
-					&wind_globals.variance[axis_index][control_point_indices[1] * 8],
-					&wind_globals.variance[axis_index][control_point_indices[2] * 8],
-					&wind_globals.variance[axis_index][control_point_indices[3] * 8],
-					(real)(control_point_indices[1] - 1),
-					1.f,
-					(real)sample_index * 0.125f + (real)control_point_index);
+					&wind_globals.variance[j][i * WIND_VARIANCE_RESOLUTION_PER_CONTROL_POINT + k],
+					&wind_globals.variance[j][control_points[0] * WIND_VARIANCE_RESOLUTION_PER_CONTROL_POINT],
+					&wind_globals.variance[j][control_points[1] * WIND_VARIANCE_RESOLUTION_PER_CONTROL_POINT],
+					&wind_globals.variance[j][control_points[2] * WIND_VARIANCE_RESOLUTION_PER_CONTROL_POINT],
+					&wind_globals.variance[j][control_points[3] * WIND_VARIANCE_RESOLUTION_PER_CONTROL_POINT],
+					(control_points[1] - 1) * h,
+					h,
+					t);
 			}
 		}
 	}
+
+	return;
+}
+
+static void wind_variance_get(
+	real_point3d const *position,
+	real_vector3d *wind,
+	real wind_local_variation_rate,
+	real max_magnitude)
+{
+	short i;
+	real const slope[3] = {0.1f, 0.2f, 0.07f};
+	real scale = max_magnitude / 3.f;
+
+	*wind = *global_zero_vector3d;
+
+	for (i = 0; i < 3; i++)
+	{
+		short index;
+		real time_adjusted_position = (wind_globals.time * slope[i] * wind_local_variation_rate + position->n[i]) * WIND_VARIANCE_BOX_SCALE;
+
+		*(long *)&time_adjusted_position &= LONG_MAX;
+		time_adjusted_position += 8388608.f;
+		index = *(long *)&time_adjusted_position & (WIND_VARIANCE_BOX_RESOLUTION - 1);
+		wind->i += wind_globals.variance[i][index].i;
+		wind->j += wind_globals.variance[i][index].j;
+		wind->k += wind_globals.variance[i][index].k;
+	}
+
+	scale_vector3d(wind, scale, wind);
 
 	return;
 }

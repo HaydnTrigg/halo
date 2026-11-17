@@ -1,15 +1,16 @@
 /*
 FONT_GROUP.C
 
-symbols in this file:
-0018C840 0070:
-	_font_get_character_by_ascii_code (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
 #include "font_group.h"
+#include "objects.h"
+#include "collision_bsp.h"
+#include "render.h"
+#include "rasterizer.h"
 
 /* ---------- constants */
 
@@ -24,31 +25,24 @@ symbols in this file:
 /* ---------- public code */
 
 struct font_character *font_get_character_by_ascii_code(
-	struct font_header *font,
-	word character_code)
+	struct font_header *header,
+	word character)
 {
-	struct font_character_table *character_table = TAG_BLOCK_GET_ELEMENT(
-		&font->character_tables,
-		character_code >> 8,
-		struct font_character_table);
-	struct font_character *character = NULL;
+	struct font_character_tables_entry *character_table = TAG_BLOCK_GET_ELEMENT(&header->character_tables, character >> 8, struct font_character_tables_entry);
+	struct font_character *font_character = NULL;
 
-	if (character_table->character_indices.count > 0)
+	if (character_table->table.count > 0)
 	{
-		short *character_index = character_table->character_indices.count == 256
-			? TAG_BLOCK_GET_ELEMENT(&character_table->character_indices, character_code & 0xFF, short)
-			: NULL;
+		struct font_character_table_entry *entry = character_table->table.count == 256 ?
+			TAG_BLOCK_GET_ELEMENT(&character_table->table, character & UNSIGNED_CHAR_MAX, struct font_character_table_entry) : NULL;
 
-		if (*character_index != NONE)
+		if (entry->character_index != NONE)
 		{
-			character = tag_block_get_element_with_size(
-				&font->characters,
-				*character_index,
-				FONT_CHARACTER_SIZE);
+			font_character = TAG_BLOCK_GET_ELEMENT(&header->characters, entry->character_index, struct font_character);
 		}
 	}
 
-	return character;
+	return font_character;
 }
 
 /* ---------- private code */

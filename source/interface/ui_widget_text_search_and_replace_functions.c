@@ -5,9 +5,9 @@ symbols in this file:
 000E4A40 0050:
 	_ui_widget_search_and_replace_invoke (0000)
 000E4A90 0010:
-	_code_000e4a90 (0000)
+	_widget_replace_function_null (0000)
 000E4AA0 00b0:
-	_code_000e4aa0 (0000)
+	_widget_controller (0000)
 00278C60 0014:
 	??_C@_1BE@PJJJEMAC@?$AA?$DM?$AAi?$AAn?$AAv?$AAa?$AAl?$AAi?$AAd?$AA?$DO?$AA?$AA@ (0000)
 00278C78 0047:
@@ -22,6 +22,15 @@ symbols in this file:
 
 #include "cseries.h"
 #include "ui_widget_text_search_and_replace_functions.h"
+#include "ui_widget.h"
+#include "cheats.h"
+#include "game.h"
+#include "network_game_globals.h"
+#include "unicode.h"
+#include "input.h"
+#include "player_profile.h"
+#include "saved_game_files.h"
+#include "build_number.h"
 
 /* ---------- constants */
 

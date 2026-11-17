@@ -10,7 +10,6 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "math/real_math.h"
 
 /* ---------- constants */
 
@@ -50,10 +49,25 @@ enum
 	MAXIMUM_MULTIPLAYER_GAME_TEAMS,
 };
 
+enum
+{
+	_allegiance_incident_accident = 0,
+	_allegiance_incident_betrayal,
+	_allegiance_incident_forgive,
+};
 
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct game_options
+{
+	unsigned long flags;
+	short code_version;
+	short difficulty;
+	unsigned long random_seed;
+	char map_name[MAXIMUM_FILENAME_LENGTH+1];
+};
 
 struct slayer_statistics
 {
@@ -117,30 +131,17 @@ struct game_statistics
 };
 
 
-/* ---------- prototypes/GAME_STATISTICS.C */
-
-void game_statistics_start(
-	void);
-void game_statistics_record_kill(
-	long dead_unit_index,
-	long killing_player_index,
-	long killing_object_index,
-	short killing_team_index);
-
 /* ---------- prototypes/GAME.C */
 
-void game_initialize(
-	void);
+void game_initialize(void);
 void game_dispose(void);
 void game_precache_new_map(char *map_name, boolean blocking);
 boolean game_map_loading_in_progress(real *progress);
-void game_unload(
-	void);
+void game_unload(void);
 void game_dispose_from_old_map(void);
 void game_frame(real dt);
-void remove_quitting_players_from_game(
-	void);
-void game_tick(void);
+void remove_quitting_players_from_game(void);
+void game_tick(long ticks_remaining_this_frame);
 void game_options_new(struct game_options *options);
 boolean game_options_verify(struct game_options *options);
 void game_initial_pulse(void);
@@ -151,19 +152,25 @@ short game_difficulty_level_get(void);
 short game_difficulty_level_get_ignore_easy(void);
 void game_set_game_variant(struct game_variant *variant);
 void game_set_game_engine_index(short index);
-boolean game_all_quiet(
-	void);
-boolean game_safe_to_save(
-	void);
-boolean game_safe_to_speak(
-	void);
+boolean game_all_quiet(void);
+boolean game_safe_to_save(void);
+boolean game_safe_to_speak(void);
 boolean game_is_cooperative(void);
-boolean game_load(
-	struct game_options *options);
-void game_initialize_for_new_map(
-	void);
-void game_set_game_variant_from_name(
-	const char *name);
+boolean game_load(struct game_options *options);
+void game_initialize_for_new_map(void);
+void game_set_game_variant_from_name(const char *name);
+
+/* ---------- prototypes/GAME_ALLEGIANCE.C */
+
+boolean game_team_is_enemy(short our_team, short other_team);
+boolean game_team_is_ally(short our_team, short other_team);
+short game_allegiance_get_incidents(short our_team_index, short other_team_index, short *incident_threshold);
+boolean game_allegiance_incident(short aggressor_team_index, short victim_team_index, short type, boolean *notify_immediately);
+
+/* ---------- prototypes/GAME_STATISTICS.C */
+
+void game_statistics_record_damage(long object_index, real damage, long owner_player_index, long owner_object_index, short owner_team_index);
+void game_statistics_record_kill(long object_index, long owner_player_index, long owner_object_index, short owner_team_index);
 
 /* ---------- prototypes/GAME_TIME.C */
 
@@ -191,6 +198,8 @@ void game_time_update(real time_delta_sec);
 short game_connection(void);
 
 /* ---------- globals */
+
+extern char const *global_game_team_names[NUMBER_OF_SOLO_CAMPAIGN_TEAMS];
 
 /* ---------- public code */
 

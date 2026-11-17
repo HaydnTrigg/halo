@@ -10,8 +10,7 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "math/real_math.h"
-#include "tag_files/tag_groups.h"
+#include "path.h"
 
 /* ---------- constants */
 
@@ -58,19 +57,6 @@ enum
 	_actor_definition_crouch_in_line_of_fire_bit,
 	_actor_definition_avoid_friend_line_of_fire_bit,
 	NUMBER_OF_ACTOR_DEFINITION_FLAGS,
-};
-
-enum
-{
-	_actor_variant_definition_can_shoot_while_flying_bit = 0,
-	_actor_variant_definition_color_interpolate_hsv_bit,
-	_actor_variant_definition_has_unlimited_grenades_bit,
-	_actor_variant_definition_movement_switching_try_to_stay_with_friends_bit,
-	_actor_variant_definition_active_camouflage_bit,
-	_actor_variant_definition_super_active_camouflage_bit,
-	_actor_variant_definition_cannot_use_ranged_weapons_bit,
-	_actor_variant_definition_prefer_passenger_seat_bit,
-	NUMBER_OF_ACTOR_VARIANT_DEFINITION_FLAGS,
 };
 
 

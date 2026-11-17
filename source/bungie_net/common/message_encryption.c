@@ -1,42 +1,28 @@
 /*
 MESSAGE_ENCRYPTION.C
-
-symbols in this file:
-0006EE40 0050:
-	_reversible_crypt (0000)
-0006EE90 0090:
-	_tea_encipher (0000)
-0006EF20 0090:
-	_tea_decipher (0000)
-0006EFB0 0100:
-	_message_encrypt (0000)
-0006F0B0 0100:
-	_message_decrypt (0000)
-0025579C 0030:
-	??_C@_0DA@EDCJMCDB@?$CI0?$DM?$DNflags?$CJ?5?$CG?$CG?5?$CI?$CIflags?$CJ?$DM?$DNMESSAGE_@ (0000)
-002557CC 000e:
-	??_C@_0O@IIKLGMGM@msgptr?5?$CG?$CG?5key?$AA@ (0000)
-002557DC 0036:
-	??_C@_0DG@HFDJMHM@c?3?2halo?2SOURCE?2bungie_net?2common@ (0000)
 */
 
 /* ---------- headers */
 
-#include "cseries/cseries.h"
-
-#include "bungie_net/common/message_encryption.h"
-#include "bungie_net/common/message_header.h"
+#include "cseries.h"
+#include "message_encryption.h"
+#include "message_header.h"
 
 /* ---------- constants */
 
 enum
 {
-	MESSAGE_ENCRYPTED_FLAG = FLAG(0),
-	TEA_ROUND_COUNT = 32,
-	TEA_BLOCK_SIZE = 8,
+	MESSAGE_KEY_LONGS = 2, /* fake name */
+	MESSAGE_KEY_SIZE = MESSAGE_KEY_LONGS*sizeof(unsigned long), /* fake name */
+	TEA_KEY_LONGS = 4, /* fake name */
+	TEA_BLOCK_LONGS = 2, /* fake name */
+	TEA_BLOCK_SIZE = TEA_BLOCK_LONGS*sizeof(unsigned long), /* fake name */
+	TEA_ROUNDS = 32, /* fake name */
 };
 
 /* ---------- macros */
+
+#define TEA_DELTA 0x9E3779B9 /* fake name */
 
 /* ---------- structures */
 
@@ -57,28 +43,114 @@ union message_header_value
 
 /* ---------- public code */
 
+void message_encrypt(
+	message_header *msgptr,
+	unsigned long const *key)
+{
+	word flags;
+	word length;
+
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 31, msgptr && key);
+
+	flags = GET_MESSAGE_FLAGS(*msgptr);
+	length = GET_MESSAGE_SIZE(*msgptr);
+
+	if (!TEST_FLAG(flags, _message_encrypted_bit))
+	{
+		long tea_key[TEA_KEY_LONGS];
+		word i;
+		word block_count = (length - sizeof(message_header)) / TEA_BLOCK_SIZE;
+		short tail_size = (length - sizeof(message_header)) % TEA_BLOCK_SIZE;
+		unsigned long *block = (unsigned long *)(msgptr + 1);
+
+		tea_key[2] = key[0];
+		tea_key[0] = key[0];
+		tea_key[3] = key[1];
+		tea_key[1] = key[1];
+
+		for (i = 0; i != block_count; i++)
+		{
+			tea_encipher(block, block, tea_key);
+			block += TEA_BLOCK_LONGS;
+		}
+
+		if (tail_size)
+		{
+			reversible_crypt((byte *)block, tail_size, (byte const *)key, MESSAGE_KEY_SIZE);
+		}
+
+		SET_FLAG(flags, _message_encrypted_bit, TRUE);
+		match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 76, (0<=flags) && ((flags)<=MESSAGE_FLAG_BITS_MASK));
+		SET_MESSAGE_FLAGS(*msgptr, flags);
+	}
+
+	return;
+}
+
+void message_decrypt(
+	message_header *msgptr,
+	unsigned long const *key)
+{
+	word flags;
+	word length;
+
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 88, msgptr && key);
+
+	flags = GET_MESSAGE_FLAGS(*msgptr);
+	length = GET_MESSAGE_SIZE(*msgptr);
+
+	if (TEST_FLAG(flags, _message_encrypted_bit))
+	{
+		long tea_key[TEA_KEY_LONGS];
+		word i;
+		word block_count = (length - sizeof(message_header)) / TEA_BLOCK_SIZE;
+		short tail_size = (length - sizeof(message_header)) % TEA_BLOCK_SIZE;
+		unsigned long *block = (unsigned long *)(msgptr + 1);
+
+		tea_key[2] = key[0];
+		tea_key[0] = key[0];
+		tea_key[3] = key[1];
+		tea_key[1] = key[1];
+
+		for (i = 0; i != block_count; i++)
+		{
+			tea_decipher(block, block, tea_key);
+			block += TEA_BLOCK_LONGS;
+		}
+
+		if (tail_size)
+		{
+			reversible_crypt((byte *)block, tail_size, (byte const *)key, MESSAGE_KEY_SIZE);
+		}
+
+		SET_FLAG(flags, _message_encrypted_bit, FALSE);
+		match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 131, (0<=flags) && ((flags)<=MESSAGE_FLAG_BITS_MASK));
+		SET_MESSAGE_FLAGS(*msgptr, flags);
+	}
+
+	return;
+}
+
 void reversible_crypt(
 	byte *data,
 	long data_size,
 	byte const *key,
 	long key_size)
 {
-	long data_index;
-	long key_index;
-	long key_step;
+	long i = 0;
+	long key_index = 0;
+	long direction = 1;
 
-	data_index = 0;
-	key_index = 0;
-	key_step = 1;
-	while (data_index < data_size)
+	while (i < data_size)
 	{
-		data[data_index] = ~(data[data_index] ^ key[key_index]);
-		key_index += key_step;
-		data_index++;
+		data[i] = ~(data[i] ^ key[key_index]);
+		key_index += direction;
+		i++;
+
 		if (key_index == key_size || key_index < 0)
 		{
-			key_step = -key_step;
-			key_index += key_step;
+			direction = -direction;
+			key_index += direction;
 		}
 	}
 
@@ -86,165 +158,57 @@ void reversible_crypt(
 }
 
 void tea_encipher(
-	unsigned long const input[2],
-	unsigned long output[2],
-	long const key[4])
+	unsigned long const *input,
+	unsigned long *output,
+	long const *key)
 {
-	unsigned long value0;
-	unsigned long value1;
-	long sum;
-	unsigned long rounds;
-	long key0;
-	long key1;
-	long key2;
-	long key3;
+	long i;
+	unsigned long y = input[0];
+	unsigned long z = input[1];
+	unsigned long sum = 0;
+	unsigned long delta = TEA_DELTA;
+	long a = key[0];
+	long b = key[1];
+	long c = key[2];
+	long d = key[3];
 
-	value0 = input[0];
-	value1 = input[1];
-	sum = 0;
-	rounds = TEA_ROUND_COUNT;
-	key0 = key[0];
-	key1 = key[1];
-	key2 = key[2];
-	key3 = key[3];
-	do
+	for (i = 0; i < TEA_ROUNDS; i++)
 	{
-		sum += 0x9E3779B9;
-		value0 += ((value1 >> 5) + key1) ^ (value1 * 0x10 + key0) ^ (value1 + sum);
-		value1 += ((value0 >> 5) + key3) ^ (value0 * 0x10 + key2) ^ (value0 + sum);
+		sum += delta;
+		y += ((z << 4) + a) ^ (z + sum) ^ ((z >> 5) + b);
+		z += ((y << 4) + c) ^ (y + sum) ^ ((y >> 5) + d);
 	}
-	while (--rounds);
-	output[0] = value0;
-	output[1] = value1;
+
+	output[0] = y;
+	output[1] = z;
 
 	return;
 }
 
 void tea_decipher(
-	unsigned long const input[2],
-	unsigned long output[2],
-	long const key[4])
+	unsigned long const *input,
+	unsigned long *output,
+	long const *key)
 {
-	unsigned long value0;
-	unsigned long value1;
-	long sum;
-	unsigned long rounds;
-	long key0;
-	long key1;
-	long key2;
-	long key3;
+	long i;
+	unsigned long y = input[0];
+	unsigned long z = input[1];
+	unsigned long sum = TEA_DELTA*TEA_ROUNDS;
+	unsigned long delta = TEA_DELTA;
+	long a = key[0];
+	long b = key[1];
+	long c = key[2];
+	long d = key[3];
 
-	value0 = input[0];
-	value1 = input[1];
-	sum = 0xC6EF3720;
-	rounds = TEA_ROUND_COUNT;
-	key0 = key[0];
-	key1 = key[1];
-	key2 = key[2];
-	key3 = key[3];
-	do
+	for (i = 0; i < TEA_ROUNDS; i++)
 	{
-		value1 -= ((value0 >> 5) + key3) ^ (value0 * 0x10 + key2) ^ (value0 + sum);
-		value0 -= ((value1 >> 5) + key1) ^ (value1 * 0x10 + key0) ^ (value1 + sum);
-		sum -= 0x9E3779B9;
+		z -= ((y << 4) + c) ^ (y + sum) ^ ((y >> 5) + d);
+		y -= ((z << 4) + a) ^ (z + sum) ^ ((z >> 5) + b);
+		sum -= delta;
 	}
-	while (--rounds);
-	output[0] = value0;
-	output[1] = value1;
+
+	output[0] = y;
+	output[1] = z;
 
 	return;
 }
-
-void message_encrypt(
-	word *msgptr,
-	unsigned long const key[2])
-{
-	union message_header_value header;
-	word message_size;
-	word flags;
-	word block_count;
-	short remainder_size;
-	word *cursor;
-	long key_copy[4];
-	unsigned long block_index;
-
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 31, msgptr && key);
-	header.value = *msgptr;
-	flags = header.fields.flags;
-	message_size = header.fields.message_size;
-	if (!TEST_FLAG(flags, 0))
-	{
-		block_count = (message_size - sizeof(word)) >> 3;
-		remainder_size = (message_size - sizeof(word)) & 7;
-		cursor = msgptr + 1;
-		key_copy[0] = key_copy[2] = key[0];
-		key_copy[1] = key_copy[3] = key[1];
-		if (block_count)
-		{
-			block_index = block_count;
-			do
-			{
-				tea_encipher((unsigned long *)cursor, (unsigned long *)cursor, key_copy);
-				cursor += TEA_BLOCK_SIZE / sizeof(word);
-			}
-			while (--block_index);
-		}
-		if (remainder_size)
-		{
-			reversible_crypt((byte *)cursor, (short)remainder_size, (byte const *)key, sizeof(unsigned long) * 2);
-		}
-		flags |= MESSAGE_ENCRYPTED_FLAG;
-		match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 76, (0<=flags) && ((flags)<=MESSAGE_FLAG_BITS_MASK));
-		*msgptr = (*msgptr & ~MESSAGE_FLAG_BITS_MASK) | flags;
-	}
-
-	return;
-}
-
-void message_decrypt(
-	word *msgptr,
-	unsigned long const key[2])
-{
-	union message_header_value header;
-	word message_size;
-	word flags;
-	word block_count;
-	short remainder_size;
-	word *cursor;
-	long key_copy[4];
-	unsigned long block_index;
-
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 88, msgptr && key);
-	header.value = *msgptr;
-	flags = header.fields.flags;
-	message_size = header.fields.message_size;
-	if (TEST_FLAG(flags, 0))
-	{
-		block_count = (message_size - sizeof(word)) >> 3;
-		remainder_size = (message_size - sizeof(word)) & 7;
-		cursor = msgptr + 1;
-		key_copy[0] = key_copy[2] = key[0];
-		key_copy[1] = key_copy[3] = key[1];
-		if (block_count)
-		{
-			block_index = block_count;
-			do
-			{
-				tea_decipher((unsigned long *)cursor, (unsigned long *)cursor, key_copy);
-				cursor += TEA_BLOCK_SIZE / sizeof(word);
-			}
-			while (--block_index);
-		}
-		if (remainder_size)
-		{
-			reversible_crypt((byte *)cursor, (short)remainder_size, (byte const *)key, sizeof(unsigned long) * 2);
-		}
-		flags &= ~MESSAGE_ENCRYPTED_FLAG;
-		match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 131, (0<=flags) && ((flags)<=MESSAGE_FLAG_BITS_MASK));
-		*msgptr = (*msgptr & ~MESSAGE_FLAG_BITS_MASK) | flags;
-	}
-
-	return;
-}
-
-/* ---------- private code */

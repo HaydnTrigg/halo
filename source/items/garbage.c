@@ -12,11 +12,7 @@ symbols in this file:
 
 #include "cseries.h"
 #include "garbage.h"
-
-#include "items/items.h"
-#include "math/real_math.h"
-#include "objects/object_types.h"
-#include "objects/objects.h"
+#include "items.h"
 
 /* ---------- constants */
 
@@ -33,16 +29,17 @@ symbols in this file:
 boolean garbage_update(
 	long garbage_index)
 {
+	boolean exists;
 	struct garbage_datum *garbage = garbage_get(garbage_index);
-	boolean active;
 
-	--garbage->lifetime_ticks;
-	active = garbage->lifetime_ticks > 0;
-
-	if (!active)
+	garbage->garbage.destroy_timer--;
+	exists = garbage->garbage.destroy_timer > 0;
+	if (!exists)
+	{
 		object_delete(garbage_index);
+	}
 
-	return active;
+	return exists;
 }
 
 boolean garbage_new(
@@ -51,8 +48,9 @@ boolean garbage_new(
 	struct garbage_datum *garbage = garbage_get(garbage_index);
 
 	object_set_garbage(garbage_index, TRUE);
-	garbage->object.flags |= FLAG(_object_shadowless_bit) | FLAG(_object_deleted_when_deactivated_bit);
-	garbage->lifetime_ticks = random_range(10 * TICKS_PER_SECOND, 20 * TICKS_PER_SECOND);
+	SET_FLAG(garbage->object.flags, _object_shadowless_bit, TRUE);
+	SET_FLAG(garbage->object.flags, _object_deleted_when_deactivated_bit, TRUE);
+	garbage->garbage.destroy_timer = random_range(300, 600);
 
 	return TRUE;
 }

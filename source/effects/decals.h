@@ -10,79 +10,80 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "cseries/cseries.h"
-#include "math/real_math.h"
+#include "decal_definitions.h"
 
 /* ---------- constants */
 
+enum
+{
+	MAXIMUM_DECALS_PER_MAP = 2048,
+	MAXIMUM_DECAL_VERTICES_PER_MAP = 10240
+};
+
+enum
+{
+	_decal_locked_bit = 0,
+	_decal_permanent_bit,
+	NUMBER_OF_DECAL_FLAGS
+};
+
+enum
+{
+	_decal_layer_primary = 0,
+	_decal_layer_secondary,
+	_decal_layer_light,
+	_decal_layer_alpha_tested,
+	_decal_layer_water,
+	NUMBER_OF_DECAL_LAYERS
+};
+
 /* ---------- macros */
+
+#define decal_get(index) ((struct decal_datum *)datum_get(global_decal_data, (index)))
 
 /* ---------- structures */
 
-struct collision_result;
-struct decal_editor_geometry;
+struct decal_vertex
+{
+	real_point3d position;
+	unsigned long texcoord;
+};
+
+struct decal_datum
+{
+	short identifier;
+	unsigned short flags;
+	short cluster_index;
+	short layer;
+	real_point3d position;
+	long creation_time;
+	char sequence_index;
+	char unused___was_frames_remaining;
+	char sprite_index;
+	char bitmap_index;
+	real lifetime;
+	real decay_time;
+	unsigned long color;
+	byte intensity;
+	byte pad;
+	short quad_count;
+	long definition_index;
+	long prev_decal_index;
+	long next_decal_index;
+};
 
 /* ---------- prototypes/DECALS.C */
 
-void decals_initialize(
-	void);
-void decals_initialize_for_new_map(
-	void);
-void decals_unlock(
-	boolean permanent);
-void decal_delete(
-	long decal_index);
-long decal_get_first_decal_index(
-	short cluster_index,
-	short layer);
-void decal_new_from_media_collision(
-	long decal_definition_index,
-	struct collision_result const *collision,
-	real_vector3d const *velocity,
-	real radius_modifier,
-	boolean permanent,
-	short forced_sequence_index,
-	struct decal_editor_geometry *editor_geometry);
-void render_debug_decals(
-	void);
-void decal_new_from_collision(
-	long decal_definition_index,
-	struct collision_result const *collision,
-	real_vector3d const *velocity,
-	real radius_modifier,
-	boolean permanent,
-	short forced_sequence_index,
-	struct decal_editor_geometry *editor_geometry);
-void decal_new(
-	long decal_definition_index,
-	real_point3d const *origin,
-	real_vector3d const *velocity,
-	real radius_modifier,
-	boolean permanent,
-	short forced_sequence_index,
-	struct decal_editor_geometry *editor_geometry);
-pixel32 real_a_rgb_color_to_pixel32(
-	real alpha,
-	real_rgb_color const *color);
+void decals_unlock(boolean permanent);
+long decal_get_first_decal_index(short cluster_index, short layer);
+void decals_reconnect_to_structure_bsp(void);
+void decals_disconnect_from_structure_bsp(void);
+void decal_delete(long decal_index);
 
 /* ---------- globals */
 
-extern boolean decals_enabled;
-extern boolean debug_decals;
+extern struct data_array *global_decal_data;
 
 /* ---------- public code */
-
-void decals_dispose(
-	void);
-void decals_dispose_from_old_map(
-	void);
-void decals_update(
-	void);
-void decals_delete_permanent_from_cluster(
-	short cluster_index);
-void decals_disconnect_from_structure_bsp(
-	void);
-void decals_reconnect_to_structure_bsp(
-	void);
 
 #endif // __DECALS_H

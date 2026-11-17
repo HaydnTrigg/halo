@@ -8,7 +8,7 @@ UNIT_DEFINITIONS.H
 
 /* ---------- headers */
 
-#include "objects/object_definitions.h"
+#include "object_definitions.h"
 
 /* ---------- constants */
 
@@ -50,27 +50,37 @@ enum
 
 enum
 {
-	_unit_seat_invisible_bit = 0,
-	_unit_seat_driver_bit = 2,
-	_unit_seat_gunner_bit,
-	_unit_seat_third_person_camera_bit = 4,
-	_unit_seat_third_person_on_enter_bit = 6,
-	_unit_seat_first_person_camera_bit = 7,
-	_unit_seat_allows_noncombatants_bit = 10,
+	_unit_seat_is_invisible_bit = 0,
+	_unit_seat_is_locked_bit,
+	_unit_seat_is_driver_bit,
+	_unit_seat_is_gunner_bit,
+	_unit_seat_has_third_person_camera_bit,
+	_unit_seat_allows_weapons_bit,
+	_unit_seat_third_person_on_enter_bit,
+	_unit_seat_slave_first_person_camera_bit,
+	_unit_seat_allow_vehicle_communication_animations_bit,
+	_unit_seat_not_valid_without_driver_bit,
+	_unit_seat_allow_noncombatants_bit,
+	NUMBER_OF_UNIT_SEAT_FLAGS,
+};
+
+enum
+{
+	_unit_camera_track_loose = 0,
+	_unit_camera_track_tight,
+	MAXIMUM_NUMBER_OF_UNIT_CAMERA_TRACKS,
+};
+
+enum
+{
+	MAXIMUM_SEATS_PER_UNIT_DEFINITION = 16,
+	MAXIMUM_INITIAL_WEAPONS_PER_UNIT = 4,
+	MAXIMUM_IK_MARKERS_PER_SEAT = 4,
+	MAXIMUM_DIALOGUE_VARIANTS_PER_UNIT = 16,
+	MAXIMUM_HUDS_PER_SEAT = 16,
 };
 
 /* ---------- macros */
-
-/* One element of unit_definition::dialogue_variants. January proves the
- * 0x18-byte stride and the dialogue tag index at offset 0x14.
- */
-struct unit_dialogue_variant
-{
-	short variant_number;
-	short pad;
-	char __unknown04[16];
-	long dialogue_index;
-};
 
 #define unit_definition_get(index) ((struct unit_definition *)tag_get(UNIT_DEFINITION_TAG, index))
 
@@ -86,10 +96,10 @@ struct unit_camera
 	struct tag_block unit_camera_tracks;
 };
 
-struct unit_hud_reference
+struct unit_camera_track
 {
-	struct tag_reference hud;
-	long unused[8];
+	struct tag_reference track;
+	long unused[3];
 };
 
 struct unit_seat
@@ -119,6 +129,14 @@ struct powered_seat_definition
 	real powerup_time;
 	real powerdown_time;
 	long unused[14];
+};
+
+struct dialogue_variant_definition
+{
+	short variant_number;
+	word pad;
+	long unused;
+	struct tag_reference dialogue_variant;
 };
 
 struct _unit_definition
@@ -183,7 +201,7 @@ struct unit_definition
 	struct _unit_definition unit;
 };
 
-/* ---------- prototypes/EXAMPLE.C */
+/* ---------- prototypes/UNIT_DEFINITIONS.C */
 
 long unit_definition_get_active_hud_index(struct unit_definition const *definition, boolean multiplayer);
 long unit_definition_get_seat_active_hud_index(struct unit_definition const *definition, short seat_index, boolean multiplayer);

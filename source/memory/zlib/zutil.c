@@ -34,15 +34,14 @@ const char * ZEXPORT zlibVersion()
 #ifdef DEBUG
 
 #  ifndef verbose
-#    define verbose 0
+#    define verbose -1
 #  endif
-int z_verbose = -1;
+int z_verbose = verbose;
 
 void z_error (m)
     char *m;
 {
-    display_assert(m, "c:\\halo\\SOURCE\\memory\\zlib\\zutil.c", 48, TRUE);
-    system_exit(-1);
+    match_vassert("c:\\halo\\SOURCE\\memory\\zlib\\zutil.c", 48, FALSE, m);
 }
 #endif
 
@@ -211,14 +210,15 @@ voidpf zcalloc (opaque, items, size)
     unsigned size;
 {
     if (opaque) items += size - size; /* make compiler happy */
-    return (voidpf)debug_malloc(items * size, TRUE, "c:\\halo\\SOURCE\\memory\\zlib\\zutil.c", 221);
+    return (voidpf)match_calloc("c:\\halo\\SOURCE\\memory\\zlib\\zutil.c", 221, items, size);
 }
 
 void  zcfree (opaque, ptr)
     voidpf opaque;
     voidpf ptr;
 {
-    debug_free(ptr, "c:\\halo\\SOURCE\\memory\\zlib\\zutil.c", 228);
+    match_free("c:\\halo\\SOURCE\\memory\\zlib\\zutil.c", 228, ptr);
+    if (opaque) return; /* make compiler happy */
 }
 
 #endif /* MY_ZCALLOC */

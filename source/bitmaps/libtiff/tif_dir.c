@@ -1,5 +1,5 @@
 #ifndef lint
-static char data_002b7f88[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_dir.c,v 1.110 92/03/06 11:59:49 sam Exp $\0TIFFSetDirectory";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_dir.c,v 1.110 92/03/06 11:59:49 sam Exp $";
 #endif
 
 /*
@@ -37,26 +37,18 @@ static char data_002b7f88[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_dir
  *     carefully chosen to make things work with compilers that
  *     are busted in one way or another (e.g. SGI/MIPS).
  */
-#pragma warning(disable: 4047)
-#pragma warning(disable: 4716)
-#line 40
 #include "tiffioP.h"
 #include "prototypes.h"
-
-void debug_free(void *pointer, const char *file, long line);
-
-#undef SeekOK
-#define SeekOK(fd, off) (lseek(fd, (long)off, L_SET) == (long)off)
 
 static
 DECLARE2(setString, char**, cpp, char*, cp)
 {
 	if (*cpp)
-		debug_free(*cpp, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 69), *cpp = 0;
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 69, *cpp), *cpp = 0;
 	if (cp) {
-		int len = csstrlen(cp)+1;
-		if (*cpp = debug_malloc(len, 0, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 72))
-			csmemcpy(*cpp, cp, len);
+		int len = strlen(cp)+1;
+		if (*cpp = match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 72, len))
+			bcopy(cp, *cpp, len);
 	}
 }
 
@@ -64,19 +56,19 @@ static
 DECLARE3(setShortArray, u_short**, wpp, u_short*, wp, long, n)
 {
 	if (*wpp)
-		debug_free((char *)*wpp, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 81), *wpp = 0;
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 81, (char *)*wpp), *wpp = 0;
 	n *= sizeof (u_short);
-	if (wp && (*wpp = (u_short *)debug_malloc(n, 0, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 83)))
-		csmemcpy(*wpp, wp, n);
+	if (wp && (*wpp = (u_short *)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 83, n)))
+		bcopy(wp, *wpp, n);
 }
 
 static
 DECLARE3(setLongArray, u_long**, wpp, u_long*, wp, long, n)
 {
 	if (*wpp)
-		free((char *)*wpp), *wpp = 0;
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 91, (char *)*wpp), *wpp = 0;
 	n *= sizeof (u_long);
-	if (wp && (*wpp = (u_long *)malloc(n)))
+	if (wp && (*wpp = (u_long *)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 93, n)))
 		bcopy(wp, *wpp, n);
 }
 
@@ -84,9 +76,9 @@ static
 DECLARE3(setFloatArray, float**, wpp, float*, wp, long, n)
 {
 	if (*wpp)
-		free((char *)*wpp), *wpp = 0;
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 101, (char *)*wpp), *wpp = 0;
 	n *= sizeof (float);
-	if (wp && (*wpp = (float *)malloc(n)))
+	if (wp && (*wpp = (float *)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 103, n)))
 		bcopy(wp, *wpp, n);
 }
 
@@ -115,9 +107,9 @@ DECLARE3(setJPEGQTable, u_char***, wpp, u_char**, wp, int, nc)
 	int i, j;
 
 	if (*wpp)
-		free((char *)*wpp), *wpp = 0;
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 132, (char *)*wpp), *wpp = 0;
 	*wpp = (u_char **)
-	    malloc(nc * (sizeof (u_char *) + 64*sizeof (u_char)));
+	    match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 134, nc * (sizeof (u_char *) + 64*sizeof (u_char)));
 	tab = (((char *)*wpp) + nc*sizeof (u_short *));
 	for (i = 0; i < nc; i++) {
 		(*wpp)[i] = (u_char *)tab;
@@ -137,7 +129,7 @@ DECLARE3(setJPEGCTable, u_char***, cpp, u_char**, cp, int, nc)
 	int i, j, nw;
 
 	if (*cpp)
-		free(*cpp), *cpp = 0;
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 154, *cpp), *cpp = 0;
 	/*
 	 * Calculate the size of the table by counting
 	 * the number of codes specified in the bits array.
@@ -148,7 +140,7 @@ DECLARE3(setJPEGCTable, u_char***, cpp, u_char**, cp, int, nc)
 		for (j = 0; j < 16; j++)/* sum up count of codes */
 			nw += cp[i][j];
 	}
-	*cpp = (u_char **)malloc(nc*sizeof (u_char *) + nw);
+	*cpp = (u_char **)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", 165, nc*sizeof (u_char *) + nw);
 	tab = ((u_char *)*cpp) + nc*sizeof (u_char *);
 	/*
 	 * Setup internal array and copy user data.
@@ -839,9 +831,9 @@ DECLARE2V(_TIFFgetfield, TIFFDirectory*, td, int, tag)
 	va_end(ap);
 }
 
-#define	CleanupField(member) {		\
+#define	CleanupField(line, member) {		\
     if (td->member) {			\
-	debug_free((char *)td->member, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", __LINE__+17); \
+	match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_dir.c", line, (char *)td->member);	\
 	td->member = 0;			\
     }					\
 }
@@ -854,41 +846,41 @@ TIFFFreeDirectory(tif)
 {
 	register TIFFDirectory *td = &tif->tif_dir;
 
-	CleanupField(td_colormap[0]);
-	CleanupField(td_colormap[1]);
-	CleanupField(td_colormap[2]);
-	CleanupField(td_documentname);
-	CleanupField(td_artist);
-	CleanupField(td_datetime);
-	CleanupField(td_hostcomputer);
-	CleanupField(td_imagedescription);
-	CleanupField(td_make);
-	CleanupField(td_model);
-	CleanupField(td_software);
-	CleanupField(td_pagename);
+	CleanupField(871, td_colormap[0]);
+	CleanupField(872, td_colormap[1]);
+	CleanupField(873, td_colormap[2]);
+	CleanupField(874, td_documentname);
+	CleanupField(875, td_artist);
+	CleanupField(876, td_datetime);
+	CleanupField(877, td_hostcomputer);
+	CleanupField(878, td_imagedescription);
+	CleanupField(879, td_make);
+	CleanupField(880, td_model);
+	CleanupField(881, td_software);
+	CleanupField(882, td_pagename);
 #ifdef YCBCR_SUPPORT
-	CleanupField(td_ycbcrcoeffs);
+	CleanupField(884, td_ycbcrcoeffs);
 #endif
 #ifdef JPEG_SUPPORT
-	CleanupField(td_qtab);
-	CleanupField(td_dctab);
-	CleanupField(td_actab);
+	CleanupField(887, td_qtab);
+	CleanupField(888, td_dctab);
+	CleanupField(889, td_actab);
 #endif
 #ifdef CMYK_SUPPORT
-	CleanupField(td_inknames);
-	CleanupField(td_targetprinter);
+	CleanupField(892, td_inknames);
+	CleanupField(893, td_targetprinter);
 #endif
 #ifdef COLORIMETRY_SUPPORT
-	CleanupField(td_whitepoint);
-	CleanupField(td_primarychromas);
-	CleanupField(td_refblackwhite);
-	CleanupField(td_transferfunction[0]);
-	CleanupField(td_transferfunction[1]);
-	CleanupField(td_transferfunction[2]);
-	CleanupField(td_transferfunction[3]);
+	CleanupField(896, td_whitepoint);
+	CleanupField(897, td_primarychromas);
+	CleanupField(898, td_refblackwhite);
+	CleanupField(899, td_transferfunction[0]);
+	CleanupField(900, td_transferfunction[1]);
+	CleanupField(901, td_transferfunction[2]);
+	CleanupField(902, td_transferfunction[3]);
 #endif
-	CleanupField(td_stripoffset);
-	CleanupField(td_stripbytecount);
+	CleanupField(904, td_stripoffset);
+	CleanupField(905, td_stripbytecount);
 }
 #undef CleanupField
 
@@ -900,7 +892,7 @@ TIFFDefaultDirectory(tif)
 {
 	register TIFFDirectory *td = &tif->tif_dir;
 
-	csmemset((char *)td, 0, sizeof (*td));
+	bzero((char *)td, sizeof (*td));
 	td->td_fillorder = FILLORDER_MSB2LSB;
 	td->td_bitspersample = 1;
 	td->td_threshholding = THRESHHOLD_BILEVEL;
@@ -943,6 +935,7 @@ TIFFSetDirectory(tif, dirn)
 	register TIFF *tif;
 	int dirn;
 {
+	static char module[] = "TIFFSetDirectory";
 	u_short dircount;
 	long nextdir;
 	int n;
@@ -951,7 +944,7 @@ TIFFSetDirectory(tif, dirn)
 	for (n = dirn; n > 0 && nextdir != 0; n--) {
 		if (!SeekOK(tif->tif_fd, nextdir) ||
 		    !ReadOK(tif->tif_fd, &dircount, sizeof (dircount))) {
-			TIFFError(data_002b7f88+88, "%s: Error fetching directory count",
+			TIFFError(module, "%s: Error fetching directory count",
 			    tif->tif_name);
 			return (0);
 		}
@@ -959,7 +952,7 @@ TIFFSetDirectory(tif, dirn)
 			TIFFSwabShort(&dircount);
 		lseek(tif->tif_fd, dircount*sizeof (TIFFDirEntry), L_INCR);
 		if (!ReadOK(tif->tif_fd, &nextdir, sizeof (nextdir))) {
-			TIFFError(data_002b7f88+88, "%s: Error fetching directory link",
+			TIFFError(module, "%s: Error fetching directory link",
 			    tif->tif_name);
 			return (0);
 		}

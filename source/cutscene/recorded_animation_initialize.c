@@ -1,72 +1,21 @@
 /*
 RECORDED_ANIMATION_INITIALIZE.C
-
-symbols in this file:
-00081D80 0070:
-	_recorded_animation_byteswap_unit_control (0000)
-00081DF0 0090:
-	_recorded_animation_initialize_unit_control (0000)
-00081E80 0070:
-	_recorded_animation_write_unit_control (0000)
-00258B44 000e:
-	??_C@_0O@FLAIBBAO@real_vector3d?$AA@ (0000)
-00258B54 000e:
-	??_C@_0O@FKMKHLDJ@real_vector2d?$AA@ (0000)
-002DCE10 0110:
-	_data_002dce10 (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-#include "memory/byte_swapping.h"
-#include "math/real_math.h"
-
-/* ---------- constants */
-
-/* ---------- macros */
+#include "recorded_animation_definitions.h"
+#include "units.h"
 
 /* ---------- structures */
 
-struct recorded_unit_control
+struct unit_control_data_entry
 {
-	byte byte_field0;
-	byte byte_field1;
-	short word_field2;
-	short word_field4;
-	short version2_field;
-	short version3_field;
-	short unused_field10;
-	real_vector2d vector2d_field12;
-	long long_field20;
-	long version1_field;
-	real_vector3d vector3d_field28;
-	real_vector3d vector3d_field40;
-	real_vector3d vector3d_field52;
-};
-
-struct recorded_animation_control_field
-{
-	struct byte_swap_definition *definition;
+	struct byte_swap_definition *bs_def;
 	long size;
-	long unit_control_offset;
+	long offset;
 };
-
-struct recorded_animation_layout_data
-{
-	byte_swap_code real_vector2d_codes[2];
-	struct byte_swap_definition real_vector2d_definition;
-	byte_swap_code real_vector3d_codes[3];
-	struct byte_swap_definition real_vector3d_definition;
-	long version_table_alignment;
-	struct recorded_animation_control_field version0_fields[10];
-	struct recorded_animation_control_field version1_fields[2];
-	struct recorded_animation_control_field version2_fields[2];
-	struct recorded_animation_control_field version3_fields[2];
-	struct recorded_animation_control_field *fields_by_version[4];
-};
-
-/* ---------- prototypes */
 
 extern struct byte_swap_definition byte_bs_definition;
 extern struct byte_swap_definition word_bs_definition;
@@ -74,115 +23,144 @@ extern struct byte_swap_definition long_bs_definition;
 
 /* ---------- globals */
 
-static struct recorded_animation_layout_data real_vector2d_bs_codes =
+static byte_swap_code real_vector2d_bs_codes[] =
 {
-	{ _4byte, _4byte },
-	{ "real_vector2d", sizeof(real_vector2d), real_vector2d_bs_codes.real_vector2d_codes, BYTE_SWAP_DEFINITION_SIGNATURE, FALSE },
-	{ _4byte, _4byte, _4byte },
-	{ "real_vector3d", sizeof(real_vector3d), real_vector2d_bs_codes.real_vector3d_codes, BYTE_SWAP_DEFINITION_SIGNATURE, FALSE },
-	0, /* the original independently declared version table begins on an 8-byte data boundary */
-	{
-		{ &byte_bs_definition, sizeof(byte), offsetof(struct recorded_unit_control, byte_field0) },
-		{ &byte_bs_definition, sizeof(byte), offsetof(struct recorded_unit_control, byte_field1) },
-		{ &word_bs_definition, sizeof(short), offsetof(struct recorded_unit_control, word_field2) },
-		{ &word_bs_definition, sizeof(short), offsetof(struct recorded_unit_control, word_field4) },
-		{ &word_bs_definition, sizeof(short), NONE },
-		{ &real_vector2d_bs_codes.real_vector2d_definition, sizeof(real_vector2d), offsetof(struct recorded_unit_control, vector2d_field12) },
-		{ &real_vector2d_bs_codes.real_vector3d_definition, sizeof(real_vector3d), offsetof(struct recorded_unit_control, vector3d_field28) },
-		{ &real_vector2d_bs_codes.real_vector3d_definition, sizeof(real_vector3d), offsetof(struct recorded_unit_control, vector3d_field40) },
-		{ &real_vector2d_bs_codes.real_vector3d_definition, sizeof(real_vector3d), offsetof(struct recorded_unit_control, vector3d_field52) },
-		{ NULL, NONE, NONE },
-	},
-	{
-		{ &long_bs_definition, sizeof(long), offsetof(struct recorded_unit_control, version1_field) },
-		{ NULL, NONE, NONE },
-	},
-	{
-		{ &word_bs_definition, sizeof(short), offsetof(struct recorded_unit_control, version2_field) },
-		{ NULL, NONE, NONE },
-	},
-	{
-		{ &word_bs_definition, sizeof(short), offsetof(struct recorded_unit_control, version3_field) },
-		{ NULL, NONE, NONE },
-	},
-	{
-		real_vector2d_bs_codes.version0_fields,
-		real_vector2d_bs_codes.version1_fields,
-		real_vector2d_bs_codes.version2_fields,
-		real_vector2d_bs_codes.version3_fields,
-	},
+	_4byte,
+	_4byte
+};
+
+static struct byte_swap_definition real_vector2d_bs_definition =
+{
+	"real_vector2d",
+	sizeof(real_vector2d),
+	real_vector2d_bs_codes,
+	BYTE_SWAP_DEFINITION_SIGNATURE,
+	FALSE
+};
+
+static byte_swap_code real_vector3d_bs_codes[] =
+{
+	_4byte,
+	_4byte,
+	_4byte
+};
+
+static struct byte_swap_definition real_vector3d_bs_definition =
+{
+	"real_vector3d",
+	sizeof(real_vector3d),
+	real_vector3d_bs_codes,
+	BYTE_SWAP_DEFINITION_SIGNATURE,
+	FALSE
+};
+
+static struct unit_control_data_entry unit_control_v1_map[] =
+{
+	{ &byte_bs_definition, sizeof(char), offsetof(struct unit_control_data, animation_state) },
+	{ &byte_bs_definition, sizeof(char), offsetof(struct unit_control_data, aiming_speed) },
+	{ &word_bs_definition, sizeof(word), offsetof(struct unit_control_data, control_flags) },
+	{ &word_bs_definition, sizeof(short), offsetof(struct unit_control_data, weapon_index) },
+	{ &word_bs_definition, sizeof(short), NONE },
+	{ &real_vector2d_bs_definition, sizeof(real_vector2d), offsetof(struct unit_control_data, throttle) },
+	{ &real_vector3d_bs_definition, sizeof(real_vector3d), offsetof(struct unit_control_data, facing_vector) },
+	{ &real_vector3d_bs_definition, sizeof(real_vector3d), offsetof(struct unit_control_data, aiming_vector) },
+	{ &real_vector3d_bs_definition, sizeof(real_vector3d), offsetof(struct unit_control_data, looking_vector) },
+	{ NULL, NONE, NONE }
+};
+
+static struct unit_control_data_entry unit_control_v2_map[] =
+{
+	{ &long_bs_definition, sizeof(real), offsetof(struct unit_control_data, primary_trigger) },
+	{ NULL, NONE, NONE }
+};
+
+static struct unit_control_data_entry unit_control_v3_map[] =
+{
+	{ &word_bs_definition, sizeof(short), offsetof(struct unit_control_data, grenade_index) },
+	{ NULL, NONE, NONE }
+};
+
+static struct unit_control_data_entry unit_control_v4_map[] =
+{
+	{ &word_bs_definition, sizeof(short), offsetof(struct unit_control_data, zoom_level) },
+	{ NULL, NONE, NONE }
+};
+
+static struct unit_control_data_entry *unit_control_data_map[RECORDED_ANIMATION_UNIT_CONTROL_DATA_VERSION] =
+{
+	unit_control_v1_map,
+	unit_control_v2_map,
+	unit_control_v3_map,
+	unit_control_v4_map
 };
 
 /* ---------- public code */
 
-void recorded_animation_byteswap_unit_control(byte **stream, byte unit_control_data_version)
+void recorded_animation_byteswap_unit_control(
+	char **playback_stream,
+	byte unit_version)
 {
 	short version_index;
 
-	for (version_index = 0; version_index < MAX(unit_control_data_version, 1); version_index++)
+	for (version_index = 0; version_index < MAX(unit_version, 1); version_index++)
 	{
-		struct recorded_animation_control_field *field = real_vector2d_bs_codes.fields_by_version[version_index];
+		struct unit_control_data_entry *entry;
 
-		while (field->size != NONE)
+		for (entry = unit_control_data_map[version_index]; entry->size != NONE; entry++)
 		{
-			byte_swap_data(field->definition, *stream, 1);
-			*stream += field->size;
-			field++;
+			byte_swap_data(entry->bs_def, *playback_stream, 1);
+			*playback_stream += entry->size;
 		}
 	}
+
+	return;
 }
 
 void recorded_animation_initialize_unit_control(
-	struct recorded_unit_control *unit_control,
-	byte **stream,
-	byte unit_control_data_version)
+	struct unit_control_data *control,
+	char const **playback_stream,
+	byte unit_version)
 {
 	short version_index;
 
-	csmemset(unit_control, 0, sizeof(*unit_control));
-	unit_control->version3_field = NONE;
+	memset(control, 0, sizeof(*control));
+	control->zoom_level = NONE;
 
-	for (version_index = 0; version_index < MAX(unit_control_data_version, 1); version_index++)
+	for (version_index = 0; version_index < MAX(unit_version, 1); version_index++)
 	{
-		struct recorded_animation_control_field *field = real_vector2d_bs_codes.fields_by_version[version_index];
+		struct unit_control_data_entry *entry;
 
-		while (field->size != NONE)
+		for (entry = unit_control_data_map[version_index]; entry->size != NONE; entry++)
 		{
-			if (field->unit_control_offset != NONE)
+			if (entry->offset != NONE)
 			{
-				csmemcpy(
-					(byte *)unit_control + field->unit_control_offset,
-					*stream,
-					field->size);
+				memcpy((byte *)control + entry->offset, *playback_stream, entry->size);
 			}
 
-			*stream += field->size;
-			field++;
+			*playback_stream += entry->size;
 		}
 	}
+
+	return;
 }
 
 void recorded_animation_write_unit_control(
-	struct recorded_unit_control const *unit_control,
-	byte **stream,
-	byte unit_control_data_version)
+	struct unit_control_data *control,
+	char **playback_stream,
+	byte unit_version)
 {
 	short version_index;
 
-	for (version_index = 0; version_index < MAX(unit_control_data_version, 1); version_index++)
+	for (version_index = 0; version_index < MAX(unit_version, 1); version_index++)
 	{
-		struct recorded_animation_control_field *field = real_vector2d_bs_codes.fields_by_version[version_index];
+		struct unit_control_data_entry *entry;
 
-		while (field->size != NONE)
+		for (entry = unit_control_data_map[version_index]; entry->size != NONE; entry++)
 		{
-			csmemcpy(
-				*stream,
-				(byte const *)unit_control + field->unit_control_offset,
-				field->size);
-			*stream += field->size;
-			field++;
+			memcpy(*playback_stream, (byte *)control + entry->offset, entry->size);
+			*playback_stream += entry->size;
 		}
 	}
-}
 
-/* ---------- private code */
+	return;
+}

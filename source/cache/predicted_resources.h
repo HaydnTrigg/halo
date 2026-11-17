@@ -12,8 +12,9 @@ header included in hcex build.
 
 enum
 {
-	_predicted_resource_bitmap,
-	_predicted_resource_sound
+	_predicted_resource_bitmap = 0,
+	_predicted_resource_sound,
+	NUMBER_OF_PREDICTED_RESOURCE_TYPES /* fake name */
 };
 
 /* ---------- macros */

@@ -8,6 +8,11 @@ header included in hcex build.
 #define __COLLISION_MODELS_H
 #pragma once
 
+/* ---------- headers */
+
+#include "collision_bsp.h"
+#include "collision_model_definitions.h"
+
 /* ---------- constants */
 
 /* ---------- macros */
@@ -20,6 +25,22 @@ struct collision_model_instance
 	const struct collision_model *model;
 	const byte *region_permutation_indices;
 	const struct real_matrix4x3 *matrices;
+};
+
+struct collision_model_test_vector_result
+{
+	short node_index;
+	short region_index;
+	short bsp_index;
+	struct collision_bsp_test_vector_result bsp_result;
+};
+
+struct collision_model_test_pill_result
+{
+	short node_index;
+	short region_index;
+	short bsp_index;
+	struct collision_bsp_test_pill_result bsp_result;
 };
 
 /* ---------- prototypes/COLLISION_MODELS.C */
@@ -64,5 +85,12 @@ void render_debug_collision_model(struct collision_model_instance const *instanc
 /* ---------- globals */
 
 /* ---------- public code */
+
+__inline short collision_model_get_material_type(
+	struct collision_model const *model,
+	short material_index)
+{
+	return material_index != NONE ? TAG_BLOCK_GET_ELEMENT(&model->resistance.materials, material_index, struct damage_material)->type : NONE;
+}
 
 #endif // __COLLISION_MODELS_H

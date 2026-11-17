@@ -62,16 +62,14 @@ symbols in this file:
 
 /* ---------- headers */
 
-#include "cseries/cseries.h"
-#include "cseries/errors.h"
-#include "memory/data.h"
-#include "objects/objects.h"
-#include "objects/reference_lists.h"
-#include "saved games/game_state.h"
-#include "scenario/scenario.h"
+#include "cseries.h"
 #include "cluster_partitions.h"
-#include "structure_bsp_definitions.h"
-#include "structures/structures.h"
+#include "structures.h"
+#include "objects.h"
+#include "collision_bsp.h"
+#include "render.h"
+#include "game_state.h"
+#include "reference_lists.h"
 
 /* ---------- constants */
 

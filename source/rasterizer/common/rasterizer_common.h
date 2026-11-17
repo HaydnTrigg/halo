@@ -6,10 +6,6 @@ RASTERIZER_COMMON.H
 #define __RASTERIZER_COMMON_H
 #pragma once
 
-/* ---------- structures */
-
-struct game_globals_rasterizer_data;
-
 /* ---------- prototypes/RASTERIZER_COMMON.C */
 
 void rasterizer_initialize_for_new_map(void);

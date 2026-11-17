@@ -1,5 +1,5 @@
 #ifndef lint
-static char tif_error_rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_error.c,v 1.13 92/02/10 19:06:34 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_error.c,v 1.13 92/02/10 19:06:34 sam Exp $";
 #endif
 
 /*
@@ -33,33 +33,35 @@ static char tif_error_rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_e
 #include "tiffioP.h"
 #include "prototypes.h"
 
-static void defaultHandler(
-	char *module,
-	char *fmt,
-	va_list ap)
+static void
+DECLARE3(defaultHandler, char*, module, char*, fmt, va_list, ap)
 {
 	if (module != NULL)
 		fprintf(stderr, "%s: ", module);
 	vfprintf(stderr, fmt, ap);
 	fprintf(stderr, ".\n");
-
-	return;
 }
 
 static TIFFErrorHandler _errorHandler = defaultHandler;
 
-TIFFErrorHandler TIFFSetErrorHandler(
-	TIFFErrorHandler handler)
+TIFFErrorHandler
+DECLARE1(TIFFSetErrorHandler, TIFFErrorHandler, handler)
 {
 	TIFFErrorHandler prev = _errorHandler;
 	_errorHandler = handler;
 	return (prev);
 }
 
-void TIFFError(
-	char *module,
-	char *fmt,
-	...)
+void
+#if USE_PROTOTYPES
+TIFFError(char *module, char *fmt, ...)
+#else
+/*VARARGS2*/
+TIFFError(module, fmt, va_alist)
+	char *module;
+	char *fmt;
+	va_dcl
+#endif
 {
 	if (_errorHandler) {
 		va_list ap;
@@ -67,6 +69,4 @@ void TIFFError(
 		(*_errorHandler)(module, fmt, ap);
 		va_end(ap);
 	}
-
-	return;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char data_002db040[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_read.c,v 1.43 92/02/10 19:06:41 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_read.c,v 1.43 92/02/10 19:06:41 sam Exp $";
 #endif
 
 /*
@@ -32,43 +32,31 @@ static char data_002db040[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_rea
  */
 #include "tiffioP.h"
 
-static int TIFFSeek(
-	TIFF *tif,
-	u_int row,
-	u_int sample);
-static int TIFFReadRawStrip1(
-	TIFF *tif,
-	u_int strip,
-	u_char *buf,
-	u_int size,
-	char module[]);
-static int TIFFReadRawTile1(
-	TIFF *tif,
-	u_int tile,
-	u_char *buf,
-	u_int size,
-	char module[]);
-static int TIFFFillStrip(
-	TIFF *tif,
-	u_int strip);
-static int TIFFFillTile(
-	TIFF *tif,
-	u_int tile);
-static int TIFFStartStrip(
-	TIFF *tif,
-	u_int strip);
-static int TIFFStartTile(
-	TIFF *tif,
-	u_int tile);
-static int TIFFCheckRead(
-	TIFF *tif,
-	int tiles);
+#if USE_PROTOTYPES
+static	TIFFSeek(TIFF *, u_int, u_int);
+static	int TIFFReadRawStrip1(TIFF *, u_int, u_char *, u_int, char []);
+static	int TIFFReadRawTile1(TIFF *, u_int, u_char *, u_int, char []);
+static	TIFFFillStrip(TIFF *, u_int);
+static	TIFFFillTile(TIFF *, u_int);
+static	TIFFStartStrip(TIFF *, u_int);
+static	TIFFStartTile(TIFF *, u_int);
+static	TIFFCheckRead(TIFF *, int);
+#else
+static	TIFFSeek();
+static	int TIFFReadRawStrip1();
+static	int TIFFReadRawTile1();
+static	TIFFFillStrip();
+static	TIFFFillTile();
+static	TIFFStartStrip();
+static	TIFFStartTile();
+static	TIFFCheckRead();
+#endif
 
-int TIFFReadScanline(
-	TIFF *tif,
-	u_char *buf,
-	u_int row,
-	u_int sample)
+/*VARARGS3*/
+TIFFReadScanline(tif, buf, row, sample)
+	register TIFF *tif;
+	u_char *buf;
+	u_int row, sample;
 {
 	int e;
 
@@ -87,12 +75,13 @@ int TIFFReadScanline(
 /*
  * Seek to a random row+sample in a file.
  */
-static int TIFFSeek(
-	TIFF *tif,
-	u_int row,
-	u_int sample)
+static
+/*VARARGS2*/
+TIFFSeek(tif, row, sample)
+	register TIFF *tif;
+	u_int row, sample;
 {
-	TIFFDirectory *td = &tif->tif_dir;
+	register TIFFDirectory *td = &tif->tif_dir;
 	int strip;
 
 	if (row >= td->td_imagelength) {	/* out of range */
@@ -146,11 +135,11 @@ static int TIFFSeek(
  * Read a strip of data and decompress the specified
  * amount into the user-supplied buffer.
  */
-int TIFFReadEncodedStrip(
-	TIFF *tif,
-	u_int strip,
-	u_char *buf,
-	u_int size)
+TIFFReadEncodedStrip(tif, strip, buf, size)
+	TIFF *tif;
+	u_int strip;
+	u_char *buf;
+	u_int size;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	u_int stripsize = TIFFStripSize(tif);
@@ -178,11 +167,11 @@ int TIFFReadEncodedStrip(
 /*
  * Read a strip of data from the file.
  */
-int TIFFReadRawStrip(
-	TIFF *tif,
-	u_int strip,
-	u_char *buf,
-	u_int size)
+TIFFReadRawStrip(tif, strip, buf, size)
+	TIFF *tif;
+	u_int strip;
+	u_char *buf;
+	u_int size;
 {
 	static char module[] = "TIFFReadRawStrip";
 	TIFFDirectory *td = &tif->tif_dir;
@@ -201,12 +190,13 @@ int TIFFReadRawStrip(
 	return (TIFFReadRawStrip1(tif, strip, buf, bytecount, module));
 }
 
-static int TIFFReadRawStrip1(
-	TIFF *tif,
-	u_int strip,
-	u_char *buf,
-	u_int size,
-	char module[])
+static int
+TIFFReadRawStrip1(tif, strip, buf, size, module)
+	TIFF *tif;
+	u_int strip;
+	u_char *buf;
+	u_int size;
+	char module[];
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -241,9 +231,10 @@ static int TIFFReadRawStrip1(
  * The data buffer is expanded, as necessary, to
  * hold the strip's data.
  */
-static int TIFFFillStrip(
-	TIFF *tif,
-	u_int strip)
+static
+TIFFFillStrip(tif, strip)
+	TIFF *tif;
+	u_int strip;
 {
 	static char module[] = "TIFFFillStrip";
 	TIFFDirectory *td = &tif->tif_dir;
@@ -265,7 +256,7 @@ static int TIFFFillStrip(
 		 * mapped read-only).
 		 */
 		if ((tif->tif_flags & TIFF_MYBUFFER) && tif->tif_rawdata)
-			free(tif->tif_rawdata);
+			match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_read.c", 259, tif->tif_rawdata);
 		tif->tif_flags &= ~TIFF_MYBUFFER;
 		if (td->td_stripoffset[strip] + bytecount > tif->tif_size) {
 			/*
@@ -320,13 +311,11 @@ static int TIFFFillStrip(
  * Read and decompress a tile of data.  The
  * tile is selected by the (x,y,z,s) coordinates.
  */
-int TIFFReadTile(
-	TIFF *tif,
-	u_char *buf,
-	u_long x,
-	u_long y,
-	u_long z,
-	u_int s)
+TIFFReadTile(tif, buf, x, y, z, s)
+	TIFF *tif;
+	u_char *buf;
+	u_long x, y, z;
+	u_int s;
 {
 	u_int tile;
 
@@ -347,11 +336,11 @@ int TIFFReadTile(
  * Read a tile of data and decompress the specified
  * amount into the user-supplied buffer.
  */
-int TIFFReadEncodedTile(
-	TIFF *tif,
-	u_int tile,
-	u_char *buf,
-	u_int size)
+TIFFReadEncodedTile(tif, tile, buf, size)
+	TIFF *tif;
+	u_int tile;
+	u_char *buf;
+	u_int size;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 	int tilesize = tif->tif_tilesize;
@@ -375,11 +364,11 @@ int TIFFReadEncodedTile(
 /*
  * Read a tile of data from the file.
  */
-int TIFFReadRawTile(
-	TIFF *tif,
-	u_int tile,
-	u_char *buf,
-	u_int size)
+TIFFReadRawTile(tif, tile, buf, size)
+	TIFF *tif;
+	u_int tile;
+	u_char *buf;
+	u_int size;
 {
 	static char module[] = "TIFFReadRawTile";
 	TIFFDirectory *td = &tif->tif_dir;
@@ -398,12 +387,13 @@ int TIFFReadRawTile(
 	return (TIFFReadRawTile1(tif, tile, buf, bytecount, module));
 }
 
-static int TIFFReadRawTile1(
-	TIFF *tif,
-	u_int tile,
-	u_char *buf,
-	u_int size,
-	char module[])
+static int
+TIFFReadRawTile1(tif, tile, buf, size, module)
+	TIFF *tif;
+	u_int tile;
+	u_char *buf;
+	u_int size;
+	char module[];
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -438,9 +428,10 @@ static int TIFFReadRawTile1(
  * The data buffer is expanded, as necessary, to
  * hold the tile's data.
  */
-static int TIFFFillTile(
-	TIFF *tif,
-	u_int tile)
+static
+TIFFFillTile(tif, tile)
+	TIFF *tif;
+	u_int tile;
 {
 	static char module[] = "TIFFFillTile";
 	TIFFDirectory *td = &tif->tif_dir;
@@ -462,7 +453,7 @@ static int TIFFFillTile(
 		 * mapped read-only).
 		 */
 		if ((tif->tif_flags & TIFF_MYBUFFER) && tif->tif_rawdata)
-			free(tif->tif_rawdata);
+			match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_read.c", 456, tif->tif_rawdata);
 		tif->tif_flags &= ~TIFF_MYBUFFER;
 		if (td->td_stripoffset[tile] + bytecount > tif->tif_size) {
 			tif->tif_curtile = -1;		/* unknown state */
@@ -511,17 +502,17 @@ static int TIFFFillTile(
  * large enough to hold any individual strip of
  * raw data.
  */
-int TIFFReadBufferSetup(
-	TIFF *tif,
-	char *bp,
-	u_int size)
+int
+TIFFReadBufferSetup(tif, bp, size)
+	TIFF *tif;
+	char *bp;
+	u_int size;
 {
 	static char module[] = "TIFFReadBufferSetup";
 
 	if (tif->tif_rawdata) {
 		if (tif->tif_flags & TIFF_MYBUFFER)
-			debug_free(tif->tif_rawdata,
-			    "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_read.c", 515);
+			match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_read.c", 515, tif->tif_rawdata);
 		tif->tif_rawdata = NULL;
 	}
 	if (bp) {
@@ -530,8 +521,7 @@ int TIFFReadBufferSetup(
 		tif->tif_flags &= ~TIFF_MYBUFFER;
 	} else {
 		tif->tif_rawdatasize = roundup(size, 1024);
-		tif->tif_rawdata = (char *)debug_malloc(tif->tif_rawdatasize, 0,
-		    "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_read.c", 524);
+		tif->tif_rawdata = match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_read.c", 524, tif->tif_rawdatasize);
 		tif->tif_flags |= TIFF_MYBUFFER;
 	}
 	if (tif->tif_rawdata == NULL) {
@@ -548,9 +538,10 @@ int TIFFReadBufferSetup(
  * Set state to appear as if a
  * strip has just been read in.
  */
-static int TIFFStartStrip(
-	TIFF *tif,
-	u_int strip)
+static
+TIFFStartStrip(tif, strip)
+	register TIFF *tif;
+	u_int strip;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -565,9 +556,10 @@ static int TIFFStartStrip(
  * Set state to appear as if a
  * tile has just been read in.
  */
-static int TIFFStartTile(
-	TIFF *tif,
-	u_int tile)
+static
+TIFFStartTile(tif, tile)
+	register TIFF *tif;
+	u_int tile;
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
@@ -583,9 +575,10 @@ static int TIFFStartTile(
 	return (tif->tif_predecode == NULL || (*tif->tif_predecode)(tif));
 }
 
-static int TIFFCheckRead(
-	TIFF *tif,
-	int tiles)
+static
+TIFFCheckRead(tif, tiles)
+	TIFF *tif;
+	int tiles;
 {
 	if (tif->tif_mode == O_WRONLY) {
 		TIFFError(tif->tif_name, "File not open for reading");

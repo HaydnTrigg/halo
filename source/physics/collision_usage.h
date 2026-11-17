@@ -8,9 +8,6 @@ header included in hcex build.
 #define __COLLISION_USAGE_H
 #pragma once
 
-#include "cseries/cseries.h"
-#include <xtl.h>
-
 /* ---------- constants */
 
 enum
@@ -58,39 +55,38 @@ enum
 	MAXIMUM_COLLISION_USER_STACK_DEPTH = 32,
 };
 
+enum
+{
+	_collision_period_game_tick = 0,
+	_collision_period_render_frame,
+	_collision_period_player_input,
+	NUMBER_OF_COLLISION_TIME_PERIODS,
+};
+
 /* ---------- macros */
 
-/* ---------- structures */
+#define match_collision_log_begin_user(file, line, user) do { match_assert(file, line, global_current_collision_user_depth < MAXIMUM_COLLISION_USER_STACK_DEPTH); global_current_collision_users[global_current_collision_user_depth++] = (user); } while (FALSE) /* fake name */
+#define match_collision_log_end_user(file, line) do { match_assert(file, line, global_current_collision_user_depth > 1); global_current_collision_user_depth--; } while (FALSE) /* fake name */
+
+#define collision_log_begin_user(user) match_collision_log_begin_user(__FILE__, __LINE__, user) /* fake name */
+#define collision_log_end_user() match_collision_log_end_user(__FILE__, __LINE__) /* fake name */
 
 /* ---------- prototypes/COLLISION_USAGE.C */
 
-void collision_log_initialize(
-	void);
-void collision_log_enable(
-	boolean enable);
-void collision_log_render(
-	void);
-void collision_log_start_time(
-	LARGE_INTEGER *start_time);
-void collision_log_end_time(
-	short collision_function,
-	__int64 end_time);
-void collision_log_usage(
-	short collision_function);
-void collision_log_display(
-	char *buffer);
-void collision_log_begin_period(
-	short time_period);
-void collision_log_continue_period(
-	short time_period);
-void collision_log_end_period(
-	void);
+void collision_log_initialize(void);
+void collision_log_enable(boolean enable);
+void collision_log_render(void);
+void collision_log_start_time(__int64 *start_time);
+void collision_log_end_time(short collision_function, __int64 start_time);
+void collision_log_usage(short collision_function);
+void collision_log_display(char *buffer);
+void collision_log_begin_period(short time_period);
+void collision_log_continue_period(short time_period);
+void collision_log_end_period(void);
 
 /* ---------- globals */
 
 extern short global_current_collision_user_depth;
 extern short global_current_collision_users[MAXIMUM_COLLISION_USER_STACK_DEPTH];
-
-/* ---------- public code */
 
 #endif // __COLLISION_USAGE_H

@@ -10,11 +10,13 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "math/real_math.h"
+#include "ai.h"
+#include "ai_constants.h"
+#include "ai_scenario_definitions.h"
 
 /* ---------- constants */
 
-enum ai_communication_type
+enum
 {
 	_ai_communication_death = 0,
 	_ai_communication_killing_spree,
@@ -76,43 +78,40 @@ enum ai_communication_type
 	NUMBER_OF_AI_COMMUNICATION_TYPES,
 };
 
-enum ai_communication_hostility
+enum
 {
-	_comm_hostility_none = 0,
-	_comm_hostility_self,
-	_comm_hostility_friend,
-	_comm_hostility_enemy,
-	_comm_hostility_traitor,
-	NUMBER_OF_AI_COMMUNICATION_HOSTILITIES,
+	_ai_conversation_status_none = 0, /* fake name */
+	_ai_conversation_status_trying_to_begin, /* fake name */
+	_ai_conversation_status_waiting_for_participants, /* fake name */
+	_ai_conversation_status_playing, /* fake name */
+	_ai_conversation_status_waiting_to_advance, /* fake name */
+	_ai_conversation_status_unable_to_begin, /* fake name */
+	_ai_conversation_status_finished_successfully, /* fake name */
+	_ai_conversation_status_finished_prematurely, /* fake name */
+	NUMBER_OF_AI_CONVERSATION_STATUSES, /* fake name */
 };
 
 /* ---------- macros */
 
-#define ai_conversation_header_get(index) \
-	((struct conversation_datum *)datum_get(conversation_data, (index)))
+#define conversation_get(index) ((struct conversation_datum *)datum_get(conversation_data, (index))) /* fake name */
 
 /* ---------- structures */
 
-struct ai_information_data;
-struct ai_information_packet;
-
-/* The independently mapped prefix of the 0x64-byte conversation datum. */
 struct conversation_datum
 {
 	short identifier;
-	short scenario_conversation_index;
+	short conversation_definition_index;
 	boolean scripted;
 	boolean any_line_spoken;
 	boolean begun;
 	boolean finished;
 	boolean waiting_to_advance;
 	boolean told_to_advance;
-	byte reserved0A[2];
 	long creation_time;
 	long triggering_player_unit_index;
 	unsigned long participant_bitmask;
-	short dialogue_indices[8];
-	long actor_indices[8];
+	short dialogue_indices[MAXIMUM_PARTICIPANTS_PER_CONVERSATION];
+	long actor_indices[MAXIMUM_PARTICIPANTS_PER_CONVERSATION];
 	short line_index;
 	short line_participant_index;
 	short line_delay_timer;
@@ -129,78 +128,29 @@ struct conversation_datum
 
 /* ---------- prototypes/AI_COMMUNICATION.C */
 
-void ai_communication_initialize(
-	void);
-void ai_communication_initialize_for_new_map(
-	void);
-void ai_communication_dispose(
-	void);
-void ai_communication_dispose_from_old_map(
-	void);
-void ai_communication_packet_new(
-	struct ai_information_packet *information);
-void ai_communication_started(
-	long unit_index,
-	short priority,
-	short vocalization_type,
-	struct ai_information_packet *information);
-void ai_communication_notify(
-	long unit_index,
-	short priority,
-	short vocalization_type,
-	struct ai_information_packet *information);
-void ai_communication_finished(
-	long unit_index,
-	short priority,
-	short vocalization_type,
-	boolean reply_to_player,
-	long preselected_reply_actor_index,
-	struct ai_information_packet *information);
-void actor_communication_update(
-	long actor_index);
-void ai_conversation_update(
-	void);
-void actor_handle_communication(
-	long actor_index,
-	long prop_index,
-	struct ai_information_packet *information);
-short actor_communication_team(
-	long actor_index);
-short ai_conversation_status(
-	short scenario_conversation_index);
-boolean ai_conversation(
-	short scenario_conversation_index,
-	boolean scripted);
-short ai_conversation_line(
-	short scenario_conversation_index);
-void ai_conversation_advance(
-	short scenario_conversation_index);
-void ai_conversation_finish(
-	long conversation_index,
-	boolean abort,
-	boolean force);
-void ai_conversation_stop(
-	short scenario_conversation_index);
-void ai_conversation_actor_deleted(
-	long actor_index);
-real ai_communication_get_player_rating(
-	long unit_index,
-	boolean test_line_of_sight,
-	long *unit_index_reference,
-	real *distance_reference);
-short ai_communication_get_type_by_name(
-	char const *name);
-void ai_conversation_unit_died(
-	long unit_index,
-	boolean deleted);
-void ai_communication_event(
-	short communication_type,
-	long subject_unit_index,
-	long cause_unit_index,
-	short hostility,
-	short damage_type,
-	short information_type,
-	struct ai_information_data *information_data);
+void ai_communication_initialize(void);
+void ai_communication_dispose(void);
+void ai_communication_initialize_for_new_map(void);
+void ai_communication_dispose_from_old_map(void);
+char const *ai_communication_get_type_name(short communication_type);
+short ai_communication_get_type_by_name(char const *name);
+void ai_communication_packet_new(struct ai_information_packet *information);
+void ai_communication_event(short communication_type, long subject_unit_index, long cause_unit_index, short hostility, short damage_type, short information_type, struct ai_information_data *information_data);
+void ai_communication_started(long unit_index, short priority, short vocalization_type, struct ai_information_packet *ai_information);
+void ai_communication_notify(long unit_index, short priority, short vocalization_type, struct ai_information_packet *ai_information);
+void ai_communication_finished(long unit_index, short priority, short vocalization_type, boolean reply_to_player, long preselected_reply_actor_index, struct ai_information_packet *ai_information);
+void actor_communication_update(long actor_index);
+short actor_communication_team(long actor_index);
+real ai_communication_get_player_rating(long unit_index, boolean test_line_of_sight, long *unit_index_reference, real *distance_reference);
+boolean ai_conversation(short conversation_definition_index, boolean scripted);
+short ai_conversation_status(short conversation_definition_index);
+short ai_conversation_line(short conversation_definition_index);
+void ai_conversation_stop(short conversation_definition_index);
+void ai_conversation_advance(short conversation_definition_index);
+void ai_conversation_update(void);
+void ai_conversation_actor_deleted(long actor_index);
+void ai_conversation_unit_died(long unit_index, boolean deleted);
+void ai_conversation_finish(long conversation_index, boolean unable_to_begin, boolean success);
 
 /* ---------- globals */
 

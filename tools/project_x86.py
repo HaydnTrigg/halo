@@ -62,6 +62,7 @@ class Object:
             "asmflags": None,
             "include_dirs": None,
             "defines": None,
+            "pch": None,
         }
         self.options.update(options)
 
@@ -93,6 +94,7 @@ class ProjectConfig:
             "include_dirs": None,
             "headers": None,
             "defines": None,
+            "pch": None,
         }
         self.options.update(options)
 
@@ -321,6 +323,27 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
     n.newline()
 
     ###
+    # Generated headers
+    ###
+    n.comment("Generated headers")
+    generated_include_dir = sln.build_dir / "include"
+    dsp_image_script = sln.tools_dir / "dsp_image.py"
+    dsp_image_header = generated_include_dir / "sound_dsound_xbox_effects_image.h"
+    n.rule(
+        name="dsp_image",
+        command=f"$python {dsp_image_script} $in $out",
+        description="DSP_IMAGE $out",
+        restat=True,
+    )
+    n.build(
+        outputs=dsp_image_header,
+        rule="dsp_image",
+        inputs=sln.baserom,
+        implicit=dsp_image_script,
+    )
+    n.newline()
+
+    ###
     # Helper rule for downloading all tools
     ###
     n.comment("Download all tools")
@@ -334,16 +357,19 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
     ###
     # Build rules
     ###
-    # /showIncludes + deps=msvc so a header edit rebuilds its dependents.
-    # Without it ninja sees only the .c file, and every object built before a
-    # header change silently stays stale - which is how a render_sky.c
-    # regression survived five days of "whole-board" measurements.
-    n.rule(
-        name="cl",
-        command=f"{wrapper_cmd}xbox/bin/vc7/CL.Exe /nologo /c /showIncludes $cflags /Fo$out $in",
-        description="CL $out",
-        deps="msvc",
-    )
+    if is_windows():
+        n.rule(
+            name="cl",
+            command=f"{wrapper_cmd}xbox/bin/vc7/CL.Exe /nologo /c /showIncludes $cflags /Fo$out $in",
+            description="CL $out",
+            deps="msvc",
+        )
+    else:
+        n.rule(
+            name="cl",
+            command=f"{wrapper_cmd}xbox/bin/vc7/CL.Exe /nologo /c $cflags /Fo$out $in",
+            description="CL $out",
+        )
     # Genuine vendor-assembly CRT helpers need MASM's ordinary aligned .text
     # section. A naked C/inline-asm wrapper emits different COFF flags.
     ml_path = sln.ml_path or find_masm()
@@ -366,6 +392,8 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
     for proj in sln.projects:
         objects: Dict[str, Object] = proj.resolve(sln)
         n.comment(proj.name)
+        pch = proj.options["pch"]
+        pch_path = sln.build_dir / "base" / f"{proj.name}.pch"
         proj_base_object_targets: List[Path] = []
         for obj_name, obj in objects.items():
             split_object_targets.append(obj.split_obj_path)
@@ -384,12 +412,26 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
                     cflags.extend(obj.options["cflags"])
                     cflags.extend([f"/D{define}" for define in obj.options["defines"]])
                     cflags.extend([f"/I\"{path}\"" for path in obj.options["include_dirs"]])
+                    cflags.append(f"/I\"{generated_include_dir}\"")
+                    implicit: List[Path] = [wrapper_implicit] if wrapper_implicit else []
+                    implicit.append(dsp_image_header)
+                    implicit_outputs: List[Path] = []
+                    if pch and obj.options["pch"] is not False:
+                        header = pch["header"]
+                        cflags.append(f"/FI{header}")
+                        if Path(pch["source"]) == obj.file_path:
+                            cflags.extend([f"/Yc{header}", f"/Fp{pch_path}"])
+                            implicit_outputs.append(pch_path)
+                        else:
+                            cflags.extend([f"/Yu{header}", f"/Fp{pch_path}"])
+                            implicit.append(pch_path)
                     n.build(
                         outputs=obj.base_obj_path,
                         rule="cl",
                         variables={"cflags": cflags},
                         inputs=obj.file_path,
-                        implicit=wrapper_implicit,
+                        implicit=implicit,
+                        implicit_outputs=implicit_outputs,
                     )
         base_object_targets.extend(proj_base_object_targets)
         n.build(
@@ -643,7 +685,10 @@ def generate_solution(sln: SolutionConfig) -> None:
         
         vc_macros: List[str] = proj.options["defines"]
         vc_include_dirs: List[Path] = [relative_root / path for path in proj.options["include_dirs"] or []]
-        vc_params = BuildParams(macros=vc_macros, include_directories=vc_include_dirs, output=f"{proj.name}_build")
+        vc_forced: List[Path] = []
+        if proj.options["pch"]:
+            vc_forced.append(relative_root / Path(proj.options["pch"]["source"]).with_name(proj.options["pch"]["header"]))
+        vc_params = BuildParams(macros=vc_macros, include_directories=vc_include_dirs, forced_includes=vc_forced, output=f"{proj.name}_build")
         vc_proj.add_build_params(str(vc_config), vc_params)
         
         vc_sources: List[Path] = []

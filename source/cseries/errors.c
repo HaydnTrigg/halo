@@ -1,87 +1,43 @@
 /*
 ERRORS.C
-
-symbols in this file:
-0007D860 0010:
-	_errors_dispose (0000)
-0007D870 0010:
-	_errors_output_to_debug_file (0000)
-0007D880 0010:
-	_errors_overflow_suppression_enable (0000)
-0007D890 0010:
-	_error_get (0000)
-0007D8A0 0130:
-	_write_to_error_file (0000)
-0007D9D0 0010:
-	_code_0007d9d0 (0000)
-0007D9E0 0020:
-	_errors_initialize (0000)
-0007DA00 0270:
-	_error (0000)
-0007DC70 0020:
-	_errors_handle (0000)
-0007DC90 0010:
-	_errors_clear (0000)
-00257C68 0015:
-	??_C@_0BF@MNPBN@?$DMTIME?5UNAVAILABLE?$DO?5?5?$AA@ (0000)
-00257C80 0020:
-	??_C@_0CA@LIAFHJOP@?$CF02d?4?$CF02d?4?$CF02d?5?$CF02d?3?$CF02d?3?$CF02d?5?5?$AA@ (0000)
-00257CA0 000d:
-	??_C@_0N@MOPBLMMO@d?3?2debug?4txt?$AA@ (0000)
-00257CB0 0018:
-	??_C@_0BI@PFJPDCFK@reference?5address?3?5?$CFx?$AN?6?$AA@ (0000)
-00257CC8 0019:
-	??_C@_0BJ@KFNJAEPH@reference?5function?3?5?$CFs?$AN?6?$AA@ (0000)
-00257CE4 0015:
-	??_C@_0BF@OBFANCCF@_write_to_error_file?$AA@ (0000)
-00257D00 0054:
-	??_C@_0FE@EJMLAPFK@halobeta?5xbox?501?401?414?42342?$CICACH@ (0000)
-00257D54 0005:
-	??_C@_04FMMHFHOO@?$AN?6?$AN?6?$AA@ (0000)
-00257D60 0047:
-	??_C@_0EH@CIPINKCN@prefix_size?5?$CL?5copy_size?5?$CL?5new_si@ (0000)
-00257DA8 0023:
-	??_C@_0CD@BCANCLDH@?$FL?4?4?4too?5many?5errors?5to?5print?4?4?4?$FN@ (0000)
-00257DCC 002c:
-	??_C@_0CM@FGNANMFL@too?5many?5errors?0?5only?5printing?5t@ (0000)
-00257DF8 003b:
-	??_C@_0DL@DEAPBIIL@priority?$DO?$DN0?5?$CG?$CG?5priority?$DMNUMBER_O@ (0000)
-00257E34 0020:
-	??_C@_0CA@JEDAOIGL@c?3?2halo?2SOURCE?2cseries?2errors?4c?$AA@ (0000)
-002DCD2C 0001:
-	_data_002dcd2c (0000)
-0031DF2C 0010:
-	_bss_0031df2c (0000)
-	_find_all_fucked_up_shit (0008)
-	_fucked_up_shit_count (000c)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-#include "cseries_windows.h"
-#include "errors.h"
-#include "interface/terminal.h"
-
-#include <stdarg.h>
-#include <time.h>
+#include "build_number.h"
+#include "terminal.h"
 
 /* ---------- constants */
+
+enum
+{
+	ERROR_IMMEDIATE_EXIT_CODE = -4998, /* fake name */
+};
 
 /* ---------- macros */
 
 /* ---------- structures */
 
-struct error_suppression_globals
+struct error_global_data
 {
-	long last_error_time;
-	long error_count;
+	boolean delayed;
+	boolean output_to_debug_file;
+	boolean display_state;
+	boolean recursion_lock;
+	boolean overflow_suppression;
+	boolean suppress_all;
+	short message_buffer_size;
+	char message_buffer[ERROR_MESSAGE_BUFFER_MAXIMUM_SIZE];
 };
+
+/* ---------- prototypes */
+
+static void reset_error_state(void);
 
 /* ---------- globals */
 
-static boolean data_002dcd2c = TRUE;
-static struct error_suppression_globals bss_0031df2c = { 0, 0 };
+struct error_global_data error_globals;
 boolean find_all_fucked_up_shit = FALSE;
 long fucked_up_shit_count = 0;
 
@@ -111,7 +67,7 @@ void errors_overflow_suppression_enable(
 	return;
 }
 
-char *error_get(
+char const *error_get(
 	void)
 {
 	return error_globals.message_buffer;
@@ -121,14 +77,16 @@ void write_to_error_file(
 	char *string,
 	boolean date)
 {
+	static boolean first_line = TRUE;
+
 	char line[1024];
 	long time_value;
 
-	if (data_002dcd2c)
+	if (first_line)
 	{
-		data_002dcd2c = FALSE;
+		first_line = FALSE;
 		write_to_error_file("\r\n\r\n", FALSE);
-		write_to_error_file("halobeta xbox 01.01.14.2342(CACHE) ----------------------------------------------\r\n", TRUE);
+		write_to_error_file(BUILD_NAME " " BUILD_STRING "(CACHE) ----------------------------------------------\r\n", TRUE);
 		sprintf(line, "reference function: %s\r\n", "_write_to_error_file");
 		write_to_error_file(line, TRUE);
 		sprintf(line, "reference address: %x\r\n", write_to_error_file);
@@ -138,32 +96,34 @@ void write_to_error_file(
 	if (error_globals.output_to_debug_file)
 	{
 		FILE *handle = fopen("d:\\debug.txt", "a+b");
+
 		if (handle)
 		{
 			if (date)
 			{
-				long timeptr;
-				struct tm *_time;
+				struct tm *time_struct;
 
-				time(&timeptr);
-				_time = localtime(&timeptr);
-				if (_time)
+				time(&time_value);
+				time_struct = localtime(&time_value);
+
+				if (time_struct)
 				{
 					fprintf(
 						handle,
 						"%02d.%02d.%02d %02d:%02d:%02d  ",
-						_time->tm_mon + 1,
-						_time->tm_mday,
-						_time->tm_year % 100,
-						_time->tm_hour,
-						_time->tm_min,
-						_time->tm_sec);
+						time_struct->tm_mon + 1,
+						time_struct->tm_mday,
+						time_struct->tm_year % 100,
+						time_struct->tm_hour,
+						time_struct->tm_min,
+						time_struct->tm_sec);
 				}
 				else
 				{
 					fprintf(handle, "<TIME UNAVAILABLE>  ");
 				}
 			}
+
 			fprintf(handle, "%s", string);
 			fclose(handle);
 		}
@@ -194,35 +154,36 @@ void errors_initialize(
 
 void error(
 	short priority,
-	const char *format,
+	char const *format,
 	...)
 {
-	char string[1024];
-	char *newline;
-	long new_size;
+	char buffer[1024];
 
-	match_assert(
-		"c:\\halo\\SOURCE\\cseries\\errors.c",
-		0x61,
-		priority>=0 && priority<NUMBER_OF_ERROR_MESSAGE_PRIORITIES);
+	match_assert("c:\\halo\\SOURCE\\cseries\\errors.c", 97, priority>=0 && priority<NUMBER_OF_ERROR_MESSAGE_PRIORITIES);
 
 	if (error_globals.overflow_suppression && priority == _error_silent)
 	{
-		long time = system_milliseconds();
+		static long last_error_time = 0;
+		static long error_count = 0;
+		long current_time = system_milliseconds();
+		long error_interval = 900;
+		long maximum_error_count = 10;
 
-		if (time > bss_0031df2c.last_error_time+900)
+		if (current_time > last_error_time + error_interval)
 		{
-			bss_0031df2c.error_count = 0;
+			error_count = 0;
 		}
-		bss_0031df2c.last_error_time = time;
-		if (bss_0031df2c.error_count == 10)
+
+		last_error_time = current_time;
+
+		if (error_count == maximum_error_count)
 		{
-			terminal_printf(
-				global_real_argb_white,
-				"too many errors, only printing to debug.txt");
+			terminal_printf(global_real_argb_white, "too many errors, only printing to debug.txt");
 		}
-		bss_0031df2c.error_count++;
-		if (bss_0031df2c.error_count >= 10)
+
+		error_count++;
+
+		if (error_count >= maximum_error_count)
 		{
 			priority = _error_log;
 		}
@@ -231,6 +192,7 @@ void error(
 	if (!error_globals.recursion_lock)
 	{
 		error_globals.recursion_lock = TRUE;
+
 		if (priority == _error_delayed)
 		{
 			error_globals.delayed = TRUE;
@@ -238,79 +200,57 @@ void error(
 
 		if (format)
 		{
-			va_list argument_list;
+			va_list arglist;
+			long new_size;
 
-			va_start(argument_list, format);
-			vsprintf(string, format, argument_list);
-			va_end(argument_list);
-			csstrcat(string, "\r\n");
+			va_start(arglist, format);
+			vsprintf(buffer, format, arglist);
+			va_end(arglist);
+			strcat(buffer, "\r\n");
 
 			if (priority != _error_log)
 			{
-				terminal_printf(global_real_argb_white, "%s", string);
+				terminal_printf(global_real_argb_white, "%s", buffer);
 			}
-			write_to_error_file(string, TRUE);
 
-			new_size = csstrlen(string);
-			if (error_globals.message_buffer_size+new_size >= ERROR_MESSAGE_BUFFER_MAXIMUM_SIZE)
+			write_to_error_file(buffer, TRUE);
+
+			new_size = strlen(buffer);
+
+			if (error_globals.message_buffer_size + new_size >= ERROR_MESSAGE_BUFFER_MAXIMUM_SIZE)
 			{
-				long old_size;
-				long copy_size;
-				long prefix_size = csstrlen("[...too many errors to print...]\r\n");
-				long offset = prefix_size+1024+new_size;
+				char const *prefix = "[...too many errors to print...]\r\n";
+				long prefix_size = strlen(prefix);
+				char *search_start = error_globals.message_buffer + PIN(prefix_size + new_size + ERROR_MESSAGE_BUFFER_MAXIMUM_SIZE / 2, 0, error_globals.message_buffer_size - 1);
+				char *copy_start = strchr(search_start, '\n');
+				long copy_offset = copy_start == NULL ? error_globals.message_buffer_size : copy_start - error_globals.message_buffer + 1;
+				long copy_size = error_globals.message_buffer_size - copy_offset;
 
-				if (offset < 0)
-				{
-					offset = 0;
-				}
-				else if (offset > error_globals.message_buffer_size-1)
-				{
-					offset = error_globals.message_buffer_size-1;
-				}
+				match_assert("c:\\halo\\SOURCE\\cseries\\errors.c", 191, prefix_size + copy_size + new_size < ERROR_MESSAGE_BUFFER_MAXIMUM_SIZE);
 
-				newline = strchr(error_globals.message_buffer+offset, '\n');
-				if (!newline)
-				{
-					old_size = error_globals.message_buffer_size;
-				}
-				else
-				{
-					old_size = newline-error_globals.message_buffer+1;
-				}
-				copy_size = error_globals.message_buffer_size-old_size;
-				match_assert(
-					"c:\\halo\\SOURCE\\cseries\\errors.c",
-					0xBF,
-					prefix_size + copy_size + new_size < ERROR_MESSAGE_BUFFER_MAXIMUM_SIZE);
-				csstrncpy(
-					error_globals.message_buffer,
-					"[...too many errors to print...]\r\n",
-					prefix_size);
+				strncpy(error_globals.message_buffer, prefix, prefix_size);
+
 				if (copy_size > 0)
 				{
-					csmemmove(
-						error_globals.message_buffer+prefix_size,
-						newline,
-						copy_size);
+					memmove(error_globals.message_buffer + prefix_size, copy_start, copy_size);
 				}
 
-				error_globals.message_buffer[prefix_size+copy_size] = 0;
-				error_globals.message_buffer_size = (short)(prefix_size+copy_size);
+				error_globals.message_buffer[prefix_size + copy_size] = '\0';
+				error_globals.message_buffer_size = (short)(prefix_size + copy_size);
 			}
 
-			if (error_globals.message_buffer_size+new_size < ERROR_MESSAGE_BUFFER_MAXIMUM_SIZE)
+			if (error_globals.message_buffer_size + new_size < ERROR_MESSAGE_BUFFER_MAXIMUM_SIZE)
 			{
-				csstrcpy(
-					error_globals.message_buffer+error_globals.message_buffer_size,
-					string);
+				strcpy(error_globals.message_buffer + error_globals.message_buffer_size, buffer);
 				error_globals.message_buffer_size += (short)new_size;
 			}
 		}
 
 		if (priority == _error_immediate)
 		{
-			system_exit(-4998);
+			system_exit(ERROR_IMMEDIATE_EXIT_CODE);
 		}
+
 		error_globals.recursion_lock = FALSE;
 	}
 

@@ -8,34 +8,29 @@ header included in hcex build.
 #define __SOUND_ENVIRONMENT_DEFINITIONS_H
 #pragma once
 
-/* ---------- headers */
-
-#include "cseries.h"
-#include "math/real_math.h"
-
 /* ---------- constants */
 
 enum
 {
 	SOUND_ENVIRONMENT_TAG = 'snde',
+	SOUND_ENVIRONMENT_VERSION = 1
 };
 
 /* ---------- macros */
 
-#define sound_environment_definition_get(index) \
-	((struct sound_environment_definition *)tag_get(SOUND_ENVIRONMENT_TAG, (index)))
-
+#define sound_environment_get(index) ((index) == NONE ? &default_sound_environment : (struct sound_environment const *)tag_get(SOUND_ENVIRONMENT_TAG, (index))) /* fake name */
+#define sound_environment_try_and_get(index) ((index) == NONE ? (struct sound_environment const *)NULL : sound_environment_get(index)) /* fake name */
 
 /* ---------- structures */
 
-struct sound_environment_definition
+struct sound_environment
 {
-	long unknown;
+	long pad1;
 	short priority;
-	short unused0;
+	word pad2;
 	real room_intensity;
 	real room_intensity_hf;
-	real room_rolloff;
+	real room_rolloff_factor;
 	real decay_time;
 	real decay_hf_ratio;
 	real reflections_intensity;
@@ -45,17 +40,14 @@ struct sound_environment_definition
 	real diffusion;
 	real density;
 	real hf_reference;
-	byte unused1[16];
+	long unused[4];
 };
 
-typedef char verify_sound_environment_definition_size[
-	sizeof(struct sound_environment_definition) == 0x48 ? 1 : -1];
-
-/* ---------- prototypes/EXAMPLE.C */
+/* ---------- prototypes/SOUND_ENVIRONMENT_DEFINITIONS.C */
 
 /* ---------- globals */
 
-extern struct sound_environment_definition const default_sound_environment;
+extern struct sound_environment const default_sound_environment;
 
 /* ---------- public code */
 

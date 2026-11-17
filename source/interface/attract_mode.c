@@ -5,18 +5,20 @@ ATTRACT_MODE.C
 /* ---------- headers */
 
 #include "cseries.h"
-#include "cseries_windows.h"
 #include "attract_mode.h"
-#include "real_math.h"
-#include "cache_files.h"
-#include "bink_playback.h"
 #include "ui_widget.h"
-#include "sound_manager.h"
-#include "international_strings.h"
-#include "files.h"
-#include "errors.h"
-#include "event_manager.h"
+#include "objects.h"
+#include "collision_bsp.h"
+#include "render.h"
 #include "network_game_globals.h"
+#include "unicode.h"
+#include "rasterizer.h"
+#include "input.h"
+#include "sound_manager.h"
+#include "player_profile.h"
+#include "saved_game_files.h"
+#include "game_sound.h"
+#include "bink_playback.h"
 
 /* ---------- constants */
 
@@ -28,12 +30,16 @@ enum
 
 /* ---------- prototypes */
 
+/* random_math.c doesn't appear to have a header? */
+extern unsigned long *get_global_local_random_seed_address(void);
+extern short seed_random_range(unsigned long *seed, short lower_bound, short upper_bound);
+
 /* ---------- globals */
 
-static unsigned long attract_mode_countdown_timer;
-static char bss_00453ae8[128];
+static unsigned long bss_00453ad8 = 0;
+static char bss_00453ae8[128] = {0};
 
-static short data_002e4c84 = NONE;
+short data_002e4c84 = NONE;
 
 /* ---------- public code */
 
@@ -44,7 +50,7 @@ boolean attract_mode_should_start(
 	real progress;
 
 	if (cache_files_precache_in_progress() &&
-		cache_files_precache_map_status(&progress)==1)
+		cache_files_precache_map_status(&progress)==_cached_map_file_success)
 	{
 		cache_files_precache_map_end();
 	}
@@ -58,7 +64,7 @@ boolean attract_mode_should_start(
 		unsigned long current_time = system_milliseconds();
 		unsigned long time_since_last_event = event_manager_time_of_last_event();
 		
-		time_since_last_event = MAX(attract_mode_countdown_timer, time_since_last_event);
+		time_since_last_event = MAX(bss_00453ad8, time_since_last_event);
 		time_elapsed = current_time-time_since_last_event;
 	
 		if (time_elapsed>=ATTRACT_MODE_COUNTDOWN-MUSIC_FADE_TIME)
@@ -88,7 +94,7 @@ boolean attract_mode_should_start(
 void attract_mode_reset_timer(
 	void)
 {
-	attract_mode_countdown_timer = system_milliseconds();
+	bss_00453ad8 = system_milliseconds();
 
 	return;
 }
@@ -159,7 +165,7 @@ const char *attract_mode_get_localized_movie_path(
 			_snprintf(bss_00453ae8, NUMBEROF(bss_00453ae8), "d:\\bink\\attract3%s.bik", language_suffixes[language]);
 			break;
 		default:
-			match_assert("c:\\halo\\SOURCE\\interface\\attract_mode.c", 198, !"unreachable");
+			match_unreachable("c:\\halo\\SOURCE\\interface\\attract_mode.c", 198);
 			break;
 		}
 
@@ -213,7 +219,7 @@ void attract_mode_start(
 
 	if (!bink_playback_active())
 	{
-		attract_mode_countdown_timer = system_milliseconds();
+		bss_00453ad8 = system_milliseconds();
 	}
 
 	return;

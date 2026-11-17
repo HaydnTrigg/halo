@@ -35,62 +35,10 @@ enum
 
 /* ---------- structures */
 
-struct bitmap_data;
-union point2d;
-union real_rectangle2d;
-
 /* ---------- prototypes/INTERFACE.C */
 
-void interface_initialize(
-	void);
-void interface_dispose(
-	void);
-void interface_initialize_for_new_map(
-	void);
-void interface_dispose_from_old_map(
-	void);
-long interface_get_tag_index(
-	short interface_tag_index);
-real_argb_color *interface_get_real_argb_color(
-	short interface_color_table_index,
-	short color_index,
-	real_argb_color *color);
-void interface_set_bitmap_text_draw_mode(
-	short interface_font_index,
-	short style,
-	short justification,
-	unsigned long flags,
-	short color_table_index,
-	short color_index);
-void interface_draw_screen(
-	void);
-void interface_draw_fullscreen_overlays(
-	void);
-void interface_draw_bitmap(
-	struct bitmap_data const *bitmap,
-	union point2d const *point,
-	union real_rectangle2d const *clip,
-	real scale,
-	real theta,
-	real fade);
-void interface_draw_bitmap_modulated(
-	struct bitmap_data const *bitmap,
-	union point2d const *point,
-	union real_rectangle2d const *clip,
-	real scale,
-	real theta,
-	real_argb_color const *modulated_color,
-	short shader_type);
-void interface_draw_bitmap_modulated_p32(
-	struct bitmap_data const *bitmap,
-	union point2d const *point,
-	union real_rectangle2d const *clip,
-	real scale,
-	real theta,
-	pixel32 modulated_color,
-	short shader_type);
-void profile_graph_toggle(
-	char const *graph_name);
+long interface_get_tag_index(short interface_tag_index);
+void interface_set_bitmap_text_draw_mode(short interface_font_index, short style, short justification, unsigned long flags, short color_table_index, short color_index);
 
 /* ---------- globals */
 

@@ -16,39 +16,24 @@ header included in hcex build.
 
 struct bungie_ima_adpcm_header
 {
-	long sample_count;
-	short initial_sample;
-	short unused;
+	long sample_count; /* fake name */
+	short predicted_sample; /* fake name */
+	short step_index; /* fake name */
 };
 
-struct bungie_ima_adpcm_state
+struct ima_adpcm_decompression_state /* fake name */
 {
-	long sample_count;
-	long sample_index;
-	short sample;
-	short step_size_index;
+	long sample_count; /* fake name */
+	long sample_index; /* fake name */
+	short predicted_sample; /* fake name */
+	short step_index; /* fake name */
 };
-
-typedef char verify_bungie_ima_adpcm_header_size[
-	sizeof(struct bungie_ima_adpcm_header) == 0x8 ? 1 : -1];
-typedef char verify_bungie_ima_adpcm_state_size[
-	sizeof(struct bungie_ima_adpcm_state) == 0xC ? 1 : -1];
 
 /* ---------- prototypes/IMA_ADPCM.C */
 
-long compress_ima_adpcm_audio_data(
-	short *input_samples,
-	long input_sample_count,
-	byte *output_data,
-	long output_data_size);
-long decompress_ima_adpcm_audio_data(
-	struct bungie_ima_adpcm_header const *input_header,
-	long input_data_size,
-	short *output_samples,
-	long output_sample_count,
-	struct bungie_ima_adpcm_state *state);
-void byte_swap_bungie_ima_adpcm_header(
-	struct bungie_ima_adpcm_header *header);
+long compress_ima_adpcm_audio_data(short const *samples, long sample_count, byte *buffer, long buffer_size);
+long decompress_ima_adpcm_audio_data(void const *buffer, long buffer_size, short *samples, long maximum_sample_count, struct ima_adpcm_decompression_state *state);
+void byte_swap_bungie_ima_adpcm_header(struct bungie_ima_adpcm_header *header);
 
 /* ---------- globals */
 

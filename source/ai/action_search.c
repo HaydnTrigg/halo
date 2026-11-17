@@ -33,19 +33,11 @@ symbols in this file:
 /* ---------- headers */
 
 #include "cseries.h"
-#include "actions.h"
-
-#include "actor_definitions.h"
 #include "actors.h"
-#include "ai.h"
-#include "ai_communication.h"
-#include "ai_scenario_definitions.h"
 #include "encounters.h"
 #include "props.h"
-#include "scenario/scenario.h"
-#include "scenario/scenario_definitions.h"
-#include "units/units.h"
-#include "math/real_math.h"
+#include "actor_types.h"
+#include "units.h"
 
 /* ---------- constants */
 

@@ -1,23 +1,6 @@
-struct tif_write_data
-{
-	char rcsid[92];
-	char write_scanline[20];
-	char write_encoded_strip[24];
-	char write_raw_strip[20];
-	char write_encoded_tile[24];
-	char write_raw_tile[20];
-	char append_to_strip[18];
-};
-
-static struct tif_write_data data_002db570 = {
-	"$Header: /usr/people/sam/tiff/libtiff/RCS/tif_write.c,v 1.41 92/02/10 19:06:47 sam Exp $",
-	"TIFFWriteScanline",
-	"TIFFWriteEncodedStrip",
-	"TIFFWriteRawStrip",
-	"TIFFWriteEncodedTile",
-	"TIFFWriteRawTile",
-	"TIFFAppendToStrip"
-};
+#ifndef lint
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_write.c,v 1.41 92/02/10 19:06:47 sam Exp $";
+#endif
 
 /*
  * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
@@ -52,8 +35,6 @@ static struct tif_write_data data_002db570 = {
 #include <stdio.h>
 #include <assert.h>
 
-#define write _write
-
 #define	STRIPINCR	20		/* expansion factor on strip array */
 
 #if USE_PROTOTYPES
@@ -74,10 +55,11 @@ TIFFWriteScanline(tif, buf, row, sample)
 	u_char *buf;
 	u_int row, sample;
 {
+	static char module[] = "TIFFWriteScanline";
 	register TIFFDirectory *td;
 	int strip, status, imagegrew = 0;
 
-	if (!TIFFWriteCheck(tif, 0, data_002db570.write_scanline))
+	if (!TIFFWriteCheck(tif, 0, module))
 		return (-1);
 	/*
 	 * Handle delayed allocation of data buffer.  This
@@ -85,7 +67,7 @@ TIFFWriteScanline(tif, buf, row, sample)
 	 * directory information).
 	 */
 	if ((tif->tif_flags & TIFF_BUFFERSETUP) == 0) {
-		if (!TIFFBufferSetup(tif, data_002db570.write_scanline))
+		if (!TIFFBufferSetup(tif, module))
 			return (-1);
 		tif->tif_flags |= TIFF_BUFFERSETUP;
 	}
@@ -146,7 +128,7 @@ TIFFWriteScanline(tif, buf, row, sample)
 	 * write (so that the strips array will be fully
 	 * allocated above).
 	 */
-	if (strip >= td->td_nstrips && !TIFFGrowStrips(tif, 1, data_002db570.write_scanline))
+	if (strip >= td->td_nstrips && !TIFFGrowStrips(tif, 1, module))
 		return (-1);
 	/*
 	 * Ensure the write is either sequential or at the
@@ -197,12 +179,13 @@ TIFFWriteEncodedStrip(tif, strip, data, cc)
 	u_char *data;
 	u_int cc;
 {
+	static char module[] = "TIFFWriteEncodedStrip";
 	TIFFDirectory *td = &tif->tif_dir;
 
-	if (!TIFFWriteCheck(tif, 0, data_002db570.write_encoded_strip))
+	if (!TIFFWriteCheck(tif, 0, module))
 		return (-1);
 	if (strip >= td->td_nstrips) {
-		TIFFError(data_002db570.write_encoded_strip, "%s: Strip %d out of range, max %d",
+		TIFFError(module, "%s: Strip %d out of range, max %d",
 		    tif->tif_name, strip, td->td_nstrips);
 		return (-1);
 	}
@@ -212,7 +195,7 @@ TIFFWriteEncodedStrip(tif, strip, data, cc)
 	 * info.
 	 */
 	if ((tif->tif_flags & TIFF_BUFFERSETUP) == 0) {
-		if (!TIFFBufferSetup(tif, data_002db570.write_encoded_strip))
+		if (!TIFFBufferSetup(tif, module))
 			return (-1);
 		tif->tif_flags |= TIFF_BUFFERSETUP;
 	}
@@ -251,10 +234,12 @@ TIFFWriteRawStrip(tif, strip, data, cc)
 	u_char *data;
 	u_int cc;
 {
-	if (!TIFFWriteCheck(tif, 0, data_002db570.write_raw_strip))
+	static char module[] = "TIFFWriteRawStrip";
+
+	if (!TIFFWriteCheck(tif, 0, module))
 		return (-1);
 	if (strip >= tif->tif_dir.td_nstrips) {
-		TIFFError(data_002db570.write_raw_strip, "%s: Strip %d out of range, max %d",
+		TIFFError(module, "%s: Strip %d out of range, max %d",
 		    tif->tif_name, strip, tif->tif_dir.td_nstrips);
 		return (-1);
 	}
@@ -301,13 +286,14 @@ TIFFWriteEncodedTile(tif, tile, data, cc)
 	u_char *data;
 	u_int cc;
 {
+	static char module[] = "TIFFWriteEncodedTile";
 	TIFFDirectory *td;
 
-	if (!TIFFWriteCheck(tif, 1, data_002db570.write_encoded_tile))
+	if (!TIFFWriteCheck(tif, 1, module))
 		return (-1);
 	td = &tif->tif_dir;
 	if (tile >= td->td_nstrips) {
-		TIFFError(data_002db570.write_encoded_tile, "%s: Tile %d out of range, max %d",
+		TIFFError(module, "%s: Tile %d out of range, max %d",
 		    tif->tif_name, tile, td->td_nstrips);
 		return (-1);
 	}
@@ -317,7 +303,7 @@ TIFFWriteEncodedTile(tif, tile, data, cc)
 	 * directory information).
 	 */
 	if ((tif->tif_flags & TIFF_BUFFERSETUP) == 0) {
-		if (!TIFFBufferSetup(tif, data_002db570.write_encoded_tile))
+		if (!TIFFBufferSetup(tif, module))
 			return (-1);
 		tif->tif_flags |= TIFF_BUFFERSETUP;
 	}
@@ -371,10 +357,12 @@ TIFFWriteRawTile(tif, tile, data, cc)
 	u_char *data;
 	u_int cc;
 {
-	if (!TIFFWriteCheck(tif, 1, data_002db570.write_raw_tile))
+	static char module[] = "TIFFWriteRawTile";
+
+	if (!TIFFWriteCheck(tif, 1, module))
 		return (-1);
 	if (tile >= tif->tif_dir.td_nstrips) {
-		TIFFError(data_002db570.write_raw_tile, "%s: Tile %d out of range, max %d",
+		TIFFError(module, "%s: Tile %d out of range, max %d",
 		    tif->tif_name, tile, tif->tif_dir.td_nstrips);
 		return (-1);
 	}
@@ -399,17 +387,17 @@ TIFFSetupStrips(tif)
 	if (td->td_planarconfig == PLANARCONFIG_SEPARATE)
 		td->td_nstrips *= td->td_samplesperpixel;
 	td->td_stripoffset = (u_long *)
-	    debug_malloc(td->td_nstrips * sizeof (u_long), 0, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 390);
+	    match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 390, td->td_nstrips * sizeof (u_long));
 	td->td_stripbytecount = (u_long *)
-	    debug_malloc(td->td_nstrips * sizeof (u_long), 0, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 392);
+	    match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 392, td->td_nstrips * sizeof (u_long));
 	if (td->td_stripoffset == NULL || td->td_stripbytecount == NULL)
 		return (0);
 	/*
 	 * Place data at the end-of-file
 	 * (by setting offsets to zero).
 	 */
-	csmemset((char *)td->td_stripoffset, 0, td->td_nstrips * sizeof (u_long));
-	csmemset((char *)td->td_stripbytecount, 0, td->td_nstrips * sizeof (u_long));
+	bzero((char *)td->td_stripoffset, td->td_nstrips * sizeof (u_long));
+	bzero((char *)td->td_stripbytecount, td->td_nstrips * sizeof (u_long));
 	TIFFSetFieldBit(tif, FIELD_STRIPOFFSETS);
 	TIFFSetFieldBit(tif, FIELD_STRIPBYTECOUNTS);
 	return (1);
@@ -493,7 +481,7 @@ TIFFBufferSetup(tif, module)
 	 */
 	if (size < 8*1024)
 		size = 8*1024;
-	tif->tif_rawdata = (char *)debug_malloc(size, 0, "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 484);
+	tif->tif_rawdata = match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 484, size);
 	if (tif->tif_rawdata == NULL) {
 		TIFFError(module, "%s: No space for output buffer",
 		    tif->tif_name);
@@ -516,18 +504,19 @@ TIFFGrowStrips(tif, delta, module)
 {
 	TIFFDirectory *td = &tif->tif_dir;
 
-	td->td_stripoffset = (u_long *)debug_realloc(td->td_stripoffset,
-	    (td->td_nstrips + delta) * sizeof (u_long), "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 509);
-	td->td_stripbytecount = (u_long *)debug_realloc(td->td_stripbytecount,
-	    (td->td_nstrips + delta) * sizeof (u_long), "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 511);
+	assert(td->td_planarconfig == PLANARCONFIG_CONTIG);
+	td->td_stripoffset = (u_long *)match_realloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 509, td->td_stripoffset,
+	    (td->td_nstrips + delta) * sizeof (u_long));
+	td->td_stripbytecount = (u_long *)match_realloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_write.c", 511, td->td_stripbytecount,
+	    (td->td_nstrips + delta) * sizeof (u_long));
 	if (td->td_stripoffset == NULL || td->td_stripbytecount == NULL) {
 		td->td_nstrips = 0;
 		TIFFError(module, "%s: No space to expand strip arrays",
 		    tif->tif_name);
 		return (0);
 	}
-	csmemset((char *)td->td_stripoffset + td->td_nstrips, 0, delta*sizeof (u_long));
-	csmemset((char *)td->td_stripbytecount + td->td_nstrips, 0, delta*sizeof (u_long));
+	bzero(td->td_stripoffset+td->td_nstrips, delta*sizeof (u_long));
+	bzero(td->td_stripbytecount+td->td_nstrips, delta*sizeof (u_long));
 	td->td_nstrips += delta;
 	return (1);
 }
@@ -546,13 +535,15 @@ TIFFAppendToStrip(tif, strip, data, cc)
 	u_int cc;
 {
 	TIFFDirectory *td = &tif->tif_dir;
+	static char module[] = "TIFFAppendToStrip";
+
 	if (td->td_stripoffset[strip] == 0 || tif->tif_curoff == 0) {
 		/*
 		 * No current offset, set the current strip.
 		 */
 		if (td->td_stripoffset[strip] != 0) {
 			if (!SeekOK(tif->tif_fd, td->td_stripoffset[strip])) {
-				TIFFError(data_002db570.append_to_strip,
+				TIFFError(module,
 				    "%s: Seek error at scanline %d",
 				    tif->tif_name, tif->tif_row);
 				return (0);
@@ -563,7 +554,7 @@ TIFFAppendToStrip(tif, strip, data, cc)
 		tif->tif_curoff = td->td_stripoffset[strip];
 	}
 	if (!WriteOK(tif->tif_fd, data, cc)) {
-		TIFFError(data_002db570.append_to_strip, "%s: Write error at scanline %d",
+		TIFFError(module, "%s: Write error at scanline %d",
 		    tif->tif_name, tif->tif_row);
 		return (0);
 	}

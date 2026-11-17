@@ -10,32 +10,45 @@ header included in hcex build.
 
 /* ---------- constants */
 
+enum
+{
+	__pack_pad = 0,
+	__pack_char,
+	__pack_short,
+	__pack_long,
+	__pack_int64,
+	__pack_string,
+	__pack_data,
+	__pack_array,
+	__pack_fixed_data,
+	__pack_end,
+	NUMBER_OF_PACKET_FIELD_TYPES,
+};
+
 /* ---------- macros */
 
 /* ---------- structures */
 
-struct data_packet_definition;
+struct data_packet_field
+{
+	short type;
+	short count;
+	short first_version;
+	short last_version;
+	short size;
+};
 
-/* ---------- prototypes/DATA_PACKETS.C */
+struct data_packet_definition
+{
+	char const *name;
+	unsigned long flags;
+	short size;
+	short version;
+	struct data_packet_field *fields;
+	boolean initialized_flag;
+};
 
-void data_packet_verify(
-	struct data_packet_definition *packet_definition);
-
-boolean data_packet_encode(
-	struct data_packet_definition *packet_definition,
-	long packet_version,
-	void const *decoded_packet,
-	void *encoded_packet,
-	short *encoded_packet_size,
-	short maximum_buffer_size);
-
-boolean data_packet_decode(
-	struct data_packet_definition *packet_definition,
-	void const *encoded_packet,
-	short encoded_packet_size,
-	void *decoded_packet,
-	short *packet_version,
-	short *decoded_packet_size);
+/* ---------- prototypes/EXAMPLE.C */
 
 /* ---------- globals */
 

@@ -8,7 +8,9 @@ header included in hcex build.
 #define __RANDOM_NUMBERS_H
 #pragma once
 
-#include "bungie_net/common/64bit_math.h"
+/* ---------- headers */
+
+#include "64bit_math.h"
 
 /* ---------- constants */
 
@@ -16,16 +18,13 @@ header included in hcex build.
 
 /* ---------- structures */
 
-/* ---------- prototypes/EXAMPLE.C */
+/* ---------- prototypes/RANDOM_NUMBERS.C */
+
+unsigned long randomrange(unsigned long min, unsigned long max);
+void randomrange64(struct qword_value const *min, struct qword_value const *max, struct qword_value *result);
 
 /* ---------- globals */
 
 /* ---------- public code */
-
-long randomrange(long min, long max);
-void randomrange64(
-	struct qword_value const *min,
-	struct qword_value const *max,
-	struct qword_value *result);
 
 #endif // __RANDOM_NUMBERS_H

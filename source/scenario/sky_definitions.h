@@ -8,44 +8,46 @@ header included in hcex build.
 #define __SKY_DEFINITIONS_H
 #pragma once
 
-/* ---------- headers */
-
-#include "tag_files/tag_files.h"
-
 /* ---------- constants */
 
-#define SKY_DEFINITION_TAG 'sky '
+enum
+{
+	SKY_TAG = 'sky ',
+	SKY_VERSION = 1
+};
 
 /* ---------- macros */
 
-#define sky_definition_get(index) ((struct sky *)tag_get(SKY_DEFINITION_TAG, (index)))
+#define sky_definition_get(index) ((struct sky *)tag_get(SKY_TAG, index)) /* fake name */
 
 /* ---------- structures */
 
 struct sky_atmospheric_fog
 {
 	real_rgb_color color;
-	byte unused0C[8];
+	real unused[2];
 	real maximum_density;
-	real start_distance;
-	real opaque_distance;
+	real z_near;
+	real z_far;
 };
-
-typedef char sky_atmospheric_fog_size_assert[
-	sizeof(struct sky_atmospheric_fog) == 0x20 ? 1 : -1];
 
 struct sky
 {
-	byte unused00[0x58];
+	struct tag_reference model;				// model
+	struct tag_reference animation_graph;	// animation_graph
+	long unused[6];
+	real_rgb_color radiosity_indoor_ambient_color;
+	real radiosity_indoor_ambient_power;
+	real_rgb_color radiosity_outdoor_ambient_color;
+	real radiosity_outdoor_ambient_power;
 	struct sky_atmospheric_fog outdoor_fog;
 	struct sky_atmospheric_fog indoor_fog;
-	struct tag_reference indoor_fog_screen;
+	struct tag_reference indoor_fog_plane;	// fog_definition
+	long unused2[1];
+	struct tag_block shader_functions;		// sky_shader_function
+	struct tag_block animations;			// sky_animation
+	struct tag_block lights;				// sky_light
 };
-
-typedef char sky_indoor_fog_offset_assert[
-	offsetof(struct sky, indoor_fog) == 0x78 ? 1 : -1];
-typedef char sky_indoor_fog_screen_offset_assert[
-	offsetof(struct sky, indoor_fog_screen) == 0x98 ? 1 : -1];
 
 /* ---------- prototypes/EXAMPLE.C */
 

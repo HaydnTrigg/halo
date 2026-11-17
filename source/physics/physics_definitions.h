@@ -10,26 +10,73 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "math/real_math.h"
-#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
 enum
 {
-	POINT_PHYSICS_DEFINITION_TAG = 'phys',
-	POINT_PHYSICS_DEFINITION_VERSION = 1,
+	PHYSICS_DEFINITION_TAG = 'phys',
+	PHYSICS_DEFINITION_VERSION = 4,
+	MAXIMUM_POWERED_MASS_POINTS_PER_PHYSICS = 32,
+	MAXIMUM_MASS_POINTS_PER_PHYSICS = 32,
+};
+
+enum
+{
+	_physics_inertial_matrix = 0,
+	_physics_inertial_matrix_inverse,
+	MAXIMUM_PHYSICS_INERTIAL_MATRICES,
+};
+
+enum
+{
+	_powered_mass_point_ground_friction_bit = 0,
+	_powered_mass_point_water_friction_bit,
+	_powered_mass_point_air_friction_bit,
+	_powered_mass_point_water_lift_bit,
+	_powered_mass_point_air_lift_bit,
+	_powered_mass_point_thrust_bit,
+	_powered_mass_point_antigrav_bit,
+	NUMBER_OF_POWERED_MASS_POINT_DEFINITION_FLAGS,
+};
+
+enum
+{
+	_friction_type_point = 0,
+	_friction_type_forward,
+	_friction_type_left,
+	_friction_type_up,
+	NUMBER_OF_FRICTION_TYPES,
+};
+
+enum
+{
+	_mass_point_metallic_bit = 0,
+	NUMBER_OF_MASS_POINT_DEFINITION_FLAGS,
 };
 
 /* ---------- macros */
 
-#define physics_definition_get(index) ((struct physics_definition *)tag_get(POINT_PHYSICS_DEFINITION_TAG, index))
+#define physics_definition_get(index) ((struct physics_definition *)tag_get(PHYSICS_DEFINITION_TAG, index))
 
 /* ---------- structures */
 
+struct powered_mass_point_definition
+{
+	char name[TAG_STRING_LENGTH+1];
+	unsigned long flags;
+	real antigrav_strength;
+	real antigrav_offset;
+	real antigrav_height;
+	real antigrav_damp_fraction;
+	real antigrav_normal_k1;
+	real antigrav_normal_k0;
+	real unused[17];
+};
+
 struct mass_point_definition
 {
-	char name[32];
+	char name[TAG_STRING_LENGTH+1];
 	short powered_mass_point_index;
 	short model_node_index;
 	unsigned long flags;
@@ -45,7 +92,7 @@ struct mass_point_definition
 	real friction_parallel_scale;
 	real friction_perpendicular_scale;
 	real radius;
-	byte reserved6C[0x14];
+	real unused[5];
 };
 
 struct physics_definition
@@ -75,13 +122,6 @@ struct physics_definition
 	struct tag_block powered_mass_points;
 	struct tag_block mass_points;
 };
-
-typedef char mass_point_definition_size_assert[
-	sizeof(struct mass_point_definition) == 0x80 ? 1 : -1];
-typedef char mass_point_definition_position_offset_assert[
-	offsetof(struct mass_point_definition, position) == 0x38 ? 1 : -1];
-typedef char mass_point_definition_radius_offset_assert[
-	offsetof(struct mass_point_definition, radius) == 0x68 ? 1 : -1];
 
 /* ---------- prototypes/EXAMPLE.C */
 

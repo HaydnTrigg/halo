@@ -50,11 +50,13 @@ symbols in this file:
 
 /* ---------- headers */
 
-#include "cseries/cseries.h"
-#include "cseries/errors.h"
-#include "ai/ai.h"
-#include "game/game_allegiance.h"
-#include "saved games/game_state.h"
+#include "cseries.h"
+#include "cheats.h"
+#include "game.h"
+#include "game_engine.h"
+#include "ai.h"
+#include "network_game_globals.h"
+#include "game_state.h"
 
 /* ---------- constants */
 

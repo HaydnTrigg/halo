@@ -10,45 +10,50 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "tag_files/tag_groups.h"
+#include "shader_definitions.h"
 
 /* ---------- constants */
 
 enum
 {
-	DECAL_GROUP_TAG = 'deca',
-};
-
-enum decal_definition_flag
-{
-	_decal_definition_geometry_inherited_by_next_decal_in_chain_bit,
-	_decal_definition_color_interpolate_in_hsv_bit,
-	_decal_definition_color_interpolate_along_farthest_hue_path_bit,
-	_decal_definition_no_random_rotation_bit,
-	_decal_definition_water_effect_bit,
-	_decal_definition_SAPIEN_ONLY_snap_to_axis_bit,
-	_decal_definition_SAPIEN_ONLY_incremental_counter_bit,
-	_decal_definition_animation_loop_bit,
-	_decal_definition_preserve_aspect_bit,
-	NUMBER_OF_DECAL_DEFINITION_FLAGS
-};
-
-enum decal_type
-{
-	_decal_type_scratch,
-	_decal_type_splatter,
-	_decal_type_burn,
-	_decal_type_painted_sign,
-	NUMBER_OF_DECAL_TYPES
+	DECAL_DEFINITION_TAG = 'deca'
 };
 
 /* ---------- macros */
 
-#define decal_definition_get(index) ((struct decal_definition *)tag_get(DECAL_GROUP_TAG, (index)))
+#define decal_definition_get(index) ((struct decal_definition *)tag_get(DECAL_DEFINITION_TAG, (index)))
 
 /* ---------- structures */
 
-struct decal_definition;
+struct decal_definition
+{
+	unsigned short flags;
+	short type;
+	short layer;
+	unsigned short pad1;
+	struct tag_reference next_decal_in_chain;
+	real radius_lower_bounds;
+	real radius_upper_bounds;
+	long unused1[3];
+	real intensity_lower_bounds;
+	real intensity_upper_bounds;
+	real_rgb_color color_lower_bounds;
+	real_rgb_color color_upper_bounds;
+	long unused2[3];
+	short animation_loop_frame_index;
+	short animation_speed;
+	long unused3[7];
+	real lifetime_lower_bounds;
+	real lifetime_upper_bounds;
+	real decay_time_lower_bounds;
+	real decay_time_upper_bounds;
+	long unused5[3];
+	struct shader_decal shader;
+	real runtime_maximum_sprite_extent;
+	unsigned short runtime_incremental_counter;
+	unsigned short pad2;
+	long unused6[2];
+};
 
 /* ---------- prototypes/EXAMPLE.C */
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char data_002dac80[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_getimage.c,v 1.8 92/03/11 09:19:10 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_getimage.c,v 1.8 92/03/11 09:19:10 sam Exp $";
 #endif
 
 /*
@@ -35,52 +35,31 @@ static char data_002dac80[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_get
 #include "tiffcompat.h"
 #include "prototypes.h"
 
-extern void *debug_malloc(unsigned int, int, const char *, long);
-extern void debug_free(void *, const char *, long);
-
-#define TIF_GETIMAGE_FILE "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c"
-
 typedef	u_char RGBvalue;
 
-static u_long width, height;
-static float D4 = { 0 };
-static float D3 = { 0 };
-static float D2 = { 0 };
-static float D1 = { 0 };
-static u_long **PALmap = { 0 };
-static u_long **BWmap = { 0 };
-static float *refBlackWhite = { 0 };
-static float *YCbCrCoeffs = { 0 };
-static u_short YCbCrVertSampling = { 0 };
-static u_short YCbCrHorizSampling = { 0 };
-static char *filename = { 0 };
-static int stoponerr = { 0 };
-static u_short *bluecmap = { 0 };
-static u_short *greencmap = { 0 };
-static u_short *redcmap = { 0 };
-static u_short orientation = { 0 };
-static u_short photometric = { 0 };
-static u_short samplesperpixel = { 0 };
-static u_short bitspersample = { 0 };
+static	u_long width, height;		/* image width & height */
+static	u_short bitspersample;
+static	u_short samplesperpixel;
+static	u_short photometric;
+static	u_short orientation;
+/* colormap for pallete images */
+static	u_short *redcmap, *greencmap, *bluecmap;
+static	int stoponerr;			/* stop on read error */
+static	char *filename;
+/* YCbCr support */
+static	u_short YCbCrHorizSampling;
+static	u_short YCbCrVertSampling;
+static	float *YCbCrCoeffs;
+static	float *refBlackWhite;
 
-/* January anonymous-symbol map, recovered from exact bodies and relocation
- * call graphs against the authentic libtiff 1.8 source above:
- * 00058910 checkcmap                 00059df0 pickTileContigCase
- * 00058a20 makebwmap                 00059f10 pickTileSeparateCase
- * 00058c40 makecmap                  00059f50 gtTileContig
- * 00058f80 put8bitcmaptile           0005a0e0 gtTileSeparate
- * 00059010 put4bitcmaptile           0005a320 gtStripContig
- * 000590b0 put2bitcmaptile           0005a4b0 gtStripSeparate
- * 00059180 put1bitcmaptile           0005a6f0 gt
- * 000592d0 putgreytile
- * 00059a60 initYCbCrConversion
- * 00059ab0 putRGBContigYCbCrClump
- * 00059c80 putcontig8bitYCbCrtile
- */
+static	u_long **BWmap;
+static	u_long **PALmap;
 
 static	int gt();
-static	int makebwmap();
-static	int makecmap();
+// halo decomp add
+static	int makebwmap(RGBvalue *);
+static	int makecmap(u_short *, u_short *, u_short *);
+// halo decomp end
 
 TIFFReadRGBAImage(tif, rwidth, rheight, raster, stop)
 	TIFF *tif;
@@ -136,9 +115,9 @@ TIFFReadRGBAImage(tif, rwidth, rheight, raster, stop)
 	PALmap = NULL;
 	ok = gt(tif, rwidth, height, raster + (rheight-height)*rwidth);
 	if (BWmap)
-		debug_free((char *)BWmap, TIF_GETIMAGE_FILE, 125);
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 125, (char *)BWmap);
 	if (PALmap)
-		debug_free((char *)PALmap, TIF_GETIMAGE_FILE, 127);
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 127, (char *)PALmap);
 	return (ok);
 }
 
@@ -192,8 +171,7 @@ gt(tif, w, h, raster)
 		register int x, range;
 
 		range = maxsamplevalue - minsamplevalue;
-		Map = (RGBvalue *)debug_malloc((range + 1) * sizeof (RGBvalue), 0,
-		    TIF_GETIMAGE_FILE, 181);
+		Map = (RGBvalue *)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 181, (range + 1) * sizeof (RGBvalue));
 		if (Map == NULL) {
 			TIFFError(filename,
 			    "No space for photometric conversion table");
@@ -214,7 +192,7 @@ gt(tif, w, h, raster)
 			if (!makebwmap(Map))
 				return (0);
 			/* no longer need Map, free it */
-			debug_free((char *)Map, TIF_GETIMAGE_FILE, 202);
+			match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 202, (char *)Map);
 			Map = NULL;
 		}
 		break;
@@ -260,7 +238,7 @@ gt(tif, w, h, raster)
 		    gtStripContig(tif, raster, Map, h, w);
 	}
 	if (Map)
-		debug_free((char *)Map, TIF_GETIMAGE_FILE, 248);
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 248, (char *)Map);
 	return (e);
 }
 
@@ -328,8 +306,7 @@ gtTileContig(tif, raster, Map, h, w)
 	put = pickTileContigCase(Map);
 	if (put == 0)
 		return (0);
-	buf = (u_char *)debug_malloc(TIFFTileSize(tif), 0,
-	    TIF_GETIMAGE_FILE, 316);
+	buf = (u_char *)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 316, TIFFTileSize(tif));
 	if (buf == 0) {
 		TIFFError(filename, "No space for tile buffer");
 		return (0);
@@ -359,7 +336,7 @@ gtTileContig(tif, raster, Map, h, w)
 		}
 		y += (orientation == ORIENTATION_TOPLEFT ? -nrow : nrow);
 	}
-	debug_free(buf, TIF_GETIMAGE_FILE, 346);
+	match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 346, buf);
 	return (1);
 }
 
@@ -398,8 +375,7 @@ gtTileSeparate(tif, raster, Map, h, w)
 	if (put == 0)
 		return (0);
 	tilesize = TIFFTileSize(tif);
-	buf = (u_char *)debug_malloc(3*tilesize, 0,
-	    TIF_GETIMAGE_FILE, 376);
+	buf = (u_char *)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 376, 3*tilesize);
 	if (buf == 0) {
 		TIFFError(filename, "No space for tile buffer");
 		return (0);
@@ -435,7 +411,7 @@ gtTileSeparate(tif, raster, Map, h, w)
 		}
 		y += (orientation == ORIENTATION_TOPLEFT ? -nrow : nrow);
 	}
-	debug_free(buf, TIF_GETIMAGE_FILE, 412);
+	match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 412, buf);
 	return (1);
 }
 
@@ -463,8 +439,7 @@ gtStripContig(tif, raster, Map, h, w)
 	put = pickTileContigCase(Map);
 	if (put == 0)
 		return (0);
-	buf = (u_char *)debug_malloc(TIFFStripSize(tif), 0,
-	    TIF_GETIMAGE_FILE, 440);
+	buf = (u_char *)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 440, TIFFStripSize(tif));
 	if (buf == 0) {
 		TIFFError(filename, "No space for strip buffer");
 		return (0);
@@ -483,7 +458,7 @@ gtStripContig(tif, raster, Map, h, w)
 		(*put)(raster + y*w, buf, Map, w, nrow, fromskew, toskew);
 		y += (orientation == ORIENTATION_TOPLEFT ? -nrow : nrow);
 	}
-	debug_free(buf, TIF_GETIMAGE_FILE, 459);
+	match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 459, buf);
 	return (1);
 }
 
@@ -511,16 +486,13 @@ gtStripSeparate(tif, raster, Map, h, w)
 	int fromskew, toskew;
 
 	stripsize = TIFFStripSize(tif);
-	r = buf = (u_char *)debug_malloc(3*stripsize, 0,
-	    TIF_GETIMAGE_FILE, 487);
+	r = buf = (u_char *)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 487, 3*stripsize);
 	if (buf == 0)
 		return (0);
 	g = r + stripsize;
 	b = g + stripsize;
 	put = pickTileSeparateCase(Map);
 	if (put == 0) {
-		/* BUG (original): buf is leaked on this error path. A corrected build
-		 * should debug_free(buf, TIF_GETIMAGE_FILE, 517) before returning. */
 		TIFFError(filename, "Can not handle format");
 		return (0);
 	}
@@ -544,7 +516,7 @@ gtStripSeparate(tif, raster, Map, h, w)
 		(*put)(raster + y*w, r, g, b, Map, w, nrow, fromskew, toskew);
 		y += (orientation == ORIENTATION_TOPLEFT ? -nrow : nrow);
 	}
-	debug_free(buf, TIF_GETIMAGE_FILE, 517);
+	match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 517, buf);
 	return (1);
 }
 
@@ -557,26 +529,25 @@ gtStripSeparate(tif, raster, Map, h, w)
  * pixel values simply by indexing into the table with one
  * number.
  */
+// halo decomp add
 static
+// halo decomp end
 makebwmap(Map)
 	RGBvalue *Map;
 {
 	register int i;
 	int nsamples = 8 / bitspersample;
 	register u_long *p;
-	register u_long **bwmap;
 
-	bwmap = (u_long **)debug_malloc(
-	    256*sizeof (u_long *)+(256*nsamples*sizeof(u_long)), 0,
-	    TIF_GETIMAGE_FILE, 538);
-	BWmap = bwmap;
-	if (bwmap == NULL) {
+	BWmap = (u_long **)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 538,
+	    256*sizeof (u_long *)+(256*nsamples*sizeof(u_long)));
+	if (BWmap == NULL) {
 		TIFFError(filename, "No space for B&W mapping table");
 		return (0);
 	}
-	p = (u_long *)(bwmap + 256);
+	p = (u_long *)(BWmap + 256);
 	for (i = 0; i < 256; i++) {
-		bwmap[i] = p;
+		BWmap[i] = p;
 		switch (bitspersample) {
 			register RGBvalue c;
 #define	GREY(x)	c = Map[x]; *p++ = PACK(c,c,c);
@@ -616,7 +587,9 @@ makebwmap(Map)
  * pixel values simply by indexing into the table with one
  * number.
  */
+// halo decomp add
 static
+// halo decomp end
 makecmap(rmap, gmap, bmap)
 	u_short *rmap, *gmap, *bmap;
 {
@@ -624,9 +597,8 @@ makecmap(rmap, gmap, bmap)
 	int nsamples = 8 / bitspersample;
 	register u_long *p;
 
-	PALmap = (u_long **)debug_malloc(
-	    256*sizeof (u_long *)+(256*nsamples*sizeof(u_long)), 0,
-	    TIF_GETIMAGE_FILE, 593);
+	PALmap = (u_long **)match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_getimage.c", 593,
+	    256*sizeof (u_long *)+(256*nsamples*sizeof(u_long)));
 	if (PALmap == NULL) {
 		TIFFError(filename, "No space for Palette mapping table");
 		return (0);
@@ -736,15 +708,10 @@ put8bitcmaptile(cp, pp, Map, w, h, fromskew, toskew)
 	u_long w, h;
 	int fromskew, toskew;
 {
-	register u_long **palmap;
-
-	if (h > 0) {
-		palmap = PALmap;
-		while (h-- > 0) {
-			UNROLL8(w,, *cp++ = palmap[*pp++][0]);
-			cp += toskew;
-			pp += fromskew;
-		}
+	while (h-- > 0) {
+		UNROLL8(w,, *cp++ = PALmap[*pp++][0]);
+		cp += toskew;
+		pp += fromskew;
 	}
 }
 
@@ -822,17 +789,12 @@ putgreytile(cp, pp, Map, w, h, fromskew, toskew)
 	u_long w, h;
 	int fromskew, toskew;
 {
-	register u_long **bwmap;
-
-	if (h > 0) {
-		bwmap = BWmap;
-		while (h-- > 0) {
-			register u_long x;
-			for (x = w; x-- > 0;)
-				*cp++ = bwmap[*pp++][0];
-			cp += toskew;
-			pp += fromskew;
-		}
+	while (h-- > 0) {
+		register u_long x;
+		for (x = w; x-- > 0;)
+			*cp++ = BWmap[*pp++][0];
+		cp += toskew;
+		pp += fromskew;
 	}
 }
 
@@ -1038,21 +1000,16 @@ putRGBseparate16bittile(cp, br, bg, bb, Map, w, h, fromskew, toskew)
 #define	LumaGreen	YCbCrCoeffs[1]
 #define	LumaBlue	YCbCrCoeffs[2]
 
+static	float D1, D2;
+static	float D3, D4;
+
 static void
 initYCbCrConversion()
 {
-	float one_over_luma_green;
-	float product;
-
 	D1 = 2 - 2*LumaRed;
-	one_over_luma_green = 1.0f / LumaGreen;
-	product = one_over_luma_green*LumaRed;
-	D2 = product*D1;
+	D2 = D1*LumaRed / LumaGreen;
 	D3 = 2 - 2*LumaBlue;
-	product = one_over_luma_green*LumaBlue;
-	D4 = product*D2;
-
-	return;
+	D4 = D2*LumaBlue / LumaGreen;
 }
 
 static void
@@ -1083,8 +1040,6 @@ putRGBContigYCbCrClump(cp, pp, cw, ch, w, n, fromskew, toskew)
 		cp += w+toskew;
 		pp += fromskew;
 	}
-
-	return;
 }
 #undef LumaBlue
 #undef LumaGreen

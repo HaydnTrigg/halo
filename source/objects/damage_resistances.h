@@ -10,19 +10,67 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
+
+enum
+{
+	_damage_part_gut = 0,
+	_damage_part_chest,
+	_damage_part_head,
+	_damage_part_left_shoulder,
+	_damage_part_left_arm,
+	_damage_part_left_leg,
+	_damage_part_left_foot,
+	_damage_part_right_shoulder,
+	_damage_part_right_arm,
+	_damage_part_right_leg,
+	_damage_part_right_foot,
+	NUMBER_OF_DAMAGE_PARTS,
+};
+
+enum
+{
+	_damage_resistance_takes_shield_damage_for_children_bit = 0,
+	_damage_resistance_takes_body_damage_for_children_bit,
+	_damage_resistance_always_shields_friendly_damage_bit,
+	_damage_resistance_children_take_area_damage_bit,
+	_damage_resistance_parent_never_takes_body_damage_for_us_bit,
+	_damage_resistance_only_hurt_by_explosives_bit,
+	_damage_resistance_only_hurt_while_occupied_bit,
+	NUMBER_OF_DAMAGE_RESISTANCE_FLAGS,
+};
+
+enum
+{
+	_damage_material_head_bit = 0,
+	NUMBER_OF_DAMAGE_MATERIAL_FLAGS,
+};
+
+enum
+{
+	_object_region_lives_until_object_dies_bit = 0,
+	_object_region_forces_object_to_die_bit,
+	_object_region_dies_when_object_dies_bit,
+	_object_region_dies_when_object_is_damaged_bit,
+	_object_region_missing_when_shield_is_zero_bit,
+	_object_region_inhibits_melee_attack_bit,
+	_object_region_inhibits_ranged_attack_bit,
+	_object_region_inhibits_walking_bit,
+	_object_region_forces_drop_weapon_bit,
+	_object_region_head_destroyed_scream_bit,
+	NUMBER_OF_DAMAGE_REGION_FLAGS,
+};
 
 /* ---------- macros */
 
 /* ---------- structures */
 
-struct damage_resistance_material
+struct damage_material
 {
-	char name[TAG_STRING_LENGTH+1];
+	char name[32];
 	unsigned long flags;
-	short material_type;
+	short type;
 	word pad;
 	real shield_leak_fraction;
 	real shield_damage_multiplier;
@@ -31,14 +79,16 @@ struct damage_resistance_material
 	long body_unused[2];
 };
 
-typedef char damage_resistance_material_size_assert[
-	sizeof(struct damage_resistance_material) == 0x48 ? 1 : -1];
-typedef char damage_resistance_material_type_offset_assert[
-	offsetof(struct damage_resistance_material, material_type) == 0x24 ? 1 : -1];
-typedef char damage_resistance_material_shield_leak_fraction_offset_assert[
-	offsetof(struct damage_resistance_material, shield_leak_fraction) == 0x28 ? 1 : -1];
-typedef char damage_resistance_material_body_damage_multiplier_offset_assert[
-	offsetof(struct damage_resistance_material, body_damage_multiplier) == 0x3C ? 1 : -1];
+struct damage_region
+{
+	char name[TAG_STRING_LENGTH+1];
+	unsigned long flags;
+	long pad;
+	real damage_threshold;
+	long unused[3];
+	struct tag_reference destroyed_effect;
+	struct tag_block permutations;
+};
 
 struct damage_resistance
 {
@@ -81,8 +131,8 @@ struct damage_resistance
 	unsigned long unused2[2];
 	real runtime_shield_recharge_velocity;
 	unsigned long unused[28];
-	struct tag_block materials;	// damage_resistance_material
-	struct tag_block regions;
+	struct tag_block materials;		// damage_material
+	struct tag_block regions;		// damage_region
 	struct tag_block modifiers;
 };
 

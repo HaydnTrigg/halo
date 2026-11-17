@@ -1,5 +1,5 @@
 #ifndef lint
-static char tif_thunder_rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_thunder.c,v 1.19 92/02/10 19:06:46 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_thunder.c,v 1.19 92/02/10 19:06:46 sam Exp $";
 #endif
 
 /*
@@ -53,8 +53,8 @@ static char tif_thunder_rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif
 #define	    DELTA3_SKIP		4	/* skip code for 3-bit deltas */
 #define	THUNDER_RAW		0xc0	/* raw data encoded */
 
-static int twobitdeltas[4] = { 0, 1, 0, -1 };
-static int threebitdeltas[8] = { 0, 1, 2, 3, 0, -3, -2, -1 };
+static const int twobitdeltas[4] = { 0, 1, 0, -1 };
+static const int threebitdeltas[8] = { 0, 1, 2, 3, 0, -3, -2, -1 };
 
 #define	SETPIXEL(op, v) { \
 	lastpixel = (v) & 0xf; \
@@ -65,13 +65,13 @@ static int threebitdeltas[8] = { 0, 1, 2, 3, 0, -3, -2, -1 };
 }
 
 static int
-ThunderDecode(
-	TIFF *tif,
-	u_char *op,
-	int maxpixels)
+ThunderDecode(tif, op, maxpixels)
+	TIFF *tif;
+	register u_char *op;
+	int maxpixels;
 {
-	u_char *bp;
-	int n, cc, lastpixel, npixels, delta;
+	register u_char *bp;
+	register int n, cc, lastpixel, npixels, delta;
 
 	bp = (u_char *)tif->tif_rawcp;
 	cc = tif->tif_rawcc;
@@ -128,11 +128,11 @@ ThunderDecode(
 }
 
 static int
-ThunderDecodeRow(
-	TIFF *tif,
-	u_char *buf,
-	int occ,
-	u_int s)
+ThunderDecodeRow(tif, buf, occ, s)
+	TIFF *tif;
+	u_char *buf;
+	int occ;
+	u_int s;
 {
 	u_char *row = buf;
 	
@@ -145,9 +145,8 @@ ThunderDecodeRow(
 	return (1);
 }
 
-int
-TIFFInitThunderScan(
-	TIFF *tif)
+TIFFInitThunderScan(tif)
+	TIFF *tif;
 {
 	tif->tif_decoderow = ThunderDecodeRow;
 	tif->tif_decodestrip = ThunderDecodeRow;

@@ -1,163 +1,56 @@
 /*
 DRAW_STRING.C
 
-symbols in this file:
-0018AB70 0010:
-	_draw_string_initialize (0000)
-0018AB80 0070:
-	_draw_string_initialize_for_new_map (0000)
-0018ABF0 0010:
-	_draw_string_dispose_from_old_map (0000)
-0018AC00 0010:
-	_draw_string_dispose (0000)
-0018AC10 0070:
-	_text_bounds_draw_character (0000)
-0018AC80 00e0:
-	_text_pick_draw_character (0000)
-0018AD60 0050:
-	_draw_string_get_string (0000)
-0018ADB0 0070:
-	_draw_string_set_tab_stops (0000)
-0018AE20 0070:
-	_draw_string_set_indents (0000)
-0018AE90 0150:
-	_draw_string_set_color (0000)
-0018AFE0 0050:
-	_draw_string_get_color (0000)
-0018B030 0020:
-	_draw_string_set_font (0000)
-0018B050 00b0:
-	_draw_string_set_format (0000)
-0018B100 0040:
-	_draw_string_set_draw_mode (0000)
-0018B140 0020:
-	_draw_string_set_highlight (0000)
-0018B160 03b0:
-	_bitmap_draw_character (0000)
-0018B510 0070:
-	_styled_font_get (0000)
-0018B580 0100:
-	_parse_string_new (0000)
-0018B680 0270:
-	_parse_string (0000)
-0018B8F0 0110:
-	_parse_unicode_string (0000)
-0018BA00 0210:
-	_draw_string_partial (0000)
-0018BC10 0210:
-	_draw_unicode_string_partial (0000)
-0018BE20 0390:
-	_draw_string (0000)
-0018C1B0 0390:
-	_draw_unicode_string (0000)
-0018C540 00c0:
-	_draw_string_compute_bounds (0000)
-0018C600 00c0:
-	_draw_unicode_string_compute_bounds (0000)
-0018C6C0 0050:
-	_draw_string_pick (0000)
-0018C710 0130:
-	_bitmap_draw_string (0000)
-002A26E4 002d:
-	??_C@_0CN@NJAONNEI@internal?5string?5localization?5tag@ (0000)
-002A2714 0029:
-	??_C@_0CJ@LDLNPDDM@index?$DO?$DN0?5?$CG?$CG?5index?$DMNUMBER_OF_TEXT@ (0000)
-002A2740 0022:
-	??_C@_0CC@EBHGCODL@c?3?2halo?2SOURCE?2text?2draw_string?4@ (0000)
-002A2764 002e:
-	??_C@_0CO@LAOAKNHK@count?$DO?$DN0?5?$CG?$CG?5count?$DMMAXIMUM_NUMBER@ (0000)
-002A2794 0014:
-	??_C@_0BE@FGPECGKA@paragraph_indent?$DO?$DN0?$AA@ (0000)
-002A27A8 0012:
-	??_C@_0BC@DNGFHNA@initial_indent?$DO?$DN0?$AA@ (0000)
-002A27BC 002d:
-	??_C@_0CN@CGOGANEE@?$CIcolor?9?$DOblue?5?$DO?$DN?50?4f?$CJ?5?$CG?$CG?5?$CIcolor?9?$DO@ (0000)
-002A27EC 002f:
-	??_C@_0CP@FADKAPOG@?$CIcolor?9?$DOgreen?5?$DO?$DN?50?4f?$CJ?5?$CG?$CG?5?$CIcolor?9@ (0000)
-002A281C 002b:
-	??_C@_0CL@COFHKNKB@?$CIcolor?9?$DOred?5?$DO?$DN?50?4f?$CJ?5?$CG?$CG?5?$CIcolor?9?$DOr@ (0000)
-002A2848 002f:
-	??_C@_0CP@DFGKLIFB@?$CIcolor?9?$DOalpha?5?$DO?$DN?50?4f?$CJ?5?$CG?$CG?5?$CIcolor?9@ (0000)
-002A2878 0040:
-	??_C@_0EA@DLFMIHAM@justification?$DO?$DN0?5?$CG?$CG?5justificatio@ (0000)
-002A28B8 0046:
-	??_C@_0EG@IPKHNIBH@style?$DN?$DN_text_style_plain?5?$HM?$HM?5?$CIsty@ (0000)
-002A2900 0029:
-	??_C@_0CJ@CIJKMAAN@VALID_FLAGS?$CIflags?0?5NUMBER_OF_TEX@ (0000)
-002A292C 003e:
-	??_C@_0DO@NHIHGJAE@x0?$DO?$DN0?5?$CG?$CG?5x0?$CLdx?$DM?$DNdraw_character_s@ (0000)
-002A296C 003c:
-	??_C@_0DM@BMLHMCCB@y0?$DO?$DN0?5?$CG?$CG?5y0?$DM?$DNdraw_character_soft@ (0000)
-002A29A8 000d:
-	??_C@_0N@HNKPGPMM@result?$CB?$DNNONE?$AA@ (0000)
-002A29B8 0049:
-	??_C@_0EJ@CJKOFANJ@tab_stop_index?$DO?$DN0?5?$CG?$CG?5tab_stop_in@ (0000)
-004C1908 0008:
-	_draw_character_software_globals (0000)
-004C1910 000c:
-	_text_pick_globals (0000)
-004C191C 000c:
-	_text_bounds_globals (0000)
-004C1928 00d8:
-	_font_drawing_globals (0000)
 */
 
 /* ---------- headers */
 
-#include "cseries/cseries.h"
-#include "cseries/errors.h"
-#include "bitmaps/bitmap_group.h"
-#include "bitmaps/bitmaps.h"
-#include "interface/interface.h"
-#include "math/integer_math.h"
-#include "math/real_math.h"
-#include "rasterizer/rasterizer.h"
-#include "text/draw_string.h"
-#include "text/font_group.h"
-#include "text/international_strings.h"
-#include "text/text_group.h"
-
-#include <ctype.h>
+#include "cseries.h"
+#include "draw_string.h"
+#include "text_group.h"
+#include "font_group.h"
+#include "international_strings.h"
+#include "objects.h"
+#include "collision_bsp.h"
+#include "render.h"
+#include "rasterizer.h"
+#include "bitmap_macros.h"
 
 /* ---------- constants */
 
+#define NUMBER_OF_TEXT_STRINGS 1
+
 enum
 {
-	NUMBER_OF_TEXT_STRINGS = 1,
-	NUMBER_OF_TEXT_FLAGS = 4,
-	MAXIMUM_NUMBER_OF_TAB_STOPS = 16,
-
-	_text_justification_left = 0,
-	_text_justification_right,
-	_text_justification_center,
-	NUMBER_OF_TEXT_JUSTIFICATIONS,
-
-	_draw_text_wrap_horizontally_bit = 0,
-	_draw_text_wrap_vertically_bit,
-
-	_parsed_end_of_string = 0,
-	_parsed_end_of_line = 1,
-	_parsed_end_of_word = 2,
-	_parsed_end_of_column = 3,
-	_parsed_justification_change = 4,
-	_parsed_color_change = 5,
-	_parsed_character = 6,
-	_parsed_style_change = 7,
-
-	_string_index_can_end_words = 4,
-	_string_index_cannot_end_words = 5,
-	_string_index_cannot_begin_words = 6,
-
-	_bitmap_format_a8 = 0,
-	_bitmap_format_y8 = 1,
-	_bitmap_format_ay8 = 2,
-	_bitmap_format_r5g6b5 = 6,
-	_bitmap_format_a8r8g8b8 = 11,
+	_string_index_language = 0,
+	_string_index_country_code,
+	_string_index_truncation_string,
+	_string_index_illegal_truncation_characters,
+	_string_index_can_end_words,
+	_string_index_cannot_end_words,
+	_string_index_cannot_begin_words,
+	_string_index_first_bitmap_text_string,
 };
+
+/* ---------- macros */
 
 /* ---------- structures */
 
-struct font_drawing_globals
+/* ---------- prototypes */
+
+static void text_bounds_draw_character(struct parse_string_state *parse_state, struct font_header *font_header, struct font_character *character, pixel32 color, short x0, short y0, short x, short y, short dx, short dy);
+static void text_pick_draw_character(struct parse_string_state *parse_state, struct font_header *font_header, struct font_character *character, pixel32 color, short x0, short y0, short x, short y, short dx, short dy);
+static void bitmap_draw_character(struct parse_string_state *parse_state, struct font_header *font_header, struct font_character *character, pixel32 color, short x0, short y0, short x, short y, short dx, short dy);
+
+static struct font_header *styled_font_get(long base_font_index, short style);
+static void parse_string_new(struct parse_string_state *state, char *string, long base_font_index, short style, short justification, real_argb_color const *color);
+static short parse_unicode_string(struct parse_string_state *state);
+static void draw_string_partial(draw_character_proc draw_character, point2d *cursor, rectangle2d const *bounds, rectangle2d const *clip, pixel32 color, char *string, short string_index, short string_length);
+static void draw_unicode_string_partial(draw_character_proc draw_character, point2d *cursor, rectangle2d const *bounds, rectangle2d const *clip, pixel32 color, wchar_t *string, short string_index, short string_length);
+
+/* ---------- globals */
+
+static struct
 {
 	long string_list_index;
 	long current_font_index;
@@ -172,77 +65,13 @@ struct font_drawing_globals
 	short initial_indent;
 	short paragraph_indent;
 	struct rasterizer_dynamic_screen_geometry_parameters multitexture_params;
-};
-
-struct font_character
-{
-	word character;
-	short character_width;
-	short bitmap_width;
-	short bitmap_height;
-	short bitmap_origin_x;
-	short bitmap_origin_y;
-	short hardware_character_index;
-	word pad;
-	long pixels_offset;
-};
-
-struct parse_string_state
-{
-	long base_font_index;
-	struct font_header *font_header;
-	byte *string;
-	short string_index;
-	short style;
-	short justification;
-	word character;
-	short result;
-	word pad;
-	pixel32 color;
-};
-
-/* ---------- prototypes */
-
-static struct font_header *styled_font_get(
-	long font_index,
-	short style);
-static void parse_string_new(
-	struct parse_string_state *state,
-	char const *string,
-	long font_index,
-	short style,
-	short justification,
-	real_argb_color const *color);
-static short parse_string(
-	struct parse_string_state *state);
-static word parse_unicode_string(
-	struct parse_string_state *state);
-static void draw_string_partial(
-	draw_character_proc draw_character,
-	point2d *cursor,
-	rectangle2d const *bounds,
-	rectangle2d const *clip,
-	pixel32 color,
-	char const *string,
-	short string_index,
-	short string_length);
-static void draw_unicode_string_partial(
-	draw_character_proc draw_character,
-	point2d *cursor,
-	rectangle2d const *bounds,
-	rectangle2d const *clip,
-	pixel32 color,
-	wchar_t const *string,
-	short string_index,
-	short string_length);
-
-/* ---------- globals */
+} font_drawing_globals;
 
 static struct
 {
-	struct bitmap_data *bitmap;
-	short encoding_shift;
-} draw_character_software_globals = { 0 };
+	rectangle2d bounds;
+	struct font_header *last_font_header;
+} text_bounds_globals;
 
 static struct
 {
@@ -250,16 +79,13 @@ static struct
 	short best_pick_string_index;
 	short best_pick_distance;
 	short last_string_index;
-} text_pick_globals = { 0 };
+} text_pick_globals;
 
 static struct
 {
-	rectangle2d bounds;
-	struct font_header *last_font_header;
-} text_bounds_globals = { 0 };
-
-static struct font_drawing_globals font_drawing_globals = { 0 };
-
+	struct bitmap_data *bitmap;
+	short encoding_shift;
+} draw_character_software_globals;
 
 /* ---------- public code */
 
@@ -272,18 +98,16 @@ void draw_string_initialize(
 void draw_string_initialize_for_new_map(
 	void)
 {
-	long localization_string_list_index = interface_get_tag_index(_interface_string_list_localization);
-	font_drawing_globals.string_list_index = localization_string_list_index;
-
-	if (localization_string_list_index != NONE)
+	font_drawing_globals.string_list_index = interface_get_tag_index(_interface_string_list_localization);
+	if (font_drawing_globals.string_list_index != NONE)
 	{
-		set_language_code((short)atoi(string_list_get_string(localization_string_list_index, 0)));
+		set_language_code((short)atoi(string_list_get_string(font_drawing_globals.string_list_index, _string_index_language)));
+		font_drawing_globals.current_font_index = NONE;
 		font_drawing_globals.tab_stop_count = 0;
 		font_drawing_globals.current_flags = 0;
 		font_drawing_globals.current_justification = _text_justification_left;
 		font_drawing_globals.initial_indent = 0;
 		font_drawing_globals.paragraph_indent = 0;
-		font_drawing_globals.current_font_index = NONE;
 	}
 	else
 	{
@@ -297,6 +121,7 @@ void draw_string_dispose_from_old_map(
 	void)
 {
 	font_drawing_globals.string_list_index = NONE;
+
 	return;
 }
 
@@ -306,80 +131,74 @@ void draw_string_dispose(
 	return;
 }
 
-static void text_bounds_draw_character(
-	struct parse_string_state *state,
-	struct font_header *font,
-	struct font_character *character,
-	pixel32 color,
-	short x0,
-	short y0,
-	short x,
-	short y,
-	short dx,
-	short dy)
+void draw_string_compute_bounds(
+	rectangle2d const *bounds,
+	char *string,
+	rectangle2d *text_bounds,
+	rectangle2d *cursor_bounds)
 {
-	short x1 = (short)(x0 + dx);
-	short y1 = (short)(y0 + dy);
+	point2d cursor;
 
-	if (x0 < text_bounds_globals.bounds.x0)
-		text_bounds_globals.bounds.x0 = x0;
-	if (y0 < text_bounds_globals.bounds.y0)
-		text_bounds_globals.bounds.y0 = y0;
-	if (x1 > text_bounds_globals.bounds.x1)
-		text_bounds_globals.bounds.x1 = x1;
-	if (y1 > text_bounds_globals.bounds.y1)
-		text_bounds_globals.bounds.y1 = y1;
-	text_bounds_globals.last_font_header = font;
+	text_bounds_globals.bounds.y0 = SHORT_MAX;
+	text_bounds_globals.bounds.x0 = SHORT_MAX;
+	text_bounds_globals.bounds.y1 = SHORT_MIN;
+	text_bounds_globals.bounds.x1 = SHORT_MIN;
+	text_bounds_globals.last_font_header = styled_font_get(font_drawing_globals.current_font_index, font_drawing_globals.current_style);
+	draw_string(text_bounds_draw_character, bounds, &cursor, NULL, 0, string);
+
+	cursor_bounds->x0 = cursor.x;
+	cursor_bounds->x1 = cursor.x + 1;
+	cursor_bounds->y0 = cursor.y - text_bounds_globals.last_font_header->ascending_height;
+	cursor_bounds->y1 = cursor.y + text_bounds_globals.last_font_header->descending_height;
+
+	text_bounds->x0 = text_bounds_globals.bounds.x0;
+	text_bounds->y0 = bounds->y0;
+	text_bounds->x1 = text_bounds_globals.bounds.x1;
+	text_bounds->y1 = cursor_bounds->y1;
 
 	return;
 }
 
-static void text_pick_draw_character(
-	struct parse_string_state *state,
-	struct font_header *font,
-	struct font_character *character,
-	pixel32 color,
-	short x0,
-	short y0,
-	short x,
-	short y,
-	short dx,
-	short dy)
+void draw_unicode_string_compute_bounds(
+	rectangle2d const *bounds,
+	wchar_t *string,
+	rectangle2d *text_bounds,
+	rectangle2d *cursor_bounds)
 {
-	short x1 = x0 + dx;
-	short y1 = y0 + dy;
-	short distance_x0 = x0 - text_pick_globals.pick_point.x;
-	short distance_x1 = x1 - text_pick_globals.pick_point.x;
-	short distance_y0 = y0 - text_pick_globals.pick_point.y;
-	short distance_y1 = y1 - text_pick_globals.pick_point.y;
-	short distance;
+	point2d cursor;
 
-	distance_x0 = ABS(distance_x0);
-	distance_x1 = ABS(distance_x1);
-	distance_y0 = ABS(distance_y0);
-	distance_y1 = ABS(distance_y1);
-	distance = MAX(distance_x0, distance_x1);
-	distance = MAX(distance, distance_y0);
-	distance = MAX(distance, distance_y1);
+	text_bounds_globals.bounds.y0 = SHORT_MAX;
+	text_bounds_globals.bounds.x0 = SHORT_MAX;
+	text_bounds_globals.bounds.y1 = SHORT_MIN;
+	text_bounds_globals.bounds.x1 = SHORT_MIN;
+	text_bounds_globals.last_font_header = styled_font_get(font_drawing_globals.current_font_index, font_drawing_globals.current_style);
+	draw_unicode_string(text_bounds_draw_character, bounds, &cursor, NULL, 0, string);
 
-	if (distance < text_pick_globals.best_pick_distance)
-	{
-		text_pick_globals.best_pick_distance = distance;
-		if (text_pick_globals.pick_point.x - x0 < ((x1 - x0) >> 1))
-		{
-			text_pick_globals.best_pick_string_index = text_pick_globals.last_string_index;
-			text_pick_globals.last_string_index = state->string_index;
-			return;
-		}
+	cursor_bounds->x0 = cursor.x;
+	cursor_bounds->x1 = cursor.x + 1;
+	cursor_bounds->y0 = cursor.y - text_bounds_globals.last_font_header->ascending_height;
+	cursor_bounds->y1 = cursor.y + text_bounds_globals.last_font_header->descending_height;
 
-		text_pick_globals.best_pick_string_index = state->string_index;
-		text_pick_globals.last_string_index = state->string_index;
-		return;
-	}
-
-	text_pick_globals.last_string_index = state->string_index;
+	text_bounds->x0 = text_bounds_globals.bounds.x0;
+	text_bounds->y0 = bounds->y0;
+	text_bounds->x1 = text_bounds_globals.bounds.x1;
+	text_bounds->y1 = cursor_bounds->y1;
 
 	return;
+}
+
+short draw_string_pick(
+	rectangle2d const *bounds,
+	char *string,
+	point2d const *point)
+{
+	text_pick_globals.pick_point = *point;
+	text_pick_globals.best_pick_distance = SHORT_MAX;
+	text_pick_globals.best_pick_string_index = 0;
+	text_pick_globals.last_string_index = 0;
+	draw_string(text_pick_draw_character, bounds, NULL, NULL, 0, string);
+
+	return text_pick_globals.best_pick_string_index;
 }
 
 char *draw_string_get_string(
@@ -387,7 +206,7 @@ char *draw_string_get_string(
 {
 	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 341, index>=0 && index<NUMBER_OF_TEXT_STRINGS);
 
-	return string_list_get_string(font_drawing_globals.string_list_index, index + 7);
+	return string_list_get_string(font_drawing_globals.string_list_index, _string_index_first_bitmap_text_string + index);
 }
 
 void draw_string_set_tab_stops(
@@ -397,10 +216,9 @@ void draw_string_set_tab_stops(
 	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 350, count>=0 && count<MAXIMUM_NUMBER_OF_TAB_STOPS);
 
 	font_drawing_globals.tab_stop_count = MIN(count, MAXIMUM_NUMBER_OF_TAB_STOPS);
-
 	if (font_drawing_globals.tab_stop_count > 0)
 	{
-		csmemcpy(font_drawing_globals.tab_stops, tab_stops, font_drawing_globals.tab_stop_count * sizeof(short));
+		memcpy(font_drawing_globals.tab_stops, tab_stops, font_drawing_globals.tab_stop_count * sizeof(short));
 	}
 
 	return;
@@ -413,8 +231,8 @@ void draw_string_set_indents(
 	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 366, initial_indent>=0);
 	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 367, paragraph_indent>=0);
 
-	font_drawing_globals.paragraph_indent = paragraph_indent;
 	font_drawing_globals.initial_indent = initial_indent;
+	font_drawing_globals.paragraph_indent = paragraph_indent;
 
 	return;
 }
@@ -483,20 +301,406 @@ void draw_string_set_draw_mode(
 }
 
 void draw_string_set_highlight(
-	short start,
-	short end)
+	short start_index,
+	short stop_index)
 {
-	font_drawing_globals.highlight_start_index = start;
-	font_drawing_globals.highlight_stop_index = end;
+	font_drawing_globals.highlight_start_index = start_index;
+	font_drawing_globals.highlight_stop_index = stop_index;
+
+	return;
+}
+
+void bitmap_draw_string(
+	struct bitmap_data *bitmap,
+	rectangle2d const *bounds,
+	rectangle2d const *clip,
+	char *string)
+{
+	draw_character_software_globals.bitmap = bitmap;
+
+	switch (bitmap->format)
+	{
+	case _bitmap_format_a8:
+	case _bitmap_format_y8:
+	case _bitmap_format_ay8:
+	case _bitmap_format_r5g6b5:
+	case _bitmap_format_a8r8g8b8:
+		{
+			rectangle2d bitmap_bounds;
+			rectangle2d bitmap_clip;
+
+			if (!bounds)
+			{
+				set_rectangle2d(&bitmap_bounds, MAX(0, bounds->x0), MAX(0, bounds->y0), MIN(bitmap->width, bounds->x1), MIN(bitmap->height, bounds->y1));
+				bounds = &bitmap_bounds;
+			}
+			if (clip)
+			{
+				set_rectangle2d(&bitmap_clip, MAX(0, clip->x0), MAX(0, clip->y0), MIN(bitmap->width, clip->x1), MIN(bitmap->height, clip->y1));
+				clip = &bitmap_clip;
+			}
+
+			draw_string(bitmap_draw_character, bounds, NULL, clip, 0, string);
+		}
+		break;
+	}
+
+	return;
+}
+
+void draw_string(
+	draw_character_proc draw_character,
+	rectangle2d const *bounds,
+	point2d *cursor_reference,
+	rectangle2d const *clip,
+	short height_adjust,
+	char *string)
+{
+	struct parse_string_state parse_state;
+	point2d cursor;
+	short tab_stop_index = 0;
+	short line_index = 0;
+	short column_line_index = 0;
+	short maximum_column_line_index = 0;
+
+	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 648, bounds);
+	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 649, string);
+
+	parse_string_new(&parse_state, string, font_drawing_globals.current_font_index, font_drawing_globals.current_style, font_drawing_globals.current_justification, &font_drawing_globals.current_color);
+
+	do
+	{
+		short end_index;
+		short word_break_width;
+		short width = 0;
+		short word_break_index = 0;
+		short previous_result = NONE;
+		short justification = parse_state.justification;
+		short start_index = parse_state.string_index;
+		boolean done = FALSE;
+		rectangle2d line_bounds = *bounds;
+
+		if (font_drawing_globals.tab_stop_count > 0)
+		{
+			match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 681, tab_stop_index>=0 && tab_stop_index<=font_drawing_globals.tab_stop_count);
+
+			if (tab_stop_index)
+			{
+				line_bounds.x0 = font_drawing_globals.tab_stops[tab_stop_index - 1];
+			}
+			else if (line_index)
+			{
+				line_bounds.x0 += font_drawing_globals.paragraph_indent;
+			}
+			else
+			{
+				line_bounds.x0 += font_drawing_globals.initial_indent;
+			}
+
+			if (tab_stop_index < font_drawing_globals.tab_stop_count)
+			{
+				line_bounds.x1 = font_drawing_globals.tab_stops[tab_stop_index];
+			}
+		}
+		else
+		{
+			if (line_index)
+			{
+				line_bounds.x0 += font_drawing_globals.paragraph_indent;
+			}
+			else
+			{
+				line_bounds.x0 += font_drawing_globals.initial_indent;
+			}
+		}
+
+		cursor.x = line_bounds.x0 + parse_state.font_header->leading_width;
+		cursor.y = line_bounds.y0 + parse_state.font_header->ascending_height + (line_index + column_line_index) *
+			(height_adjust + parse_state.font_header->ascending_height + parse_state.font_header->descending_height + parse_state.font_header->leading_height);
+
+		while (!done)
+		{
+			boolean use_word_break = FALSE;
+
+			parse_string(&parse_state);
+			if (parse_state.result == _parsed_end_of_word || parse_state.result == _parsed_character)
+			{
+				struct font_character *character = font_get_character_by_ascii_code(parse_state.font_header, parse_state.character);
+
+				if (character)
+				{
+					if (parse_state.result != _parsed_end_of_word && previous_result == _parsed_end_of_word)
+					{
+						word_break_index = end_index;
+						word_break_width = width;
+					}
+
+					if (width + cursor.x + character->bitmap_width < line_bounds.x1)
+					{
+						width += character->character_width;
+					}
+					else if (TEST_FLAG(font_drawing_globals.current_flags, _draw_text_wrap_horizontally_bit))
+					{
+						if (word_break_index > 0)
+						{
+							end_index = word_break_index;
+							width = word_break_width;
+							use_word_break = TRUE;
+						}
+						done = TRUE;
+					}
+				}
+			}
+			else
+			{
+				done = TRUE;
+			}
+
+			if (!use_word_break)
+			{
+				end_index = parse_state.string_index;
+			}
+			previous_result = parse_state.result;
+		}
+
+		switch (justification)
+		{
+		case _text_justification_right:
+			cursor.x = line_bounds.x0 + rectangle2d_width(&line_bounds) - width - parse_state.font_header->leading_width;
+			break;
+		case _text_justification_center:
+			cursor.x = line_bounds.x0 + ((rectangle2d_width(&line_bounds) - width) >> 1);
+			break;
+		}
+
+		if (TEST_FLAG(font_drawing_globals.current_flags, _draw_text_wrap_vertically_bit) || cursor.y < line_bounds.y1)
+		{
+			draw_string_partial(draw_character, &cursor, &line_bounds, clip, parse_state.color, string, start_index, end_index);
+		}
+		parse_state.string_index = end_index;
+
+		switch (parse_state.result)
+		{
+		case _parsed_end_of_string:
+		case _parsed_color_change:
+			break;
+		case _parsed_end_of_word:
+		case _parsed_character:
+			if (++column_line_index > maximum_column_line_index)
+			{
+				maximum_column_line_index = column_line_index;
+			}
+			break;
+		case _parsed_end_of_column:
+			if (tab_stop_index < font_drawing_globals.tab_stop_count)
+			{
+				tab_stop_index++;
+				column_line_index = 0;
+			}
+			break;
+		case _parsed_justification_change:
+			column_line_index = 0;
+			break;
+		case _parsed_end_of_line:
+			tab_stop_index = 0;
+			column_line_index = 0;
+			line_index += maximum_column_line_index + 1;
+			break;
+		default:
+			match_vassert("c:\\halo\\SOURCE\\text\\draw_string.c", 817, FALSE, NULL);
+		}
+	}
+	while (parse_state.result != _parsed_end_of_string);
+
+	font_drawing_globals.highlight_start_index = font_drawing_globals.highlight_stop_index = 0;
+
+	if (cursor_reference)
+	{
+		*cursor_reference = cursor;
+	}
+
+	return;
+}
+
+void draw_unicode_string(
+	draw_character_proc draw_character,
+	rectangle2d const *bounds,
+	point2d *cursor_reference,
+	rectangle2d const *clip,
+	short height_adjust,
+	wchar_t *string)
+{
+	struct parse_string_state parse_state;
+	point2d cursor;
+	short tab_stop_index = 0;
+	short line_index = 0;
+	short column_line_index = 0;
+	short maximum_column_line_index = 0;
+
+	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 848, bounds);
+	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 849, string);
+
+	parse_string_new(&parse_state, (char *)string, font_drawing_globals.current_font_index, font_drawing_globals.current_style, font_drawing_globals.current_justification, &font_drawing_globals.current_color);
+
+	do
+	{
+		short end_index;
+		short word_break_width;
+		short width = 0;
+		short word_break_index = 0;
+		short previous_result = NONE;
+		short justification = parse_state.justification;
+		short start_index = parse_state.string_index;
+		boolean done = FALSE;
+		rectangle2d line_bounds = *bounds;
+
+		if (font_drawing_globals.tab_stop_count > 0)
+		{
+			match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 881, tab_stop_index>=0 && tab_stop_index<=font_drawing_globals.tab_stop_count);
+
+			if (tab_stop_index)
+			{
+				line_bounds.x0 = font_drawing_globals.tab_stops[tab_stop_index - 1];
+			}
+			else if (line_index)
+			{
+				line_bounds.x0 += font_drawing_globals.paragraph_indent;
+			}
+			else
+			{
+				line_bounds.x0 += font_drawing_globals.initial_indent;
+			}
+
+			if (tab_stop_index < font_drawing_globals.tab_stop_count)
+			{
+				line_bounds.x1 = font_drawing_globals.tab_stops[tab_stop_index];
+			}
+		}
+		else
+		{
+			if (line_index)
+			{
+				line_bounds.x0 += font_drawing_globals.paragraph_indent;
+			}
+			else
+			{
+				line_bounds.x0 += font_drawing_globals.initial_indent;
+			}
+		}
+
+		cursor.x = line_bounds.x0 + parse_state.font_header->leading_width;
+		cursor.y = line_bounds.y0 + parse_state.font_header->ascending_height + (line_index + column_line_index) *
+			(height_adjust + parse_state.font_header->ascending_height + parse_state.font_header->descending_height + parse_state.font_header->leading_height);
+
+		while (!done)
+		{
+			boolean use_word_break = FALSE;
+
+			parse_unicode_string(&parse_state);
+			if (parse_state.result == _parsed_end_of_word || parse_state.result == _parsed_character)
+			{
+				struct font_character *character = font_get_character_by_ascii_code(parse_state.font_header, parse_state.character);
+
+				if (character)
+				{
+					if (parse_state.result != _parsed_end_of_word && previous_result == _parsed_end_of_word)
+					{
+						word_break_index = end_index;
+						word_break_width = width;
+					}
+
+					if (width + cursor.x + character->bitmap_width < line_bounds.x1)
+					{
+						width += character->character_width;
+					}
+					else if (TEST_FLAG(font_drawing_globals.current_flags, _draw_text_wrap_horizontally_bit))
+					{
+						if (word_break_index > 0)
+						{
+							end_index = word_break_index;
+							width = word_break_width;
+							use_word_break = TRUE;
+						}
+						done = TRUE;
+					}
+				}
+			}
+			else
+			{
+				done = TRUE;
+			}
+
+			if (!use_word_break)
+			{
+				end_index = parse_state.string_index;
+			}
+			previous_result = parse_state.result;
+		}
+
+		switch (justification)
+		{
+		case _text_justification_right:
+			cursor.x = line_bounds.x0 + rectangle2d_width(&line_bounds) - width - parse_state.font_header->leading_width;
+			break;
+		case _text_justification_center:
+			cursor.x = line_bounds.x0 + ((rectangle2d_width(&line_bounds) - width) >> 1);
+			break;
+		}
+
+		if (TEST_FLAG(font_drawing_globals.current_flags, _draw_text_wrap_vertically_bit) || cursor.y < line_bounds.y1)
+		{
+			draw_unicode_string_partial(draw_character, &cursor, &line_bounds, clip, parse_state.color, string, start_index, end_index);
+		}
+		parse_state.string_index = end_index;
+
+		switch (parse_state.result)
+		{
+		case _parsed_end_of_string:
+		case _parsed_color_change:
+			break;
+		case _parsed_end_of_word:
+		case _parsed_character:
+			if (++column_line_index > maximum_column_line_index)
+			{
+				maximum_column_line_index = column_line_index;
+			}
+			break;
+		case _parsed_end_of_column:
+			if (tab_stop_index < font_drawing_globals.tab_stop_count)
+			{
+				tab_stop_index++;
+				column_line_index = 0;
+			}
+			break;
+		case _parsed_justification_change:
+			column_line_index = 0;
+			break;
+		case _parsed_end_of_line:
+			tab_stop_index = 0;
+			column_line_index = 0;
+			line_index += maximum_column_line_index + 1;
+			break;
+		default:
+			match_vassert("c:\\halo\\SOURCE\\text\\draw_string.c", 1017, FALSE, NULL);
+		}
+	}
+	while (parse_state.result != _parsed_end_of_string);
+
+	font_drawing_globals.highlight_start_index = font_drawing_globals.highlight_stop_index = 0;
+
+	if (cursor_reference)
+	{
+		*cursor_reference = cursor;
+	}
 
 	return;
 }
 
 /* ---------- private code */
 
-static void bitmap_draw_character(
-	struct parse_string_state *state,
-	struct font_header *font,
+static void text_bounds_draw_character(
+	struct parse_string_state *parse_state,
+	struct font_header *font_header,
 	struct font_character *character,
 	pixel32 color,
 	short x0,
@@ -506,188 +710,270 @@ static void bitmap_draw_character(
 	short dx,
 	short dy)
 {
+	short x1 = x0 + dx;
+	short y1 = y0 + dy;
+
+	if (x0 < text_bounds_globals.bounds.x0)
+	{
+		text_bounds_globals.bounds.x0 = x0;
+	}
+	if (y0 < text_bounds_globals.bounds.y0)
+	{
+		text_bounds_globals.bounds.y0 = y0;
+	}
+	if (x1 > text_bounds_globals.bounds.x1)
+	{
+		text_bounds_globals.bounds.x1 = x1;
+	}
+	if (y1 > text_bounds_globals.bounds.y1)
+	{
+		text_bounds_globals.bounds.y1 = y1;
+	}
+	text_bounds_globals.last_font_header = font_header;
+
+	return;
+}
+
+static void text_pick_draw_character(
+	struct parse_string_state *parse_state,
+	struct font_header *font_header,
+	struct font_character *character,
+	pixel32 color,
+	short x0,
+	short y0,
+	short x,
+	short y,
+	short dx,
+	short dy)
+{
+	short distance;
+	short x1 = x0 + dx;
+	short x0_distance = x0 - text_pick_globals.pick_point.x;
+	short x1_distance = x1 - text_pick_globals.pick_point.x;
+	short y0_distance = y0 - text_pick_globals.pick_point.y;
+	short y1_distance = y0 + dy - text_pick_globals.pick_point.y;
+
+	x0_distance = ABS(x0_distance);
+	x1_distance = ABS(x1_distance);
+	y0_distance = ABS(y0_distance);
+	y1_distance = ABS(y1_distance);
+	distance = MAX(x0_distance, x1_distance);
+	distance = MAX(distance, y0_distance);
+	distance = MAX(distance, y1_distance);
+
+	if (distance < text_pick_globals.best_pick_distance)
+	{
+		text_pick_globals.best_pick_distance = distance;
+		text_pick_globals.best_pick_string_index = text_pick_globals.pick_point.x - x0 < (x1 - x0) >> 1 ?
+			text_pick_globals.last_string_index : parse_state->string_index;
+	}
+	text_pick_globals.last_string_index = parse_state->string_index;
+
+	return;
+}
+
+static void bitmap_draw_character(
+	struct parse_string_state *parse_state,
+	struct font_header *font_header,
+	struct font_character *character,
+	pixel32 color,
+	short x0,
+	short y0,
+	short x,
+	short y,
+	short dx,
+	short dy)
+{
+	word color16;
 	short format = draw_character_software_globals.bitmap->format;
-	short coverage_scale = (short)(color >> 24);
-	byte *glyph_pixels = (byte *)font->pixels.address + character->pixels_offset;
-	word destination_color;
-	short row;
+	short alpha = (short)PIXEL32_ALPHA(color);
+	byte *character_pixels = (byte *)font_header->pixels.address + character->pixels_offset;
 
 	if (format == _bitmap_format_r5g6b5)
 	{
-		destination_color = (word)(((((color >> 16) & 0xFF) >> 3) << 11) |
-			((((color >> 8) & 0xFF) >> 2) << 5) |
-			((color & 0xFF) >> 3));
+		color16 = PIXEL32_TO_PIXEL16_565(color);
 	}
 
-	if (dy <= 0)
-		return;
-
-	for (row = dy; row > 0; row--, y++, y0++)
+	while (dy-- > 0)
 	{
-		long row_pitch = bitmap_format_get_bits_per_pixel(
-			draw_character_software_globals.bitmap->format) *
-			draw_character_software_globals.bitmap->width / 8;
-		byte *destination_pixel = (byte *)draw_character_software_globals.bitmap->base_address +
-			(x0 << draw_character_software_globals.encoding_shift) +
-			y0 * row_pitch;
-		byte *source_pixel = &glyph_pixels[character->bitmap_width * y + x];
-		short column;
+		long bytes_per_row = draw_character_software_globals.bitmap->width * bitmap_format_get_bits_per_pixel(draw_character_software_globals.bitmap->format) / 8;
+		byte *destination = (byte *)draw_character_software_globals.bitmap->base_address + y0 * bytes_per_row + (x0 << draw_character_software_globals.encoding_shift);
+		byte *source = character_pixels + x + y * character->bitmap_width;
+		short i;
 
-		match_assert(
-			"c:\\halo\\SOURCE\\text\\draw_string.c",
-			495,
-			y0>=0 && y0<=draw_character_software_globals.bitmap->height);
-		match_assert(
-			"c:\\halo\\SOURCE\\text\\draw_string.c",
-			496,
-			x0>=0 && x0+dx<=draw_character_software_globals.bitmap->width);
+		match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 495, y0>=0 && y0<=draw_character_software_globals.bitmap->height);
+		match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 496, x0>=0 && x0+dx<=draw_character_software_globals.bitmap->width);
 
 		switch (format)
 		{
 		case _bitmap_format_a8:
 		case _bitmap_format_y8:
 		case _bitmap_format_ay8:
-			for (column = dx; column > 0; column--, source_pixel++, destination_pixel++)
+			for (i = dx; i > 0; i--)
 			{
-				short coverage = *source_pixel;
+				short intensity = *source;
 
-				if (coverage)
+				if (intensity)
 				{
-					byte destination_value = *destination_pixel;
+					byte destination_intensity = *destination;
 
-					coverage = (coverage * coverage_scale) >> 8;
-					*destination_pixel = (byte)MIN(coverage, destination_value);
+					intensity = (intensity * alpha) >> 8;
+					*destination = (byte)MIN(intensity, destination_intensity);
 				}
+				source++;
+				destination++;
 			}
 			break;
-
 		case _bitmap_format_r5g6b5:
-			for (column = dx; column > 0; column--, source_pixel++, destination_pixel += 2)
+			for (i = dx; i > 0; i--)
 			{
-				if (*source_pixel)
+				if (*source)
 				{
-					word destination = *(word *)destination_pixel;
-					short coverage = (*source_pixel * coverage_scale) >> 8;
-					short inverse = 255 - coverage;
+					word pixel = *(word *)destination;
+					short intensity = (*source * alpha) >> 8;
+					short inverse_intensity = 255 - intensity;
 
-					*(word *)destination_pixel = (word)(
-						(((destination_color * coverage + destination * inverse) >> 8) & 0xF800) |
-						((((destination_color & 0x7FF) * coverage + (destination & 0x7FF) * inverse) >> 8) & 0x7E0) |
-						((((destination_color & 0x1F) * coverage + (destination & 0x1F) * inverse) >> 8) & 0x1F));
+					*(word *)destination = (((inverse_intensity * (pixel & 0x1f) + intensity * (color16 & 0x1f)) >> 8) & 0x1f) |
+						(((inverse_intensity * (pixel & 0x7ff) + intensity * (color16 & 0x7ff)) >> 8) & 0x7e0) |
+						(((inverse_intensity * pixel + intensity * color16) >> 8) & 0xf800);
 				}
+				source++;
+				destination += sizeof(word);
 			}
 			break;
-
 		case _bitmap_format_a8r8g8b8:
-			for (column = dx; column > 0; column--, source_pixel++, destination_pixel += 4)
+			for (i = dx; i > 0; i--)
 			{
-				short source_value = *source_pixel;
+				short intensity = *source;
 
-				if (source_value)
+				if (intensity)
 				{
-					pixel32 destination = *(pixel32 *)destination_pixel;
-					short coverage = (source_value * coverage_scale) >> 8;
-					short inverse = 255 - coverage;
+					pixel32 pixel = *(pixel32 *)destination;
+					short inverse_intensity;
 
-					*(pixel32 *)destination_pixel =
-						((((((destination >> 16) & 0xFF) * inverse) >> 8) + ((((color >> 16) & 0xFF) * coverage) >> 8)) << 16) |
-						((((((destination >> 8) & 0xFF) * inverse) >> 8) + ((((color >> 8) & 0xFF) * coverage) >> 8)) << 8) |
-						((((destination & 0xFF) * inverse) >> 8) + (((color & 0xFF) * coverage) >> 8)) |
-						(MAX((pixel32)coverage, destination >> 24) << 24);
+					intensity = (intensity * alpha) >> 8;
+					inverse_intensity = 255 - intensity;
+
+					*(pixel32 *)destination = ((((pixel & 0xff) * inverse_intensity) >> 8) + (((color & 0xff) * intensity) >> 8)) |
+						(((((pixel >> 8) & 0xff) * inverse_intensity) >> 8) + ((((color >> 8) & 0xff) * intensity) >> 8)) << 8 |
+						(((((pixel >> 16) & 0xff) * inverse_intensity) >> 8) + ((((color >> 16) & 0xff) * intensity) >> 8)) << 16 |
+						MAX((pixel32)intensity, pixel >> 24) << 24;
 				}
+				source++;
+				destination += sizeof(pixel32);
 			}
 			break;
-
 		default:
-			display_assert(
-				"### ERROR unsupported bitmap format",
-				"c:\\halo\\SOURCE\\text\\draw_string.c",
-				565,
-				TRUE);
-			system_exit(-1);
-			break;
+			match_vassert("c:\\halo\\SOURCE\\text\\draw_string.c", 565, FALSE, "### ERROR unsupported bitmap format");
 		}
+
+		y++;
+		y0++;
 	}
 
 	return;
 }
 
 static struct font_header *styled_font_get(
-	long font_index,
+	long base_font_index,
 	short style)
 {
-	long styled_font_index;
+	long font_index;
 
 	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 1039, style==_text_style_plain || (style>=0 && style<NUMBER_OF_TEXT_STYLES));
 
-	styled_font_index = style == _text_style_plain ? font_index : font_definition_get(font_index)->style_fonts[style].index;
-	if (styled_font_index == NONE)
-		styled_font_index = font_index;
+	if (style == _text_style_plain)
+	{
+		font_index = base_font_index;
+	}
+	else
+	{
+		font_index = font_definition_get(base_font_index)->style_fonts[style].index;
+	}
 
-	return font_definition_get(styled_font_index);
+	if (font_index == NONE)
+	{
+		font_index = base_font_index;
+	}
+
+	return font_definition_get(font_index);
 }
 
 static void parse_string_new(
 	struct parse_string_state *state,
-	char const *string,
-	long font_index,
+	char *string,
+	long base_font_index,
 	short style,
 	short justification,
 	real_argb_color const *color)
 {
-	pixel32 packed_color;
+	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 1054, style==_text_style_plain || (style>=0 && style<NUMBER_OF_TEXT_STYLES));
+	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 1055, justification>=0 && justification<NUMBER_OF_TEXT_JUSTIFICATIONS);
 
-	match_assert(
-		"c:\\halo\\SOURCE\\text\\draw_string.c",
-		1054,
-		style==_text_style_plain || (style>=0 && style<NUMBER_OF_TEXT_STYLES));
-	match_assert(
-		"c:\\halo\\SOURCE\\text\\draw_string.c",
-		1055,
-		justification>=0 && justification<NUMBER_OF_TEXT_JUSTIFICATIONS);
-
-	state->base_font_index = font_index;
+	state->base_font_index = base_font_index;
 	state->string = (byte *)string;
-	state->justification = justification;
 	state->string_index = 0;
 	state->style = style;
-
-	packed_color = (long)(color->alpha * 255.f);
-	packed_color = (packed_color << 8) | (long)(color->red * 255.f);
-	packed_color = (packed_color << 8) | (long)(color->green * 255.f);
-	packed_color = (packed_color << 8) | (long)(color->blue * 255.f);
-	state->color = packed_color;
-	state->font_header = styled_font_get(font_index, style);
+	state->justification = justification;
+	state->color = REAL_ARGB_COLOR_TO_PIXEL32(color);
+	state->font_header = styled_font_get(state->base_font_index, state->style);
 
 	return;
 }
 
-static short parse_string(
+short parse_string(
 	struct parse_string_state *state)
 {
-	short *string_index = &state->string_index;
 	word character;
 	short result;
 
 	do
 	{
-		character = get_next_character(state->string, string_index);
+		character = get_next_character(state->string, &state->string_index);
 		result = NONE;
 
-		if ((character & 0xFF00) == 0x7C00)
+		if ((character >> 8) == '|')
 		{
-			switch (tolower(character & 0xFF))
+			switch (tolower(character & UNSIGNED_CHAR_MAX))
 			{
-			case 'p': state->style = _text_style_plain; result = _parsed_style_change; break;
-			case 'i': state->style = _text_style_italic; result = _parsed_style_change; break;
-			case 'b': state->style = _text_style_bold; result = _parsed_style_change; break;
-			case 'k': state->style = _text_style_condense; result = _parsed_style_change; break;
-			case 'u': state->style = _text_style_underline; result = _parsed_style_change; break;
-			case 'l': state->justification = _text_justification_left; result = _parsed_justification_change; break;
-			case 'r': state->justification = _text_justification_right; result = _parsed_justification_change; break;
-			case 'c': state->justification = _text_justification_center; result = _parsed_justification_change; break;
-			case 'n': result = _parsed_end_of_line; break;
-			case 't': result = _parsed_end_of_column; break;
+			case 'p':
+				state->style = _text_style_plain;
+				result = _parsed_style_change;
+				break;
+			case 'i':
+				state->style = _text_style_italic;
+				result = _parsed_style_change;
+				break;
+			case 'b':
+				state->style = _text_style_bold;
+				result = _parsed_style_change;
+				break;
+			case 'k':
+				state->style = _text_style_condense;
+				result = _parsed_style_change;
+				break;
+			case 'u':
+				state->style = _text_style_underline;
+				result = _parsed_style_change;
+				break;
+			case 'l':
+				state->justification = _text_justification_left;
+				result = _parsed_justification_change;
+				break;
+			case 'r':
+				state->justification = _text_justification_right;
+				result = _parsed_justification_change;
+				break;
+			case 'c':
+				state->justification = _text_justification_center;
+				result = _parsed_justification_change;
+				break;
+			case 'n':
+				result = _parsed_end_of_line;
+				break;
+			case 't':
+				result = _parsed_end_of_column;
+				break;
 			}
 		}
 
@@ -696,7 +982,7 @@ static short parse_string(
 		case NONE:
 			switch (character)
 			{
-			case 0:
+			case '\0':
 				result = _parsed_end_of_string;
 				break;
 			case '\t':
@@ -707,15 +993,15 @@ static short parse_string(
 				break;
 			default:
 				{
-					short next_string_index = *string_index;
-					long next_character = get_next_character(state->string, &next_string_index);
+					short next_index = state->string_index;
+					long next_character = get_next_character(state->string, &next_index);
 					char *can_end_words = string_list_get_string(font_drawing_globals.string_list_index, _string_index_can_end_words);
 					char *cannot_end_words = string_list_get_string(font_drawing_globals.string_list_index, _string_index_cannot_end_words);
 					char *cannot_begin_words = string_list_get_string(font_drawing_globals.string_list_index, _string_index_cannot_begin_words);
 
-					if (((character & 0xFF00) || character_in_pattern(character, can_end_words)) &&
-						(!(character & 0xFF00) || !character_in_pattern(character, cannot_end_words)) &&
-						!character_in_pattern(next_character, cannot_begin_words))
+					if (!((character & 0xff00) == 0 && !character_in_pattern(character, can_end_words) ||
+						(character & 0xff00) != 0 && character_in_pattern(character, cannot_end_words) ||
+						character_in_pattern((word)next_character, cannot_begin_words)))
 					{
 						result = _parsed_end_of_word;
 					}
@@ -727,7 +1013,6 @@ static short parse_string(
 				break;
 			}
 			break;
-
 		case _parsed_style_change:
 			state->font_header = styled_font_get(state->base_font_index, state->style);
 			break;
@@ -737,38 +1022,34 @@ static short parse_string(
 
 	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 1203, result!=NONE);
 
-	state->result = result;
 	state->character = character;
+	state->result = result;
 
 	return result;
 }
 
-static word parse_unicode_string(
+static short parse_unicode_string(
 	struct parse_string_state *state)
 {
-	wchar_t const *string = (wchar_t const *)state->string;
-	short string_index = state->string_index;
-	word character = string[string_index];
+	wchar_t character = ((wchar_t *)state->string)[state->string_index++];
 
 	state->character = character;
-	state->string_index = string_index + 1;
-
 	switch (character)
 	{
-	case '|':
-		if (string[state->string_index++] == 'n')
+	case L'|':
+		if (((wchar_t *)state->string)[state->string_index++] == L'n')
 		{
-			state->character = '\r';
+			state->character = L'\r';
 			state->result = _parsed_end_of_line;
 		}
 		break;
-	case 0:
+	case L'\0':
 		state->result = _parsed_end_of_string;
 		break;
-	case '\t':
+	case L'\t':
 		state->result = _parsed_end_of_column;
 		break;
-	case '\r':
+	case L'\r':
 		state->result = _parsed_end_of_line;
 		break;
 	default:
@@ -785,97 +1066,103 @@ static void draw_string_partial(
 	rectangle2d const *bounds,
 	rectangle2d const *clip,
 	pixel32 color,
-	char const *string,
+	char *string,
 	short string_index,
 	short string_length)
 {
-	short clip_left = SHORT_MIN;
-	short clip_top = SHORT_MIN;
-	short clip_right = SHORT_MAX;
-	short clip_bottom = SHORT_MAX;
+	short x0 = SHORT_MIN;
+	short y0 = SHORT_MIN;
+	short x1 = SHORT_MAX;
+	short y1 = SHORT_MAX;
 
 	if (bounds)
 	{
-		if (bounds->x0 > clip_left)
-			clip_left = bounds->x0;
-		if (bounds->x1 < clip_right)
-			clip_right = bounds->x1;
-		if (bounds->y0 > clip_top)
-			clip_top = bounds->y0;
-		if (bounds->y1 < clip_bottom)
-			clip_bottom = bounds->y1;
+		if (bounds->x0 > x0)
+		{
+			x0 = bounds->x0;
+		}
+		if (bounds->x1 < x1)
+		{
+			x1 = bounds->x1;
+		}
+		if (bounds->y0 > y0)
+		{
+			y0 = bounds->y0;
+		}
+		if (bounds->y1 < y1)
+		{
+			y1 = bounds->y1;
+		}
 	}
 
 	if (clip)
 	{
-		if (clip->x0 > clip_left)
-			clip_left = clip->x0;
-		if (clip->x1 < clip_right)
-			clip_right = clip->x1;
-		if (clip->y0 > clip_top)
-			clip_top = clip->y0;
-		if (clip->y1 < clip_bottom)
-			clip_bottom = clip->y1;
+		if (clip->x0 > x0)
+		{
+			x0 = clip->x0;
+		}
+		if (clip->x1 < x1)
+		{
+			x1 = clip->x1;
+		}
+		if (clip->y0 > y0)
+		{
+			y0 = clip->y0;
+		}
+		if (clip->y1 < y1)
+		{
+			y1 = clip->y1;
+		}
 	}
 
-	if (clip_left < clip_right && clip_top < clip_bottom)
+	if (x0 < x1 && y0 < y1)
 	{
-		struct parse_string_state state;
+		struct parse_string_state parse_state;
 
-		parse_string_new(
-			&state,
-			string,
-			font_drawing_globals.current_font_index,
-			font_drawing_globals.current_style,
-			font_drawing_globals.current_justification,
-			&font_drawing_globals.current_color);
-
-		for (state.string_index = string_index; state.string_index < string_length; )
+		parse_string_new(&parse_state, string, font_drawing_globals.current_font_index, font_drawing_globals.current_style, font_drawing_globals.current_justification, &font_drawing_globals.current_color);
+		for (parse_state.string_index = string_index; parse_state.string_index < string_length; )
 		{
-			pixel32 character_color =
-				(state.string_index >= font_drawing_globals.highlight_start_index && state.string_index < font_drawing_globals.highlight_stop_index) ?
-				color ^ 0xFFFFFF :
-				color;
+			pixel32 character_color = parse_state.string_index < font_drawing_globals.highlight_start_index || parse_state.string_index >= font_drawing_globals.highlight_stop_index ?
+				color : color ^ 0x00ffffff;
 			struct font_character *character;
 
-			parse_string(&state);
-			character = font_get_character_by_ascii_code(state.font_header, state.character);
+			parse_string(&parse_state);
+			character = font_get_character_by_ascii_code(parse_state.font_header, parse_state.character);
 			if (character)
 			{
 				short x = cursor->x - character->bitmap_origin_x;
 				short y = cursor->y - character->bitmap_origin_y;
-				short width = character->bitmap_width;
-				short source_x = 0;
-				short source_y = 0;
-				short height = character->bitmap_height;
+				short x_offset = 0;
+				short dx = character->bitmap_width;
+				short y_offset = 0;
+				short dy = character->bitmap_height;
 
 				cursor->x += character->character_width;
 
-				if (x + width > clip_right)
+				if (x + dx > x1)
 				{
-					width = clip_right - x;
+					dx = x1 - x;
 				}
-				if (x < clip_left)
+				if (x < x0)
 				{
-					source_x = clip_left - x;
-					x = clip_left;
-					width -= source_x;
+					x_offset = x0 - x;
+					x = x0;
+					dx -= x_offset;
+				}
+				if (y + dy > y1)
+				{
+					dy = y1 - y;
+				}
+				if (y < y0)
+				{
+					y_offset = y0 - y;
+					y = y0;
+					dy -= y_offset;
 				}
 
-				if (y + height > clip_bottom)
+				if (dx > 0 && dy > 0)
 				{
-					height = clip_bottom - y;
-				}
-				if (y < clip_top)
-				{
-					source_y = clip_top - y;
-					y = clip_top;
-					height -= source_y;
-				}
-
-				if (width > 0 && height > 0)
-				{
-					draw_character(&state, state.font_header, character, character_color, x, y, source_x, source_y, width, height);
+					draw_character(&parse_state, parse_state.font_header, character, character_color, x, y, x_offset, y_offset, dx, dy);
 				}
 			}
 		}
@@ -890,636 +1177,107 @@ static void draw_unicode_string_partial(
 	rectangle2d const *bounds,
 	rectangle2d const *clip,
 	pixel32 color,
-	wchar_t const *string,
+	wchar_t *string,
 	short string_index,
 	short string_length)
 {
-	short clip_left = SHORT_MIN;
-	short clip_top = SHORT_MIN;
-	short clip_right = SHORT_MAX;
-	short clip_bottom = SHORT_MAX;
+	short x0 = SHORT_MIN;
+	short y0 = SHORT_MIN;
+	short x1 = SHORT_MAX;
+	short y1 = SHORT_MAX;
 
 	if (bounds)
 	{
-		if (bounds->x0 > clip_left)
-			clip_left = bounds->x0;
-		if (bounds->x1 < clip_right)
-			clip_right = bounds->x1;
-		if (bounds->y0 > clip_top)
-			clip_top = bounds->y0;
-		if (bounds->y1 < clip_bottom)
-			clip_bottom = bounds->y1;
+		if (bounds->x0 > x0)
+		{
+			x0 = bounds->x0;
+		}
+		if (bounds->x1 < x1)
+		{
+			x1 = bounds->x1;
+		}
+		if (bounds->y0 > y0)
+		{
+			y0 = bounds->y0;
+		}
+		if (bounds->y1 < y1)
+		{
+			y1 = bounds->y1;
+		}
 	}
 
 	if (clip)
 	{
-		if (clip->x0 > clip_left)
-			clip_left = clip->x0;
-		if (clip->x1 < clip_right)
-			clip_right = clip->x1;
-		if (clip->y0 > clip_top)
-			clip_top = clip->y0;
-		if (clip->y1 < clip_bottom)
-			clip_bottom = clip->y1;
+		if (clip->x0 > x0)
+		{
+			x0 = clip->x0;
+		}
+		if (clip->x1 < x1)
+		{
+			x1 = clip->x1;
+		}
+		if (clip->y0 > y0)
+		{
+			y0 = clip->y0;
+		}
+		if (clip->y1 < y1)
+		{
+			y1 = clip->y1;
+		}
 	}
 
-	if (clip_left < clip_right && clip_top < clip_bottom)
+	if (x0 < x1 && y0 < y1)
 	{
-		struct parse_string_state state;
+		struct parse_string_state parse_state;
 
-		parse_string_new(
-			&state,
-			(char const *)string,
-			font_drawing_globals.current_font_index,
-			font_drawing_globals.current_style,
-			font_drawing_globals.current_justification,
-			&font_drawing_globals.current_color);
-
-		for (state.string_index = string_index; state.string_index < string_length; )
+		parse_string_new(&parse_state, (char *)string, font_drawing_globals.current_font_index, font_drawing_globals.current_style, font_drawing_globals.current_justification, &font_drawing_globals.current_color);
+		for (parse_state.string_index = string_index; parse_state.string_index < string_length; )
 		{
-			pixel32 character_color =
-				(state.string_index >= font_drawing_globals.highlight_start_index && state.string_index < font_drawing_globals.highlight_stop_index) ?
-				color ^ 0xFFFFFF :
-				color;
+			pixel32 character_color = parse_state.string_index < font_drawing_globals.highlight_start_index || parse_state.string_index >= font_drawing_globals.highlight_stop_index ?
+				color : color ^ 0x00ffffff;
 			struct font_character *character;
 
-			parse_unicode_string(&state);
-			character = font_get_character_by_ascii_code(state.font_header, state.character);
+			parse_unicode_string(&parse_state);
+			character = font_get_character_by_ascii_code(parse_state.font_header, parse_state.character);
 			if (character)
 			{
 				short x = cursor->x - character->bitmap_origin_x;
 				short y = cursor->y - character->bitmap_origin_y;
-				short width = character->bitmap_width;
-				short source_x = 0;
-				short source_y = 0;
-				short height = character->bitmap_height;
+				short x_offset = 0;
+				short dx = character->bitmap_width;
+				short y_offset = 0;
+				short dy = character->bitmap_height;
 
 				cursor->x += character->character_width;
 
-				if (x + width > clip_right)
+				if (x + dx > x1)
 				{
-					width = clip_right - x;
+					dx = x1 - x;
 				}
-				if (x < clip_left)
+				if (x < x0)
 				{
-					source_x = clip_left - x;
-					x = clip_left;
-					width -= source_x;
+					x_offset = x0 - x;
+					x = x0;
+					dx -= x_offset;
+				}
+				if (y + dy > y1)
+				{
+					dy = y1 - y;
+				}
+				if (y < y0)
+				{
+					y_offset = y0 - y;
+					y = y0;
+					dy -= y_offset;
 				}
 
-				if (y + height > clip_bottom)
+				if (dx > 0 && dy > 0)
 				{
-					height = clip_bottom - y;
-				}
-				if (y < clip_top)
-				{
-					source_y = clip_top - y;
-					y = clip_top;
-					height -= source_y;
-				}
-
-				if (width > 0 && height > 0)
-				{
-					draw_character(&state, state.font_header, character, character_color, x, y, source_x, source_y, width, height);
-				}
-			}
-		}
-	}
-
-	return;
-}
-
-void draw_string(
-	draw_character_proc draw_character,
-	rectangle2d const *bounds,
-	point2d *cursor_reference,
-	rectangle2d const *clip,
-	short height_adjust,
-	char const *string)
-{
-	short tab_stop_index = 0;
-	short paragraph_line_index = 0;
-	short wrapped_line_index = 0;
-	short maximum_wrapped_line_index = 0;
-	struct parse_string_state state;
-	point2d cursor;
-
-	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 648, bounds);
-	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 649, string);
-
-	parse_string_new(
-		&state,
-		string,
-		font_drawing_globals.current_font_index,
-		font_drawing_globals.current_style,
-		font_drawing_globals.current_justification,
-		&font_drawing_globals.current_color);
-
-	do
-	{
-		short justification = state.justification;
-		short segment_start_index = state.string_index;
-		short tab_stop_count = font_drawing_globals.tab_stop_count;
-		short line_width = 0;
-		short break_string_index = 0;
-		short break_line_width;
-		short previous_result = NONE;
-		short segment_end_index;
-		boolean done = FALSE;
-		rectangle2d line_bounds = *bounds;
-
-		if (tab_stop_count > 0)
-		{
-			match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 681, tab_stop_index>=0 && tab_stop_index<=font_drawing_globals.tab_stop_count);
-
-			if (tab_stop_index != 0)
-			{
-				line_bounds.x0 = font_drawing_globals.tab_stops[tab_stop_index - 1];
-			}
-			else if (paragraph_line_index != 0)
-			{
-				line_bounds.x0 += font_drawing_globals.paragraph_indent;
-			}
-			else
-			{
-				line_bounds.x0 += font_drawing_globals.initial_indent;
-			}
-
-			if (tab_stop_index < font_drawing_globals.tab_stop_count)
-			{
-				line_bounds.x1 = font_drawing_globals.tab_stops[tab_stop_index];
-			}
-		}
-		else if (paragraph_line_index != 0)
-		{
-			line_bounds.x0 += font_drawing_globals.paragraph_indent;
-		}
-		else
-		{
-			line_bounds.x0 += font_drawing_globals.initial_indent;
-		}
-
-		cursor.x = state.font_header->leading_width + line_bounds.x0;
-		cursor.y = (state.font_header->leading_height + state.font_header->descending_height + state.font_header->ascending_height + height_adjust) *
-			(wrapped_line_index + paragraph_line_index) +
-			state.font_header->ascending_height + line_bounds.y0;
-
-		do
-		{
-			boolean wrapped = FALSE;
-
-			parse_string(&state);
-			if (state.result != _parsed_end_of_word && state.result != _parsed_character)
-			{
-				done = TRUE;
-			}
-			else
-			{
-				struct font_character *character = font_get_character_by_ascii_code(state.font_header, state.character);
-
-				if (character)
-				{
-					if (state.result != _parsed_end_of_word && previous_result == _parsed_end_of_word)
-					{
-						break_string_index = segment_end_index;
-						break_line_width = line_width;
-					}
-
-					if (character->bitmap_width + cursor.x + line_width < line_bounds.x1)
-					{
-						line_width += character->character_width;
-					}
-					else if (TEST_FLAG(font_drawing_globals.current_flags, _draw_text_wrap_horizontally_bit))
-					{
-						if (break_string_index > 0)
-						{
-							segment_end_index = break_string_index;
-							line_width = break_line_width;
-							wrapped = TRUE;
-						}
-						done = TRUE;
-					}
+					draw_character(&parse_state, parse_state.font_header, character, character_color, x, y, x_offset, y_offset, dx, dy);
 				}
 			}
-
-			if (!wrapped)
-			{
-				segment_end_index = state.string_index;
-			}
-			previous_result = state.result;
-		}
-		while (!done);
-
-		switch (justification)
-		{
-		case _text_justification_center:
-			cursor.x = ((rectangle2d_width(&line_bounds) - line_width) >> 1) + line_bounds.x0;
-			break;
-
-		case _text_justification_right:
-			cursor.x = rectangle2d_width(&line_bounds) + line_bounds.x0 - state.font_header->leading_width - line_width;
-			break;
-		}
-
-		if (TEST_FLAG(font_drawing_globals.current_flags, _draw_text_wrap_vertically_bit) || cursor.y < line_bounds.y1)
-		{
-			draw_string_partial(
-				draw_character,
-				&cursor,
-				&line_bounds,
-				clip,
-				state.color,
-				string,
-				segment_start_index,
-				segment_end_index);
-		}
-
-		state.string_index = segment_end_index;
-
-		switch (state.result)
-		{
-		case _parsed_end_of_string:
-		case _parsed_color_change:
-			break;
-
-		case _parsed_end_of_word:
-		case _parsed_character:
-			wrapped_line_index++;
-			if (wrapped_line_index > maximum_wrapped_line_index)
-			{
-				maximum_wrapped_line_index = wrapped_line_index;
-			}
-			break;
-
-		case _parsed_end_of_column:
-			if (tab_stop_index < font_drawing_globals.tab_stop_count)
-			{
-				tab_stop_index++;
-				wrapped_line_index = 0;
-			}
-			break;
-
-		case _parsed_justification_change:
-			wrapped_line_index = 0;
-			break;
-
-		case _parsed_end_of_line:
-			tab_stop_index = 0;
-			wrapped_line_index = 0;
-			paragraph_line_index += maximum_wrapped_line_index + 1;
-			break;
-
-		default:
-			display_assert(NULL, "c:\\halo\\SOURCE\\text\\draw_string.c", 817, TRUE);
-			system_exit(-1);
-			break;
 		}
 	}
-	while (state.result != _parsed_end_of_string);
-
-	font_drawing_globals.highlight_stop_index = 0;
-	font_drawing_globals.highlight_start_index = 0;
-	if (cursor_reference)
-	{
-		*cursor_reference = cursor;
-	}
-
-	return;
-}
-
-void draw_unicode_string(
-	draw_character_proc draw_character,
-	rectangle2d const *bounds,
-	point2d *cursor_reference,
-	rectangle2d const *clip,
-	short height_adjust,
-	wchar_t const *string)
-{
-	short tab_stop_index = 0;
-	short paragraph_line_index = 0;
-	short wrapped_line_index = 0;
-	short maximum_wrapped_line_index = 0;
-	struct parse_string_state state;
-	point2d cursor;
-
-	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 848, bounds);
-	match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 849, string);
-
-	parse_string_new(
-		&state,
-		(char const *)string,
-		font_drawing_globals.current_font_index,
-		font_drawing_globals.current_style,
-		font_drawing_globals.current_justification,
-		&font_drawing_globals.current_color);
-
-	do
-	{
-		short justification = state.justification;
-		short segment_start_index = state.string_index;
-		short tab_stop_count = font_drawing_globals.tab_stop_count;
-		short line_width = 0;
-		short break_string_index = 0;
-		short break_line_width;
-		short previous_result = NONE;
-		short segment_end_index;
-		boolean done = FALSE;
-		rectangle2d line_bounds = *bounds;
-
-		if (tab_stop_count > 0)
-		{
-			match_assert("c:\\halo\\SOURCE\\text\\draw_string.c", 881, tab_stop_index>=0 && tab_stop_index<=font_drawing_globals.tab_stop_count);
-
-			if (tab_stop_index != 0)
-			{
-				line_bounds.x0 = font_drawing_globals.tab_stops[tab_stop_index - 1];
-			}
-			else if (paragraph_line_index != 0)
-			{
-				line_bounds.x0 += font_drawing_globals.paragraph_indent;
-			}
-			else
-			{
-				line_bounds.x0 += font_drawing_globals.initial_indent;
-			}
-
-			if (tab_stop_index < font_drawing_globals.tab_stop_count)
-			{
-				line_bounds.x1 = font_drawing_globals.tab_stops[tab_stop_index];
-			}
-		}
-		else if (paragraph_line_index != 0)
-		{
-			line_bounds.x0 += font_drawing_globals.paragraph_indent;
-		}
-		else
-		{
-			line_bounds.x0 += font_drawing_globals.initial_indent;
-		}
-
-		cursor.x = state.font_header->leading_width + line_bounds.x0;
-		cursor.y = (state.font_header->leading_height + state.font_header->descending_height + state.font_header->ascending_height + height_adjust) *
-			(wrapped_line_index + paragraph_line_index) +
-			state.font_header->ascending_height + line_bounds.y0;
-
-		do
-		{
-			boolean wrapped = FALSE;
-
-			parse_unicode_string(&state);
-			if (state.result != _parsed_end_of_word && state.result != _parsed_character)
-			{
-				done = TRUE;
-			}
-			else
-			{
-				struct font_character *character = font_get_character_by_ascii_code(state.font_header, state.character);
-
-				if (character)
-				{
-					if (state.result != _parsed_end_of_word && previous_result == _parsed_end_of_word)
-					{
-						break_string_index = segment_end_index;
-						break_line_width = line_width;
-					}
-
-					if (character->bitmap_width + cursor.x + line_width < line_bounds.x1)
-					{
-						line_width += character->character_width;
-					}
-					else if (TEST_FLAG(font_drawing_globals.current_flags, _draw_text_wrap_horizontally_bit))
-					{
-						if (break_string_index > 0)
-						{
-							segment_end_index = break_string_index;
-							line_width = break_line_width;
-							wrapped = TRUE;
-						}
-						done = TRUE;
-					}
-				}
-			}
-
-			if (!wrapped)
-			{
-				segment_end_index = state.string_index;
-			}
-			previous_result = state.result;
-		}
-		while (!done);
-
-		switch (justification)
-		{
-		case _text_justification_center:
-			cursor.x = ((rectangle2d_width(&line_bounds) - line_width) >> 1) + line_bounds.x0;
-			break;
-
-		case _text_justification_right:
-			cursor.x = rectangle2d_width(&line_bounds) + line_bounds.x0 - state.font_header->leading_width - line_width;
-			break;
-		}
-
-		if (TEST_FLAG(font_drawing_globals.current_flags, _draw_text_wrap_vertically_bit) || cursor.y < line_bounds.y1)
-		{
-			draw_unicode_string_partial(
-				draw_character,
-				&cursor,
-				&line_bounds,
-				clip,
-				state.color,
-				string,
-				segment_start_index,
-				segment_end_index);
-		}
-
-		state.string_index = segment_end_index;
-
-		switch (state.result)
-		{
-		case _parsed_end_of_string:
-		case _parsed_color_change:
-			break;
-
-		case _parsed_end_of_word:
-		case _parsed_character:
-			wrapped_line_index++;
-			if (wrapped_line_index > maximum_wrapped_line_index)
-			{
-				maximum_wrapped_line_index = wrapped_line_index;
-			}
-			break;
-
-		case _parsed_end_of_column:
-			if (tab_stop_index < font_drawing_globals.tab_stop_count)
-			{
-				tab_stop_index++;
-				wrapped_line_index = 0;
-			}
-			break;
-
-		case _parsed_justification_change:
-			wrapped_line_index = 0;
-			break;
-
-		case _parsed_end_of_line:
-			tab_stop_index = 0;
-			wrapped_line_index = 0;
-			paragraph_line_index += maximum_wrapped_line_index + 1;
-			break;
-
-		default:
-			display_assert(NULL, "c:\\halo\\SOURCE\\text\\draw_string.c", 1017, TRUE);
-			system_exit(-1);
-			break;
-		}
-	}
-	while (state.result != _parsed_end_of_string);
-
-	font_drawing_globals.highlight_stop_index = 0;
-	font_drawing_globals.highlight_start_index = 0;
-	if (cursor_reference)
-	{
-		*cursor_reference = cursor;
-	}
-
-	return;
-}
-
-void draw_string_compute_bounds(
-	rectangle2d const *bounds,
-	char const *string,
-	rectangle2d *text_bounds,
-	rectangle2d *cursor_bounds)
-{
-	point2d cursor;
-
-	text_bounds_globals.bounds.y0 = SHORT_MAX;
-	text_bounds_globals.bounds.x0 = SHORT_MAX;
-	text_bounds_globals.bounds.y1 = SHORT_MIN;
-	text_bounds_globals.bounds.x1 = SHORT_MIN;
-
-	text_bounds_globals.last_font_header = styled_font_get(
-		font_drawing_globals.current_font_index,
-		font_drawing_globals.current_style);
-	draw_string(text_bounds_draw_character, bounds, &cursor, NULL, 0, string);
-
-	cursor_bounds->x0 = cursor.x;
-	cursor_bounds->x1 = (short)(cursor.x + 1);
-	cursor_bounds->y0 = (short)(
-		cursor.y - text_bounds_globals.last_font_header->ascending_height);
-	cursor_bounds->y1 = (short)(
-		text_bounds_globals.last_font_header->descending_height + cursor.y);
-
-	text_bounds->x0 = text_bounds_globals.bounds.x0;
-	text_bounds->y0 = bounds->y0;
-	text_bounds->x1 = text_bounds_globals.bounds.x1;
-	text_bounds->y1 = cursor_bounds->y1;
-
-	return;
-}
-
-void draw_unicode_string_compute_bounds(
-	rectangle2d const *bounds,
-	wchar_t const *string,
-	rectangle2d *text_bounds,
-	rectangle2d *cursor_bounds)
-{
-	point2d cursor;
-
-	text_bounds_globals.bounds.y0 = SHORT_MAX;
-	text_bounds_globals.bounds.x0 = SHORT_MAX;
-	text_bounds_globals.bounds.y1 = SHORT_MIN;
-	text_bounds_globals.bounds.x1 = SHORT_MIN;
-
-	text_bounds_globals.last_font_header = styled_font_get(
-		font_drawing_globals.current_font_index,
-		font_drawing_globals.current_style);
-	draw_unicode_string(text_bounds_draw_character, bounds, &cursor, NULL, 0, string);
-
-	cursor_bounds->x0 = cursor.x;
-	cursor_bounds->x1 = (short)(cursor.x + 1);
-	cursor_bounds->y0 = (short)(
-		cursor.y - text_bounds_globals.last_font_header->ascending_height);
-	cursor_bounds->y1 = (short)(
-		text_bounds_globals.last_font_header->descending_height + cursor.y);
-
-	text_bounds->x0 = text_bounds_globals.bounds.x0;
-	text_bounds->y0 = bounds->y0;
-	text_bounds->x1 = text_bounds_globals.bounds.x1;
-	text_bounds->y1 = cursor_bounds->y1;
-
-	return;
-}
-
-short draw_string_pick(
-	rectangle2d const *bounds,
-	char const *string,
-	point2d const *point)
-{
-	text_pick_globals.pick_point = *point;
-	text_pick_globals.best_pick_distance = SHORT_MAX;
-	text_pick_globals.best_pick_string_index = 0;
-	text_pick_globals.last_string_index = 0;
-
-	draw_string(text_pick_draw_character, bounds, NULL, NULL, 0, string);
-	return (word)text_pick_globals.best_pick_string_index;
-}
-
-void bitmap_draw_string(
-	struct bitmap_data *bitmap,
-	rectangle2d const *bounds,
-	rectangle2d const *clip,
-	char const *string)
-{
-	rectangle2d adjusted_bounds;
-	rectangle2d adjusted_clip;
-	rectangle2d const *effective_bounds = bounds;
-	short format = bitmap->format;
-
-	draw_character_software_globals.bitmap = bitmap;
-
-	switch (format)
-	{
-	case _bitmap_format_a8:
-	case _bitmap_format_y8:
-	case _bitmap_format_ay8:
-	case _bitmap_format_r5g6b5:
-	case _bitmap_format_a8r8g8b8:
-		break;
-
-	default:
-		return;
-	}
-
-	if (!effective_bounds)
-	{
-		set_rectangle2d(
-			&adjusted_bounds,
-			0,
-			0,
-			bitmap->width,
-			bitmap->height);
-		effective_bounds = &adjusted_bounds;
-	}
-
-	if (clip)
-	{
-		set_rectangle2d(
-			&adjusted_clip,
-			MAX(clip->x0, 0),
-			MAX(clip->y0, 0),
-			MIN(clip->x1, bitmap->width),
-			MIN(clip->y1, bitmap->height));
-		clip = &adjusted_clip;
-	}
-
-	draw_string(
-		bitmap_draw_character,
-		effective_bounds,
-		NULL,
-		clip,
-		0,
-		string);
 
 	return;
 }

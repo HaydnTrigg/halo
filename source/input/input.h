@@ -8,7 +8,6 @@ INPUT.H
 
 /* ---------- headers */
 
-#include "math/integer_math.h"
 
 /* ---------- constants */
 
@@ -28,6 +27,45 @@ enum
 	_memory_unit_controller3_top,
 	_memory_unit_controller3_bottom,
 	NUMBER_OF_MEMORY_UNITS
+};
+
+enum
+{
+	_device_change_gamepad0_removed_bit = 0, /* fake name */
+	_device_change_gamepad1_removed_bit, /* fake name */
+	_device_change_gamepad2_removed_bit, /* fake name */
+	_device_change_gamepad3_removed_bit, /* fake name */
+	_device_change_controller0_top_removed_bit, /* fake name */
+	_device_change_controller0_bottom_removed_bit, /* fake name */
+	_device_change_controller1_top_removed_bit, /* fake name */
+	_device_change_controller1_bottom_removed_bit, /* fake name */
+	_device_change_controller2_top_removed_bit, /* fake name */
+	_device_change_controller2_bottom_removed_bit, /* fake name */
+	_device_change_controller3_top_removed_bit, /* fake name */
+	_device_change_controller3_bottom_removed_bit, /* fake name */
+	_device_change_gamepad0_inserted_bit, /* fake name */
+	_device_change_gamepad1_inserted_bit, /* fake name */
+	_device_change_gamepad2_inserted_bit, /* fake name */
+	_device_change_gamepad3_inserted_bit, /* fake name */
+	_device_change_controller0_top_inserted_bit, /* fake name */
+	_device_change_controller0_bottom_inserted_bit, /* fake name */
+	_device_change_controller1_top_inserted_bit, /* fake name */
+	_device_change_controller1_bottom_inserted_bit, /* fake name */
+	_device_change_controller2_top_inserted_bit, /* fake name */
+	_device_change_controller2_bottom_inserted_bit, /* fake name */
+	_device_change_controller3_top_inserted_bit, /* fake name */
+	_device_change_controller3_bottom_inserted_bit, /* fake name */
+	NUMBER_OF_DEVICE_CHANGE_BITS, /* fake name */
+
+	DEVICE_CHANGE_INSERTED_MASK = MASK(NUMBER_OF_DEVICE_CHANGE_BITS) & ~MASK(_device_change_gamepad0_inserted_bit) /* fake name */
+};
+
+enum
+{
+	_key_modifier_shift_bit = 0, /* fake name */
+	_key_modifier_control_bit, /* fake name */
+	_key_modifier_alt_bit, /* fake name */
+	NUMBER_OF_KEY_MODIFIER_BITS /* fake name */
 };
 
 enum
@@ -173,6 +211,19 @@ enum
 
 enum
 {
+	_mouse_button_left = 0,
+	_mouse_button_middle,
+	_mouse_button_right,
+	_mouse_button_x1,
+	_mouse_button_x2,
+	_mouse_button_x3,
+	_mouse_button_x4,
+	_mouse_button_x5,
+	NUMBER_OF_MOUSE_BUTTONS,
+};
+
+enum
+{
 	_gamepad_stick_left = 0,
 	_gamepad_stick_right,
 	NUMBER_OF_GAMEPAD_STICKS
@@ -193,6 +244,14 @@ struct vibrate_data
 {
 	word left_frequency;
 	word right_frequency;
+};
+
+struct mouse_state
+{
+	long dx;
+	long dy;
+	long dw;
+	byte button_frames[NUMBER_OF_MOUSE_BUTTONS];
 };
 
 struct gamepad_state

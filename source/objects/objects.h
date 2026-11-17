@@ -11,35 +11,32 @@ file has inline function assertions.
 /* ---------- headers */
 
 #include "object_definitions.h"
-#include "object_types.h"
-
-#include "math/real_math.h"
-#include "memory/data.h"
-#include "structures/cluster_partitions.h"
+#include "ai_scenario_definitions.h"
+#include "game_globals.h"
+#include "interface.h"
+#include "damage.h"
+#include "breakable_surfaces.h"
+#include "scenario.h"
+#include "model_animation_definitions.h"
+#include "model_definitions.h"
+#include "models.h"
+#include "damage_resistances.h"
+#include "shader_definitions.h"
 
 /* ---------- constants */
-
-enum
-{
-	OBJECT_ITERATOR_SIGNATURE = 0x86868686,
-	MAXIMUM_CLUSTERS_PER_OBJECT = 32,
-	OBJECT_MEMORY_POOL_SIZE = 0x100000,
-	GARBAGE_LIMIT_FREE_MEMORY_CRITICAL = 52428,
-	GARBAGE_LIMIT_FREE_MEMORY_TRIGGER = 104857,
-	GARBAGE_LIMIT_FREE_MEMORY_TARGET = 209715,
-	GARBAGE_LIMIT_FREE_OBJECTS_CRITICAL = 51,
-	GARBAGE_LIMIT_FREE_OBJECTS_TRIGGER = 102,
-	GARBAGE_LIMIT_FREE_OBJECTS_TARGET = 204,
-	GARBAGE_LIMIT_ACTIVE_GARBAGE_CRITICAL = 75,
-	GARBAGE_LIMIT_ACTIVE_GARBAGE_TRIGGER = 50,
-	GARBAGE_LIMIT_ACTIVE_GARBAGE_TARGET = 30,
-};
 
 enum
 {
 	MAXIMUM_MARKERS_PER_OBJECT = 64,
 	MAXIMUM_OBJECTS_PER_MAP = 2048,
 	MAXIMUM_RENDERED_OBJECTS = 256,
+};
+
+enum
+{
+	_object_class_collideable = 0,
+	_object_class_noncollideable,
+	NUMBER_OF_OBJECT_CLASSES,
 };
 
 enum
@@ -95,7 +92,6 @@ enum
 	NUMBER_OF_NEW_OBJECT_DATA_FLAGS,
 };
 
-
 enum
 {
 	_object_passed_body_damage_threshold_bit = 0,
@@ -135,51 +131,6 @@ enum
 	NUMBER_OF_OBJECT_FUNCTION_REFERENCES,
 };
 
-enum
-{
-	_object_function_none = 0,
-	_object_function_body_vitality,
-	_object_function_shield_vitality,
-	_object_function_recent_body_damage,
-	_object_function_recent_shield_damage,
-	_object_function_random_constant,
-	_object_function_umbrella_shield_vitality,
-	_object_function_shield_stun,
-	_object_function_recent_umbrella_shield_vitality,
-	_object_function_umbrella_shield_stun,
-	_object_function_first_region_damage,
-	_object_function_last_region_damage = 17,
-	_object_function_alive,
-	_object_function_compass,
-	NUMBER_OF_OBJECT_FUNCTION_MODES,
-};
-
-enum
-{
-	_object_change_color_a = 0,
-	_object_change_color_b,
-	_object_change_color_c,
-	_object_change_color_d,
-	NUMBER_OF_OBJECT_CHANGE_COLORS,
-};
-
-enum
-{
-	_pvs_activation_normal = 0,
-	_pvs_activation_object,
-	_pvs_activation_cluster,
-	NUMBER_OF_OBJECT_PVS_ACTIVATION_TYPES,
-};
-
-enum
-{
-	_garbage_collect_everything = 0,
-	_garbage_collect_active_objects,
-	_garbage_collect_for_space,
-	NUMBER_OF_GARBAGE_COLLECTION_MODES,
-};
-
-
 /* ---------- macros */
 
 #define object_header_get(index)			((struct object_header_datum*)datum_get(object_header_data, (index)))
@@ -188,18 +139,9 @@ enum
 #define object_get(index)			((struct object_datum*)object_get_and_verify_type(index, _object_mask_all))
 #define object_try_and_get(index)	((struct object_datum*)object_try_and_get_and_verify_type(index, _object_mask_all))
 
-/* the inline assertions below report January's __FILE__ for this header, and January spelled it
-   two ways: its string census has "..\objects\objects.h" defined by action_vehicle (and
-   referenced by render_objects) and "c:\halo\source\objects\objects.h" defined by
-   object_lights; a unit that needs the absolute spelling defines OBJECTS_H_FILE first */
-#ifndef OBJECTS_H_FILE
-#define OBJECTS_H_FILE "..\\objects\\objects.h"
-#endif
-
 /* ---------- structures */
 
 typedef void (*object_deleted_proc)(long);
-
 
 struct object_cluster_iterator
 {
@@ -215,19 +157,6 @@ struct object_header_datum
 	short cluster_index;
 	short data_size;
 	struct object_datum *datum;
-};
-
-struct location
-{
-	long leaf_index;
-	short cluster_index;
-	word bonus;
-};
-
-struct animation_state
-{
-	short index;
-	short frame_index;
 };
 
 struct object_animation_state
@@ -356,8 +285,6 @@ struct object_placement_data
 
 /* ---------- prototypes/OBJECTS.C */
 
-struct scenario_object_permutation;
-
 long cluster_get_first_noncollideable_object(long *reference_index, short cluster_index);
 long cluster_get_next_noncollideable_object(long *reference_index);
 long cluster_get_first_collideable_object(long *reference_index, short cluster_index);
@@ -446,6 +373,7 @@ void object_translate(long object_index, real_point3d const *new_position, struc
 long object_new(struct object_placement_data *data);
 void object_attach_to_node(long parent_object_index, long child_object_index, short parent_node_index);
 boolean object_force_inside_bsp(long object_index, real_point3d const *known_good_point);
+boolean object_update(long object_index);
 void object_compute_node_matrices_recursive(long object_index);
 long object_new_from_scenario(struct scenario_object_datum *scenario_object, struct tag_block *palette);
 void object_attach_to_marker(long parent_object_index, char const *parent_marker_name, long child_object_index, char const *child_marker_name);
@@ -455,7 +383,6 @@ void object_delete_immediately(long object_index);
 void objects_garbage_collection(void);
 void objects_update(void);
 void objects_memory_compact(void);
-
 
 /* ---------- prototypes/OBJECT_DELETED_PROCS.C */
 
@@ -496,8 +423,8 @@ __inline void object_get_bounding_sphere(
 {
 	struct object_datum *object = object_get(object_index);
 
-	match_assert(OBJECTS_H_FILE, 535, center);
-	match_assert(OBJECTS_H_FILE, 536, radius);
+	match_assert("c:\\halo\\source\\objects\\objects.h", 535, center);
+	match_assert("c:\\halo\\source\\objects\\objects.h", 536, radius);
 
 	*center = object->object.bounding_sphere_center;
 	*radius = object->object.bounding_sphere_radius;
@@ -512,14 +439,13 @@ __inline void object_get_render_bounding_sphere(
 {
 	struct object_datum *object = object_get(object_index);
 
-	match_assert(OBJECTS_H_FILE, 551, center);
-	match_assert(OBJECTS_H_FILE, 552, radius);
+	match_assert("c:\\halo\\source\\objects\\objects.h", 551, center);
+	match_assert("c:\\halo\\source\\objects\\objects.h", 552, radius);
 
 	*center = object->object.bounding_sphere_center;
 	*radius = object_definition_get(object->definition_index)->object.render_bounding_radius;
 
 	return;
 }
-
 
 #endif // __OBJECTS_H

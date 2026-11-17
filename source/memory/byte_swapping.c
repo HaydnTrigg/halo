@@ -5,7 +5,7 @@ symbols in this file:
 00107E40 01d0:
 	_byte_swap_memory (0000)
 00108010 03b0:
-	_code_00108010 (0000)
+	__byte_swap_data (0000)
 001083C0 0040:
 	_byte_swap_codes_size (0000)
 00108400 00d0:
@@ -53,7 +53,6 @@ symbols in this file:
 /* ---------- headers */
 
 #include "cseries.h"
-#include "byte_swapping.h"
 
 /* ---------- constants */
 

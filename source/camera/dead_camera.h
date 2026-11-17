@@ -8,11 +8,6 @@ header included in hcex build.
 #define __DEAD_CAMERA_H
 #pragma once
 
-/* ---------- headers */
-
-#include "cseries/cseries.h"
-#include "math/real_math.h"
-
 /* ---------- constants */
 
 /* ---------- macros */
@@ -22,7 +17,7 @@ header included in hcex build.
 struct dead_camera
 {
 	real_point3d position;
-	real_euler_angles2d facing;
+	real_euler_angles2d orientation;
 	real distance;
 	real field_of_view;
 	real timer;
@@ -32,22 +27,10 @@ struct dead_camera
 	real switch_timer;
 };
 
-typedef char dead_camera_size_assert[
-	sizeof(struct dead_camera) == 0x30 ? 1 : -1];
-
-struct camera_control;
-struct dead_camera_command;
-
 /* ---------- prototypes/DEAD_CAMERA.C */
 
-void dead_camera_new(
-	struct dead_camera *camera,
-	short local_player_index,
-	long unit_index);
-void dead_camera_update(
-	struct dead_camera *camera,
-	struct camera_control const *controls,
-	struct dead_camera_command *result);
+void dead_camera_new(struct dead_camera *camera, short local_player_index, long unit_index);
+void dead_camera_update(struct dead_camera *camera, struct camera_control const *controls, struct observer_command *result);
 
 /* ---------- globals */
 

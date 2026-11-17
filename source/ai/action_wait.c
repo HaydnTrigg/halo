@@ -21,12 +21,11 @@ symbols in this file:
 /* ---------- headers */
 
 #include "cseries.h"
-#include "actions.h"
-
 #include "actors.h"
-#include "ai_communication.h"
+#include "encounters.h"
 #include "props.h"
-#include "game/game.h"
+#include "actor_types.h"
+#include "units.h"
 
 /* ---------- constants */
 

@@ -10,8 +10,6 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "math/real_math.h"
-#include "objects/objects.h"
 
 /* ---------- constants */
 
@@ -154,42 +152,10 @@ struct prop_iterator
 
 /* ---------- prototypes/PROPS.C */
 
-void props_initialize(
-	void);
-void props_initialize_for_new_map(
-	void);
-void props_dispose(
-	void);
-void props_dispose_from_old_map(
-	void);
-void prop_delete(
-	long actor_index,
-	long prop_index);
 void prop_iterator_new(struct prop_iterator *iterator, long actor_index);
 struct prop_datum *prop_iterator_next(struct prop_iterator *iterator);
-long prop_new_unacknowledged(
-	long actor_index,
-	long unit_index,
-	boolean enemy);
-long prop_orphan_transition(
-	long actor_index,
-	long parent_prop_index);
-long prop_orphan_from_friend(
-	long actor_index,
-	long unacknowledged_prop_index,
-	long friend_acknowledged_prop_index);
-void prop_orphan_update_information(
-	long actor_index,
-	long orphan_prop_index,
-	long friend_acknowledged_prop_index);
-long prop_get_active_by_unit_index(
-	long actor_index,
-	long unit_index);
-long prop_get_base_by_unit_index(
-	long actor_index,
-	long unit_index,
-	boolean create_if_missing,
-	boolean update_status);
+long prop_get_active_by_unit_index(long actor_index, long unit_index);
+long prop_get_base_by_unit_index(long actor_index, long unit_index, boolean acquire, boolean refresh_upon_acquisition);
 
 /* ---------- globals */
 

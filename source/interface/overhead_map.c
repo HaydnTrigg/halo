@@ -19,10 +19,6 @@ symbols in this file:
 /* ---------- headers */
 
 #include "cseries.h"
-#include "bitmaps/bitmap_group.h"
-#include "game/game.h"
-#include "math/integer_math.h"
-#include "math/real_math.h"
 
 /* ---------- constants */
 
@@ -61,56 +57,61 @@ typedef char verify_overhead_map_bitmap_offset[offsetof(struct overhead_map_glob
 
 /* ---------- globals */
 
-static real const overhead_map_constants[3] = { 0.5f, 84.0f, 80.0f };
-
-static struct overhead_map_globals bss_00453cd0;
-#define overhead_map_globals bss_00453cd0
+struct
+{
+	boolean bss_00453cd0;
+	short data_853cd2;
+	short data_853cd4;
+	short data_853cd6;
+	long data_853cd8;
+	long data_853cdc;
+	long data_853ce0;
+	double data_853ce4;
+	short data_853cec;
+	short data_853cee;
+	long data_853cf0;
+	void* data_853cf8;
+} overhead_map_globals;
 
 /* ---------- public code */
 
-void overhead_map_initialize(void)
+void overhead_map_initialize(
+	void)
 {
+	return;
 }
 
-void overhead_map_initialize_for_new_map(void)
+void overhead_map_initialize_for_new_map(
+	void)
 {
+	return;
 }
 
-void overhead_map_dispose_from_old_map(void)
+void overhead_map_dispose_from_old_map(
+	void)
 {
-	overhead_map_globals.enabled = FALSE;
+	overhead_map_globals.bss_00453cd0 = FALSE;
+
+	return;
 }
 
 void overhead_map_post_rasterize(
-	void *unused0,
-	void *unused1,
-	real_point2d const *viewport_size)
+	void* a1,
+	void* a2,
+	double* a3)
 {
-	if (overhead_map_globals.enabled)
+	double* v1;
+	void* v2;
+
+	if (overhead_map_globals.bss_00453cd0)
 	{
-		rectangle2d render_bounds;
-		struct bitmap_data *bitmap;
+		overhead_map_globals.data_853ce4 = *a3;
 
-		overhead_map_globals.viewport_size = *viewport_size;
-		bitmap = overhead_map_globals.bitmap;
-		render_bounds.x0 = ((short)(long)viewport_size->x >> 1) - bitmap->registration_point.x;
-		render_bounds.y0 = ((short)(long)viewport_size->y >> 1) - bitmap->registration_point.y;
-
-		render_bounds.x1 = overhead_map_globals.bitmap_bounds.x1 + render_bounds.x0;
-		render_bounds.y1 = overhead_map_globals.bitmap_bounds.y1 + render_bounds.y0;
-		overhead_map_globals.bitmap_origin.y = render_bounds.y0;
-		render_bounds.y0 += overhead_map_globals.bitmap_bounds.y0;
-		overhead_map_globals.bitmap_origin.x = render_bounds.x0;
-		render_bounds.x0 += overhead_map_globals.bitmap_bounds.x0;
-
-		if (!overhead_map_globals.throttle_updates ||
-			local_time_get() - overhead_map_globals.last_render_bounds_update_time > 7)
-		{
-			overhead_map_globals.render_bounds = render_bounds;
-			overhead_map_globals.last_render_bounds_update_time = local_time_get();
-			overhead_map_globals.render_target_dirty = FALSE;
-		}
+		v1 = a3;
+		v2 = overhead_map_globals.data_853cf8;
 	}
+
+	return;
 }
 
 /* ---------- private code */

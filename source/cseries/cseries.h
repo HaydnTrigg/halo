@@ -11,9 +11,9 @@ CSERIES.H
 #include <StdDef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <malloc.h>
 #include <math.h>
 #include <string.h>
-#include <stdarg.h>
 
 /* ---------- constants */
 
@@ -41,8 +41,8 @@ enum
 enum
 {
 	UNSIGNED_LONG_MAX = 4294967295,
-	LONG_MAX = 2147483647L,
-	LONG_MIN = (-2147483648L),
+	LONG_MAX = 2147483647L,	   //0x7FFFFFFF
+	LONG_MIN = (-2147483648L), //0x80000000
 	LONG_BITS = 32,
 	LONG_BITS_BITS = 5,
 
@@ -85,10 +85,24 @@ enum
 	NUMBER_OF_POINTS_PER_RECTANGLE = 4,
 };
 
-
 #define NONE -1
 
+enum
+{
+	_german = 0,
+	_french,
+	_spanish,
+	_italian,
+	_english,
+	_japanese,
+	_unknown,
+	NUMBER_OF_SUPPORTED_LANGUAGES,
+};
+
 /* ---------- macros */
+
+#define SECONDS_PER_TICK (1.f/TICKS_PER_SECOND) /* fake name */
+#define METERS_PER_UNIT 3.048f /* fake name */
 
 #define STRINGIFY_DETAIL(x) #x
 #define STRINGIFY(x) STRINGIFY_DETAIL(x)
@@ -102,26 +116,21 @@ enum
 	#define MATCH_LINE(line) line
 #endif
 
-#define match_halt(file, line) do { display_assert(NULL, MATCH_FILE(file), MATCH_LINE(line), TRUE); halt_and_catch_fire(); } while (FALSE);
-#define match_vhalt(file, line, string) do { display_assert(string, MATCH_FILE(file), MATCH_LINE(line), TRUE); halt_and_catch_fire(); } while (FALSE);
+#define match_halt(file, line) { display_assert(NULL, MATCH_FILE(file), MATCH_LINE(line), TRUE); system_exit(-1); }
+#define match_vhalt(file, line, string) { display_assert(string, MATCH_FILE(file), MATCH_LINE(line), TRUE); system_exit(-1); }
 #define match_assert(file, line, expr) if (!(expr)) { display_assert(#expr, MATCH_FILE(file), MATCH_LINE(line), TRUE); system_exit(-1); }
 #define match_vassert(file, line, expr, string) if (!(expr)) { display_assert(string, MATCH_FILE(file), MATCH_LINE(line), TRUE); system_exit(-1); }
-#define match_dassert(file, line, expr, diagnostic) do { match_vassert(file, line, expr, diagnostic); } while (FALSE)
 #define match_warn(file, line, expr) if (!(expr)) { display_assert(#expr, MATCH_FILE(file), MATCH_LINE(line), FALSE); }
 #define match_vwarn(file, line, expr, string) if (!(expr)) { display_assert(string, MATCH_FILE(file), MATCH_LINE(line), FALSE); }
-#define match_dwarn(file, line, expr, diagnostic) do { match_vwarn(file, line, expr, diagnostic); } while (FALSE)
-#define match_dhalt(file, line, diagnostic) do { match_vhalt(file, line, diagnostic); } while (FALSE)
+#define match_unreachable(file, line) match_assert(file, line, !"unreachable")
 
 #define halt() match_halt(__FILE__, __LINE__)
 #define vhalt(string) match_vhalt(__FILE__, __LINE__, string)
-#define dhalt(diagnostic) match_dhalt(__FILE__, __LINE__, diagnostic)
 #define assert(expr) match_assert(__FILE__, __LINE__, expr)
-#define dassert(expr, diagnostic) match_dassert(__FILE__, __LINE__, expr, diagnostic)
-/* VC7 has no variadic macros: format vassert messages with csprintf(temporary, ...). */
 #define vassert(expr, string) match_vassert(__FILE__, __LINE__, expr, string)
 #define warn(expr) match_warn(__FILE__, __LINE__, expr)
-#define dwarn(expr, diagnostic) match_dwarn(__FILE__, __LINE__, expr, diagnostic)
 #define vwarn(expr, string) match_vwarn(__FILE__, __LINE__, expr, string)
+#define unreachable() match_assert(__FILE__, __LINE__, !"unreachable")
 
 #define ABS(x) ((x>=0) ? (x) : -(x))
 
@@ -133,6 +142,7 @@ enum
 #define PIN(n,floor,ceiling) ((n)<(floor) ? (floor) : CEILING((n),(ceiling)))
 
 #define FLAG(b) (1<<(b))
+#define MASK(b) (FLAG((b)) - 1)
 #define TEST_FLAG(flags, bit) (((flags)&(unsigned)FLAG(bit))!=0)
 #define SET_FLAG(f, b, v) ((v) ? ((f)|=(unsigned)FLAG(b)) : ((f)&=(unsigned)~FLAG(b)))
 
@@ -146,8 +156,6 @@ enum
 #define SIZEOF_BITS(value) (CHAR_BITS*sizeof(value))
 #define NUMBEROF(array) (sizeof(array) / sizeof(array[0]))
 
-#define VALID_INDEX(index, count) (index>=0 && index<count)
-
 #define DATUM_INDEX_NEW(absolute_index, salt) ((absolute_index) | ((salt)<<SHORT_BITS))
 #define DATUM_INDEX_TO_ABSOLUTE_INDEX(datum_index) ((datum_index)&UNSIGNED_SHORT_MAX)
 #define DATUM_INDEX_TO_IDENTIFIER(datum_index) ((datum_index)>>SHORT_BITS)
@@ -160,11 +168,39 @@ enum
 
 typedef unsigned char byte;
 typedef unsigned short word;
-typedef float real;
 
 typedef byte boolean;
 
 typedef unsigned long tag;
+
+typedef boolean (*compare_function_2byte)(short, short);
+typedef boolean (*compare_function_4byte)(long, long);
+
+/* ---------- structures */
+
+struct system_unique_identifier
+{
+	byte data[16];
+};
+
+struct memory_status
+{
+	unsigned long minimum_free; /* fake name */
+	unsigned long maximum_free; /* fake name */
+};
+
+struct system_memory_information
+{
+	long free;
+	long total;
+};
+
+struct location
+{
+	long leaf_index;
+	short cluster_index;
+	word bonus;
+};
 
 /* ---------- prototypes/CSERIES.C */
 
@@ -173,8 +209,8 @@ void cseries_dispose(void);
 tag string_to_tag(const char *s);
 char *tag_to_string(tag t, char *s);
 long strnlen(const char *string, long n);
-char *strnupr(char *string, long n);
-char *strnlwr(char *string, long n);
+char *strnupr(char *string, int n);
+char *strnlwr(char *string, int n);
 char *strupr(char *string);
 char *strlwr(char *string);
 char *csprintf(char *buffer, char *format, ...);
@@ -195,53 +231,43 @@ long csstrcasecmp(const char *s1, const char *s2);
 char *stristr(char const *haystack, char const *needle);
 unsigned long string_hash(char const *string);
 
-/* ---------- prototypes/CSERIES_WINDOWS.C */
-
-void system_exit(long code);
-
 /* ---------- prototypes/MAIN.C */
 
 void halt_and_catch_fire(void);
 
 /* ---------- prototypes/DEBUG_MEMORY.C */
 
-void debug_memory_manager_initialize(
-	void);
+void debug_memory_manager_initialize(void);
 /*void debug_memory_manager_dispose(void);*/
-void check_memory_status(
-	struct memory_status *memory_status,
-	const char *location);
-void debug_check_memory(
-	const char *file,
-	long line);
-void debug_dump_memory_for_file(
-	const char *file);
-void debug_dump_memory_by_file(
-	void);
-void *debug_malloc(
-	unsigned int size,
-	boolean clear,
-	const char *file,
-	long line);
-void debug_free(
-	void *pointer,
-	const char *file,
-	long line);
-void *debug_realloc(
-	void *pointer,
-	unsigned int size,
-	const char *file,
-	long line);
-void debug_dump_memory(
-	void);
+void check_memory_status(struct memory_status *status, char const *string);
+void *debug_malloc(unsigned int size, boolean clear, char const *source_file, long source_line);
+void debug_free(void *pointer, char const *source_file, long source_line);
+void *debug_realloc(void *pointer, unsigned int size, char const *source_file, long source_line);
+void debug_check_memory(char const *source_file, long source_line);
+void debug_dump_memory_for_file(char const *source_file_substring);
+void debug_dump_memory_by_file(void);
+void debug_dump_memory(void);
+
+/* ---------- prototypes/SORT.C */
+
+void qsort_2byte(void *base, unsigned long num, compare_function_2byte compare);
+void qsort_4byte(void *base, unsigned long num, compare_function_4byte compare);
 
 /* ---------- prototypes/STACK_WALK_WINDOWS.C */
 
+void stack_walk_initialize(void);
+void stack_walk_dispose(void);
+long stack_walk_global_function_offset(void);
 void stack_walk_disregard_symbol_names(boolean disregard);
+void stack_walk(short levels_to_ignore);
+void stack_walk_with_context(FILE *error_stream, short levels_to_ignore, struct _CONTEXT *context_pointer);
+boolean load_symbol_table(char *filename, struct debug_symbol_table *symbol_table, char *timestamp_str);
+void free_symbol_table(struct debug_symbol_table *symbol_table);
+char *symbol_name_from_address(unsigned long fake_address, struct debug_symbol_table *symbol_table);
+unsigned long base_address_from_symbol_name(char const *name, struct debug_symbol_table *symbol_table);
 
 /* ---------- macros */
 
-#ifndef BUILDING_CSERIES
 #define memcmp csmemcmp
 #define memmove csmemmove
 #define memset csmemset
@@ -256,13 +282,14 @@ void stack_walk_disregard_symbol_names(boolean disregard);
 #define memcpy csmemcpy
 
 #define match_malloc(file, line, size) debug_malloc(size, FALSE, MATCH_FILE(file), MATCH_LINE(line))
+#define match_calloc(file, line, count, size) debug_malloc((count)*(size), TRUE, MATCH_FILE(file), MATCH_LINE(line))
 #define match_free(file, line, ptr) debug_free(ptr, MATCH_FILE(file), MATCH_LINE(line))
 #define match_realloc(file, line, ptr, size) debug_realloc(ptr, size, MATCH_FILE(file), MATCH_LINE(line))
 
 #define malloc(size) match_malloc(__FILE__, __LINE__, size)
 #define free(ptr) match_free(__FILE__, __LINE__, ptr)
+#define calloc(count, size) match_calloc(__FILE__, __LINE__, count, size)
 #define realloc(ptr, size) match_realloc(__FILE__, __LINE__, ptr, size)
-#endif
 
 /* ---------- globals */
 
@@ -306,18 +333,60 @@ extern const union real_rgb_color *global_real_rgb_violet;
 
 /* ---------- public code */
 
+// HCEX indicates these live here despite the lack of real type
 __inline long fast_ftol(
-	real value)
+	float d)
 {
 	long result;
 
 	__asm
 	{
-		fld value
+		fld d
 		fistp result
 	}
 
 	return result;
+}
+
+__inline long fast_ftol_C(
+	float x)
+{
+	long result = fast_ftol(x);
+
+	// This is to simulate a C-cast where the result is truncated 
+	// Default float rounding is to nearest whole number (even numbers preferred when .5)
+	if (x >= 0.f)
+	{
+		if ((float)result > x)
+		{
+			result--;
+		}
+	}
+	else if ((float)result < x)
+	{
+		result++;
+	}
+
+	return result;
+}
+
+__inline unsigned int address_from_pointer(
+	void const *pointer)
+{
+	return (unsigned int)pointer;
+}
+
+__inline void *pointer_from_address(
+	unsigned int address)
+{
+	return (void *)address;
+}
+
+__inline void *offset_pointer(
+	void *pointer,
+	long offset)
+{
+	return pointer_from_address(address_from_pointer(pointer) + offset);
 }
 
 #endif // __CSERIES_H

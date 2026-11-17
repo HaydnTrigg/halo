@@ -34,8 +34,6 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_dirinfo.c,v
 #include "tiffioP.h"
 #include "prototypes.h"
 
-__declspec(noreturn) void __cdecl exit(int status);
-
 #ifndef TRUE
 #define	TRUE	1
 #define	FALSE	0
@@ -47,7 +45,7 @@ __declspec(noreturn) void __cdecl exit(int status);
  *     then the LONG must be placed before the SHORT for
  *     writing to work properly.
  */
-TIFFFieldInfo tiffFieldInfo[] = {
+const TIFFFieldInfo tiffFieldInfo[] = {
     { TIFFTAG_SUBFILETYPE,	 1, 1, TIFF_LONG,	FIELD_SUBFILETYPE,
       TRUE,	"SubfileType" },
 /* XXX SHORT for compatibility w/ old versions of the library */
@@ -253,7 +251,7 @@ TIFFFieldInfo tiffFieldInfo[] = {
     { 0 }
 };
 
-int tiffDataWidth[] = {
+const int tiffDataWidth[] = {
     1,	/* nothing */
     1,	/* TIFF_BYTE */
     1,	/* TIFF_ASCII */
@@ -269,11 +267,10 @@ int tiffDataWidth[] = {
     8,	/* TIFF_DOUBLE */
 };
 
-static TIFFFieldInfo const *last = NULL;
-
 TIFFFieldInfo const *
 DECLARE2(TIFFFindFieldInfo, u_short, tag, TIFFDataType, dt)
 {
+	static TIFFFieldInfo const *last = NULL;
 	register TIFFFieldInfo const *fip;
 
 	if (last && last->field_tag == tag &&

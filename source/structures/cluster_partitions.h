@@ -8,11 +8,6 @@ header included in hcex build.
 #define __CLUSTER_PARTITIONS_H
 #pragma once
 
-/* ---------- headers */
-
-#include "math/real_math.h"
-#include "memory/data.h"
-
 /* ---------- constants */
 
 /* ---------- macros */
@@ -28,18 +23,10 @@ struct cluster_partition
 
 /* ---------- prototypes/CLUSTER_PARTITIONS.C */
 
-void cluster_partition_new(
-	struct cluster_partition *partition,
-	char const *name);
-void cluster_partition_make_valid(
-	struct cluster_partition *partition);
-void cluster_partition_make_invalid(
-	struct cluster_partition *partition);
-void cluster_partition_delete(
-	struct cluster_partition *partition);
-void cluster_partition_copy(
-	struct cluster_partition *result,
-	struct cluster_partition const *source);
+void cluster_partition_new(struct cluster_partition *partition, char const *name);
+void cluster_partition_make_valid(struct cluster_partition *partition);
+void cluster_partition_make_invalid(struct cluster_partition *partition);
+void cluster_partition_delete(struct cluster_partition *partition);
 void cluster_partition_reconnect(
 	struct cluster_partition *partition,
 	long datum_index,
@@ -47,24 +34,11 @@ void cluster_partition_reconnect(
 	real_point3d const *position,
 	float radius,
 	struct location const *location);
-void cluster_partition_disconnect(
-	struct cluster_partition *partition,
-	long datum_index,
-	long *first_cluster_reference);
-long cluster_partition_get_first_datum(
-	struct cluster_partition const *partition,
-	long *reference_index,
-	short cluster_index);
-long cluster_partition_get_next_datum(
-	struct cluster_partition const *partition,
-	long *reference_index);
-long cluster_partition_get_first_cluster(
-	struct cluster_partition const *partition,
-	long *reference_index,
-	long first_cluster_reference);
-long cluster_partition_get_next_cluster(
-	struct cluster_partition const *partition,
-	long *reference_index);
+void cluster_partition_disconnect(struct cluster_partition *partition, long datum_index, long *first_cluster_reference);
+long cluster_partition_get_first_datum(struct cluster_partition const *partition, long *reference_index, short cluster_index);
+long cluster_partition_get_next_datum(struct cluster_partition const *partition, long *reference_index);
+long cluster_partition_get_first_cluster(struct cluster_partition const *partition, long *reference_index, long first_cluster_reference);
+long cluster_partition_get_next_cluster(struct cluster_partition const *partition, long *reference_index);
 
 
 /* ---------- globals */

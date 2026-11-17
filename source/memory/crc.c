@@ -1,31 +1,19 @@
 /*
 CRC.C
-
-symbols in this file:
-001088D0 0010:
-	_crc_new (0000)
-001088E0 0040:
-	_build_crc_table (0000)
-00108920 0080:
-	_crc_checksum_buffer (0000)
-0027D2E4 000f:
-	??_C@_0P@JPGOHOCM@buffer_size?$DO?$DN0?$AA@ (0000)
-0027D2F4 001c:
-	??_C@_0BM@FPJPBIIF@c?3?2halo?2SOURCE?2memory?2crc?4c?$AA@ (0000)
-00456220 0401:
-	_crc_globals (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-#include "memory/crc.h"
 
 /* ---------- constants */
 
-/* ---------- macros */
-
-/* ---------- structures */
+enum
+{
+	CRC_NEW = -1,
+	CRC_TABLE_SIZE = 256,
+	CRC32_POLYNOMIAL = 0xEDB88320
+};
 
 #pragma pack(push, 1)
 struct crc_globals
@@ -37,7 +25,7 @@ struct crc_globals
 
 /* ---------- prototypes */
 
-/* ---------- globals */
+static void build_crc_table(unsigned long *crc_table);
 
 #pragma bss_seg(".bss")
 static struct crc_globals crc_globals;
@@ -48,37 +36,7 @@ static struct crc_globals crc_globals;
 void crc_new(
 	unsigned long *crc_reference)
 {
-	*crc_reference = 0xFFFFFFFF;
-	return;
-}
-
-/* The descriptive private name follows the recovered cross-build CRC implementation. */
-static void build_crc_table(
-	unsigned long *crc_table)
-{
-	unsigned long byte_index;
-	long byte_count;
-
-	byte_index = 0;
-	byte_count = 256;
-	do
-	{
-		unsigned long crc = byte_index;
-		long bit_count;
-
-		bit_count = 8;
-		do
-		{
-			if (crc & 1)
-				crc = (crc >> 1) ^ 0xEDB88320;
-			else
-				crc >>= 1;
-		} while (--bit_count);
-
-		*crc_table = crc;
-		byte_index++;
-		crc_table++;
-	} while (--byte_count);
+	*crc_reference = CRC_NEW;
 
 	return;
 }
@@ -88,32 +46,59 @@ void crc_checksum_buffer(
 	void const *buffer,
 	long buffer_size)
 {
+	static unsigned long crc_table[256];
+	static boolean crc_table_built;
+
 	unsigned long crc;
-	unsigned long table_index;
+	unsigned long temp1;
+	unsigned long temp2;
 
 	match_assert("c:\\halo\\SOURCE\\memory\\crc.c", 42, buffer_size>=0);
 
-	if (!crc_globals.initialized)
+	if (!crc_table_built)
 	{
-		build_crc_table(crc_globals.table);
-		crc_globals.initialized = TRUE;
+		build_crc_table(crc_table);
+		crc_table_built = TRUE;
 	}
 
 	crc = *crc_reference;
-	if (buffer_size > 0)
+
+	while (buffer_size-->0)
 	{
-		do
-		{
-			table_index = (*(byte const *)buffer ^ crc) & 0xFF;
-			table_index = crc_globals.table[table_index];
-			crc >>= 8;
-			buffer = (byte const *)buffer + 1;
-			crc ^= table_index;
-		} while (--buffer_size);
+		temp1 = (crc>>8) & 0x00FFFFFF;
+		temp2 = crc_table[(crc ^ *((byte *)buffer)++) & 0xFF];
+		crc = temp1 ^ temp2;
 	}
 
 	*crc_reference = crc;
+
 	return;
 }
 
 /* ---------- private code */
+
+static void build_crc_table(
+	unsigned long *crc_table)
+{
+	short table_index;
+
+	for (table_index = 0; table_index<CRC_TABLE_SIZE; ++table_index)
+	{
+		unsigned long crc = table_index;
+		short round;
+
+		for (round = 0; round<8; ++round)
+		{
+			if (crc&1)
+			{
+				crc = (crc>>1) ^ CRC32_POLYNOMIAL;
+			}
+			else
+			{
+				crc = crc>>1;
+			}
+		}
+
+		crc_table[table_index] = crc;
+	}
+}

@@ -10,18 +10,18 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "math/integer_math.h"
-#include "math/real_math.h"
-#include "tag_files/tag_groups.h"
-#include "interface/interface.h"
 
 /* ---------- constants */
+
+enum
+{
+	GAME_GLOBALS_DEFINITION_TAG = 'matg',
+	GAME_GLOBALS_DEFINITION_VERSION = 3
+};
 
 /* referenced in game_globals.c? */
 enum
 {
-	GAME_GLOBALS_TAG = 'matg',
-
 	_material_dirt = 0,
 	_material_sand,
 	_material_stone,
@@ -59,51 +59,130 @@ enum
 	MAXIMUM_NUMBER_OF_MATERIAL_TYPES = 40,
 };
 
-#define game_globals_definition_get(index) ((struct game_globals *)tag_get(GAME_GLOBALS_TAG, (index)))
+enum
+{
+	_game_difficulty_enemy_damage_scale = 0,
+	_game_difficulty_enemy_vitality_scale,
+	_game_difficulty_enemy_shield_scale,
+	_game_difficulty_enemy_recharge_scale,
+	_game_difficulty_friend_damage_scale,
+	_game_difficulty_friend_vitality_scale,
+	_game_difficulty_friend_shield_scale,
+	_game_difficulty_friend_recharge_scale,
+	_game_difficulty_infection_form_toughness,
+	_game_difficulty_health_unused6,
+	_game_difficulty_rate_of_fire_scale,
+	_game_difficulty_fire_projectile_error_scale,
+	_game_difficulty_burst_error_scale,
+	_game_difficulty_new_target_delay_scale,
+	_game_difficulty_burst_separation_delay_scale,
+	_game_difficulty_target_tracking_bonus,
+	_game_difficulty_target_leading_bonus,
+	_game_difficulty_overcharge_chance_scale,
+	_game_difficulty_special_fire_delay_scale,
+	_game_difficulty_projectile_guidance_vs_player_scale,
+	_game_difficulty_melee_delay_bonus,
+	_game_difficulty_melee_delay_scale,
+	_game_difficulty_fire_unused6,
+	_game_difficulty_grenade_chance_scale,
+	_game_difficulty_grenade_timer_scale,
+	_game_difficulty_grenade_unused1,
+	_game_difficulty_grenade_unused2,
+	_game_difficulty_grenade_unused3,
+	_game_difficulty_major_normal_placement,
+	_game_difficulty_major_few_placement,
+	_game_difficulty_major_many_placement,
+	_game_difficulty_unused1,
+	_game_difficulty_unused2,
+	_game_difficulty_unused3,
+	_game_difficulty_unused4,
+};
 
 enum
 {
-	_game_difficulty_value_enemy_damage = 0,
-	_game_difficulty_value_enemy_vitality,
-	_game_difficulty_value_enemy_shield,
-	_game_difficulty_value_enemy_recharge,
-	_game_difficulty_value_friend_damage,
-	_game_difficulty_value_friend_vitality,
-	_game_difficulty_value_friend_shield,
-	_game_difficulty_value_friend_recharge,
-	_game_difficulty_value_infection_forms,
-	_game_difficulty_value_unused9,
-	_game_difficulty_value_rate_of_fire,
-	_game_difficulty_value_projectile_error,
-	_game_difficulty_value_burst_error,
-	_game_difficulty_value_new_target_delay,
-	_game_difficulty_value_burst_separation,
-	_game_difficulty_value_target_tracking,
-	_game_difficulty_value_target_leading,
-	_game_difficulty_value_overcharge_chance,
-	_game_difficulty_value_special_fire_delay,
-	_game_difficulty_value_guidance_vs_player,
-	_game_difficulty_value_melee_delay_base,
-	_game_difficulty_value_melee_delay_scale,
-	_game_difficulty_value_unused22,
-	_game_difficulty_value_grenade_chance_scale,
-	_game_difficulty_value_grenade_timer_scale,
-	_game_difficulty_value_unused25,
-	_game_difficulty_value_unused26,
-	_game_difficulty_value_unused27,
-	_game_difficulty_value_major_upgrade,
-	_game_difficulty_value_major_upgrade_1,
-	_game_difficulty_value_major_upgrade_2,
-	_game_difficulty_value_unused31,
-	_game_difficulty_value_unused32,
-	_game_difficulty_value_unused33,
-	_game_difficulty_value_unused34,
-	NUMBER_OF_GAME_DIFFICULTY_VALUES,
+	_multiplayer_sound_oddball_spawn = 0,
+	_multiplayer_sound_game_over,
+	_multiplayer_sound_60_seconds,
+	_multiplayer_sound_30_seconds,
+	_multiplayer_sound_red_60_seconds,
+	_multiplayer_sound_red_30_seconds,
+	_multiplayer_sound_blue_60_seconds,
+	_multiplayer_sound_blue_30_seconds,
+	_multiplayer_sound_ctf_blue_took_flag,
+	_multiplayer_sound_ctf_blue_returned_flag,
+	_multiplayer_sound_ctf_blue_captured_flag,
+	_multiplayer_sound_ctf_red_took_flag,
+	_multiplayer_sound_ctf_red_returned_flag,
+	_multiplayer_sound_ctf_red_captured_flag,
+	_multiplayer_sound_double_kill,
+	_multiplayer_sound_triple_kill,
+	_multiplayer_sound_killtacular_kill,
+	_multiplayer_sound_running_riot,
+	_multiplayer_sound_killing_spree,
+	_multiplayer_sound_oddball,
+	_multiplayer_sound_race,
+	_multiplayer_sound_slayer,
+	_multiplayer_sound_ctf,
+	_multiplayer_sound_warthog,
+	_multiplayer_sound_ghost,
+	_multiplayer_sound_scorpion,
+	_multiplayer_sound_countdown_timer,
+	_multiplayer_sound_teleporter_activate,
+	_multiplayer_sound_flag_failure,
+	_multiplayer_sound_countdown_for_respawn,
+	_multiplayer_sound_hill_move,
+	_multiplayer_sound_respawn,
+	_multiplayer_sound_team_king,
+	_multiplayer_sound_team_oddball,
+	_multiplayer_sound_team_race,
+	_multiplayer_sound_team_slayer,
+	_multiplayer_sound_king,
+	_multiplayer_sound_blue_team_ctf,
+	_multiplayer_sound_red_team_ctf,
+	_multiplayer_sound_hill_contested,
+	_multiplayer_sound_hill_controlled,
+	_multiplayer_sound_hill_occupied,
+	_multiplayer_sound_countdown_timer_end,
+	NUMBER_OF_MULTIPLAYER_SOUNDS,
 };
 
 /* ---------- macros */
 
+#define game_globals_definition_get(index) ((struct game_globals *)tag_get(GAME_GLOBALS_DEFINITION_TAG, index)) /* fake name */
+
 /* ---------- structures */
+
+struct breakable_surface
+{
+	real maximum_vitality; 
+	long unused1[2]; 
+	unsigned long flags; 
+	struct tag_reference effect; 
+	struct tag_reference sound; 
+	long unused2[6]; 
+	struct tag_block particle_effects; 
+};
+
+struct material_definition
+{
+	unsigned long flags;
+	long modifiers_unused[24];
+	unsigned long biped_flags;
+	real biped_maximum_acceleration;
+	real biped_slip_angle;
+	real biped_slow_angle;
+	long biped_unused[8];
+	real physics_ground_friction_scale;
+	real physics_ground_friction_normal_k1_scale;
+	real physics_ground_friction_normal_k0_scale;
+	real physics_ground_depth_scale;
+	real physics_ground_damp_fraction_scale;
+	real physics_unused[19];
+	long unused[120];
+	struct breakable_surface breakable_surface;
+	long unused2[15];
+	struct tag_reference melee_hit_sound;
+};
 
 struct game_globals_grenade
 {
@@ -113,6 +192,30 @@ struct game_globals_grenade
 	struct tag_reference hud_interface;
 	struct tag_reference item;
 	struct tag_reference projectile;
+};
+
+struct game_globals_camera
+{
+	struct tag_reference default_unit_camera_track;
+};
+
+struct game_globals_player_control
+{
+	real magnetism_friction;
+	real magnetism_adhesion;
+	real magnetism_inconsequential_target_scale;
+	real magnetism_unused[13];
+	real look_acceleration_time;
+	real look_acceleration_scale;
+	real look_pegging_threshold;
+	real look_default_pitch_rate;
+	real look_default_yaw_rate;
+	real look_autolevel_scale;
+	real look_unused[5];
+	short minimum_weapon_swap_ticks;
+	short minimum_autolevel_enabled_ticks;
+	real minimum_vehicle_flipping_angle;
+	struct tag_block look_function;
 };
 
 struct game_globals_rasterizer_data
@@ -187,60 +290,35 @@ struct game_globals_first_person_interface
 	unsigned long unused[22];
 };
 
-struct game_globals_difficulty_information
-{
-	real values[NUMBER_OF_GAME_DIFFICULTY_VALUES][4];
-	real pad[21];
-};
-
-struct game_globals_vehicle
-{
-	struct tag_reference vehicle;
-};
-
 struct game_globals_multiplayer_information
 {
 	struct tag_reference flag;
-	struct tag_reference unit;
-	struct tag_block vehicles;			// game_globals_vehicle
+	struct tag_reference player_unit;
+	struct tag_block vehicles;
 	struct tag_reference hill_shader;
 	struct tag_reference flag_shader;
 	struct tag_reference ball;
-	struct tag_block sounds;				// tag_reference
-	byte tag_padding[56];
+	struct tag_block sounds;
+	long unused[14];
 };
 
-struct game_globals_player_control
+struct game_globals_falling_damage
 {
-	real magnetism_friction;
-	real magnetism_adhesion;
-	real magnetism_inconsequential_target_scale;
-	real magnetism_unused[13];
-	real look_acceleration_time;
-	real look_acceleration_scale;
-	real look_pegging_threshold;
-	real look_default_pitch_rate;
-	real look_default_yaw_rate;
-	real look_autolevel_scale;
-	real look_unused[5];
-	short minimum_weapon_swap_ticks;
-	short minimum_autolevel_enabled_ticks;
-	real minimum_vehicle_flipping_angle;
-	struct tag_block look_function;
-};
-
-typedef char game_globals_player_control_size_assert[
-	sizeof(struct game_globals_player_control) == 0x80 ? 1 : -1];
-typedef char game_globals_player_control_flipping_angle_offset_assert[
-	offsetof(struct game_globals_player_control, minimum_vehicle_flipping_angle) == 0x70 ? 1 : -1];
-
-typedef char verify_game_globals_multiplayer_information_size[sizeof(struct game_globals_multiplayer_information) == 0xA0 ? 1 : -1];
-typedef char verify_game_globals_multiplayer_sounds_offset[offsetof(struct game_globals_multiplayer_information, sounds) == 0x5C ? 1 : -1];
-
-struct game_globals_interface_tag_references
-{
-	struct tag_reference interface_tag_references[NUMBER_OF_INTERFACE_TAGS];
-	long unused0[12];
+	long falling_unused[2];
+	real falling_distance_lower_bound;
+	real falling_distance_upper_bound;
+	struct tag_reference falling_damage;
+	long terminal_velocity_unused[2];
+	real maximum_distance;
+	struct tag_reference maximum_distance_damage;
+	struct tag_reference vehicle_hit_environment_damage_effect;
+	struct tag_reference vehicle_killed_unit_damage_effect;
+	struct tag_reference vehicle_collision_damage;
+	struct tag_reference flaming_death_damage;
+	long unused2[4];
+	real runtime_maximum_falling_velocity;
+	real runtime_minimum_damage_velocity;
+	real runtime_maximum_damage_velocity;
 };
 
 struct game_globals
@@ -249,7 +327,7 @@ struct game_globals
 	long unused0[61];
 	struct tag_block sounds;
 	struct tag_block camera;
-	struct tag_block player_control; // game_globals_player_control
+	struct tag_block player_control;			// game_globals_player_control
 	struct tag_block difficulty_information;
 	struct tag_block grenades;					// game_globals_grenade
 	struct tag_block rasterizer_data;			// game_globals_rasterizer_data
@@ -264,11 +342,11 @@ struct game_globals
 	struct tag_block playlist;
 };
 
-/* ---------- prototypes/GAME_GLOBALS.C */
+/* ---------- prototypes/EXAMPLE.C */
 
+real game_difficulty_get_team_value(short value_type, short team_index);
 char const *material_get_name(short material_type);
 real game_difficulty_get_value(short value_type);
-real game_difficulty_get_team_value(short value_type, short team_index);
 
 /* ---------- globals */
 

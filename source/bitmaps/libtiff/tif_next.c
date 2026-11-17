@@ -33,8 +33,6 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_next.c,v 1.
  */
 #include "tiffioP.h"
 
-extern void *csmemcpy(void *destination, const void *source, unsigned long size);
-
 #if USE_PROTOTYPES
 static	int NeXTDecode(TIFF *, u_char *, int, u_int);
 #else
@@ -95,7 +93,7 @@ NeXTDecode(tif, buf, occ, s)
 			 */
 			if (cc < scanline)
 				goto bad;
-			csmemcpy(row, bp, scanline);
+			bcopy(bp, row, scanline);
 			bp += scanline;
 			cc -= scanline;
 			break;
@@ -109,7 +107,7 @@ NeXTDecode(tif, buf, occ, s)
 			n = (bp[2] * 256) + bp[3];
 			if (cc < 4+n)
 				goto bad;
-			csmemcpy(row+off, bp+4, n);
+			bcopy(bp+4, row+off, n);
 			bp += 4+n;
 			cc -= 4+n;
 			break;

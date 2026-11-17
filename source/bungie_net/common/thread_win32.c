@@ -1,162 +1,76 @@
 /*
 THREAD_WIN32.C
-
-symbols in this file:
-0006FC30 0030:
-	_get_thread_from_pool (0000)
-0006FC60 0040:
-	_get_mutex_from_pool (0000)
-0006FCA0 00f0:
-	_create_thread (0000)
-0006FD90 0050:
-	_thread_has_exited (0000)
-0006FDE0 0070:
-	_dispose_thread (0000)
-0006FE50 0090:
-	_create_mutex (0000)
-0006FEE0 0060:
-	_take_mutex (0000)
-0006FF40 0040:
-	_release_mutex (0000)
-0006FF80 0070:
-	_dispose_mutex (0000)
-00255AEC 0011:
-	??_C@_0BB@GLLFGHGN@thread_reference?$AA@ (0000)
-00255B00 0009:
-	??_C@_08HFFPPCHF@function?$AA@ (0000)
-00255B0C 0030:
-	??_C@_0DA@KOBAFCDH@c?3?2halo?2SOURCE?2bungie_net?2common@ (0000)
-00255B3C 0019:
-	??_C@_0BJ@MGKMABGD@thread_reference?9?$DOin_use?$AA@ (0000)
-00255B58 000a:
-	??_C@_09PJEOHGKG@mutex_?$CFld?$AA@ (0000)
-00255B64 0010:
-	??_C@_0BA@IKBDPBME@mutex_reference?$AA@ (0000)
-00255B74 0018:
-	??_C@_0BI@CFEHKCFO@mutex_reference?9?$DOin_use?$AA@ (0000)
-0031C728 0608:
-	_thread_globals (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-#ifndef _X86_
-#define _X86_
-#endif
-#include <excpt.h>
-#include <windef.h>
-#include <winbase.h>
-
-#include "bungie_net/common/thread.h"
-
-/* ---------- constants */
-
-enum
-{
-	MAXIMUM_THREAD_REFERENCES = 32,
-	MAXIMUM_MUTEX_REFERENCES = 32,
-	MUTEX_NAME_LENGTH = 32,
-	THREAD_STILL_ACTIVE = 0x103
-};
-
-/* ---------- macros */
-
-/* ---------- structures */
-
-struct thread_reference
-{
-	HANDLE handle;
-	boolean in_use;
-	byte __pad5[3];
-};
-
-struct mutex_reference
-{
-	HANDLE handle;
-	char name[MUTEX_NAME_LENGTH];
-	boolean in_use;
-	byte __pad25[3];
-};
-
-struct thread_globals
-{
-	long mutex_index;
-	byte __pad4[4];
-	struct thread_reference thread_references[MAXIMUM_THREAD_REFERENCES];
-	struct mutex_reference mutex_references[MAXIMUM_MUTEX_REFERENCES];
-};
+#include "thread.h"
 
 /* ---------- prototypes */
 
-static struct thread_reference *get_thread_from_pool(
-	void);
-static struct mutex_reference *get_mutex_from_pool(
-	void);
+static struct thread *get_thread_from_pool(void);
+static struct mutex *get_mutex_from_pool(void);
 
 /* ---------- globals */
 
-static struct thread_globals thread_globals = {0};
+static unsigned long mutex_count = 0;
+static struct thread thread_pool[MAXIMUM_THREADS] = {0};
+static struct mutex mutex_pool[MAXIMUM_MUTEXES] = {0};
 
 /* ---------- public code */
 
 boolean create_thread(
 	word flags,
-	unsigned long (__stdcall *function)(void *),
+	LPTHREAD_START_ROUTINE function,
 	void *function_input,
-	struct thread_reference **thread_reference)
+	struct thread **thread_reference)
 {
 	boolean success = FALSE;
-	struct thread_reference *reference;
+	struct thread *thread;
 	unsigned long unused_thread_id;
 
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0x6B, function);
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0x6C, thread_reference);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 107, function);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 108, thread_reference);
 
-	reference = get_thread_from_pool();
-	if (reference && (reference->handle = CreateThread(
-		NULL,
-		0x4000,
-		function,
-		function_input,
-		CREATE_SUSPENDED,
-		&unused_thread_id))!=NULL)
+	thread = get_thread_from_pool();
+	if (thread && (thread->object = CreateThread(NULL, THREAD_STACK_SIZE, function, function_input, CREATE_SUSPENDED, &unused_thread_id))!=NULL)
 	{
 		long priority = THREAD_PRIORITY_NORMAL;
 
-		if (TEST_FLAG(flags, 1))
+		if (TEST_FLAG(flags, _thread_attribute_flag_priority_low))
 		{
 			priority = THREAD_PRIORITY_BELOW_NORMAL;
 		}
-		else if (TEST_FLAG(flags, 2))
+		else if (TEST_FLAG(flags, _thread_attribute_flag_priority_high))
 		{
 			priority = THREAD_PRIORITY_ABOVE_NORMAL;
 		}
 
-		if (SetThreadPriority(reference->handle, priority) && ResumeThread(reference->handle)!=-1)
+		if (SetThreadPriority(thread->object, priority) && ResumeThread(thread->object)!=-1)
 		{
 			success = TRUE;
 		}
 		else
 		{
-			CloseHandle(reference->handle);
-			reference = NULL;
+			CloseHandle(thread->object);
+			thread = NULL;
 		}
 	}
 
-	*thread_reference = reference;
+	*thread_reference = thread;
 	return success;
 }
 
 boolean thread_has_exited(
-	struct thread_reference *thread_reference)
+	struct thread *thread_reference)
 {
 	boolean result = FALSE;
 	unsigned long exit_code;
 
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0x98, thread_reference);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 152, thread_reference);
 
-	if (GetExitCodeThread(thread_reference->handle, &exit_code) && exit_code!=THREAD_STILL_ACTIVE)
+	if (GetExitCodeThread(thread_reference->object, &exit_code) && exit_code!=STILL_ACTIVE)
 	{
 		result = TRUE;
 	}
@@ -165,57 +79,55 @@ boolean thread_has_exited(
 }
 
 void dispose_thread(
-	struct thread_reference *thread_reference)
+	struct thread *thread_reference)
 {
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0xA8, thread_reference);
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0xA9, thread_reference->in_use);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 168, thread_reference);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 169, thread_reference->in_use);
 
-	CloseHandle(thread_reference->handle);
-	thread_reference->handle = NULL;
+	CloseHandle(thread_reference->object);
+	thread_reference->object = NULL;
 	thread_reference->in_use = FALSE;
 
 	return;
 }
 
 boolean create_mutex(
-	struct mutex_reference **mutex_reference)
+	struct mutex **mutex_reference)
 {
-	struct mutex_reference *reference;
-	boolean success;
+	boolean success = FALSE;
+	struct mutex *mutex;
 
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0xB8, mutex_reference);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 184, mutex_reference);
 
-	success = FALSE;
-	reference = get_mutex_from_pool();
-	if (reference)
+	mutex = get_mutex_from_pool();
+	if (mutex)
 	{
-		_snprintf(
-			reference->name,
-			NUMBEROF(reference->name),
-			"mutex_%ld",
-			thread_globals.mutex_index++);
-		reference->handle = CreateMutexA(NULL, FALSE, reference->name);
-		if (reference->handle)
+		_snprintf(mutex->name, sizeof(mutex->name), "mutex_%ld", mutex_count++);
+		mutex->object = CreateMutexA(NULL, FALSE, mutex->name);
+		if (mutex->object)
+		{
 			success = TRUE;
+		}
 		else
-			reference = NULL;
+		{
+			mutex = NULL;
+		}
 	}
 
-	*mutex_reference = reference;
-
+	*mutex_reference = mutex;
 	return success;
 }
 
 boolean take_mutex(
-	struct mutex_reference *mutex_reference,
-	unsigned long timeout_ms)
+	struct mutex *mutex_reference,
+	unsigned long milliseconds_to_wait)
 {
 	boolean result = FALSE;
 	unsigned long wait_result;
 
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0xD3, mutex_reference);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 211, mutex_reference);
 
-	wait_result = WaitForSingleObject(mutex_reference->handle, timeout_ms);
+	wait_result = WaitForSingleObject(mutex_reference->object, milliseconds_to_wait);
 	if (wait_result==WAIT_OBJECT_0 || wait_result==WAIT_ABANDONED)
 	{
 		result = TRUE;
@@ -225,24 +137,24 @@ boolean take_mutex(
 }
 
 void release_mutex(
-	struct mutex_reference *mutex_reference)
+	struct mutex *mutex_reference)
 {
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0xE6, mutex_reference);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 230, mutex_reference);
 
-	ReleaseMutex(mutex_reference->handle);
+	ReleaseMutex(mutex_reference->object);
 
 	return;
 }
 
 void dispose_mutex(
-	struct mutex_reference *mutex_reference)
+	struct mutex *mutex_reference)
 {
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0xF0, mutex_reference);
-	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 0xF1, mutex_reference->in_use);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 240, mutex_reference);
+	match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\thread_win32.c", 241, mutex_reference->in_use);
 
-	CloseHandle(mutex_reference->handle);
+	CloseHandle(mutex_reference->object);
 	mutex_reference->name[0] = 0;
-	mutex_reference->handle = NULL;
+	mutex_reference->object = NULL;
 	mutex_reference->in_use = FALSE;
 
 	return;
@@ -250,50 +162,43 @@ void dispose_mutex(
 
 /* ---------- private code */
 
-static struct thread_reference *get_thread_from_pool(
+static struct thread *get_thread_from_pool(
 	void)
 {
-	struct thread_reference *thread_reference = NULL;
-	long thread_index;
+	struct thread *thread = NULL;
+	long i;
 
-	for (thread_index = 0; thread_index<MAXIMUM_THREAD_REFERENCES; thread_index++)
+	for (i = 0; i<MAXIMUM_THREADS; i++)
 	{
-		if (!thread_globals.thread_references[thread_index].in_use)
+		if (!thread_pool[i].in_use)
 		{
-			thread_reference = &thread_globals.thread_references[thread_index];
-			thread_reference->handle = NULL;
-			thread_reference->in_use = TRUE;
+			thread = &thread_pool[i];
+			thread->object = NULL;
+			thread->in_use = TRUE;
 			break;
 		}
 	}
 
-	return thread_reference;
+	return thread;
 }
 
-static struct mutex_reference *get_mutex_from_pool(
+static struct mutex *get_mutex_from_pool(
 	void)
 {
-	struct mutex_reference *mutex_reference = NULL;
-	boolean *in_use;
-	long mutex_index;
+	struct mutex *mutex = NULL;
+	long i;
 
-	mutex_index = 0;
-	in_use = &thread_globals.mutex_references[0].in_use;
-	do
+	for (i = 0; i<MAXIMUM_MUTEXES; i++)
 	{
-		if (!*in_use)
+		if (!mutex_pool[i].in_use)
 		{
-			mutex_reference = &thread_globals.mutex_references[mutex_index];
-			mutex_reference->name[0] = 0;
-			mutex_reference->handle = NULL;
-			mutex_reference->in_use = TRUE;
+			mutex = &mutex_pool[i];
+			mutex->name[0] = 0;
+			mutex->object = NULL;
+			mutex->in_use = TRUE;
 			break;
 		}
-
-		in_use += sizeof(struct mutex_reference);
-		mutex_index++;
 	}
-	while ((long)in_use<(long)&thread_globals.mutex_references[MAXIMUM_MUTEX_REFERENCES].in_use);
 
-	return mutex_reference;
+	return mutex;
 }

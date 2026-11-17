@@ -1,102 +1,84 @@
 /*
 DATA_COMPRESS.C
-
-symbols in this file:
-00109360 0070:
-	_data_compress (0000)
-001093D0 0040:
-	_data_decompressed_size (0000)
-00109410 0060:
-	_data_decompress (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-#include "data_compress.h"
-
-#include "memory/byte_swapping.h"
-#include "memory/zlib/zlib.h"
-
-/* ---------- constants */
-
-/* ---------- macros */
+#include "zlib.h"
 
 /* ---------- structures */
 
-/* ---------- prototypes */
-
-/* ---------- globals */
+struct compressed_header
+{
+	unsigned long size;
+};
 
 /* ---------- public code */
 
 boolean data_compress(
-	void const *source,
-	unsigned long source_size,
-	void *compressed_data,
+	void const *uncompressed_buffer,
+	unsigned long uncompressed_size,
+	void *compressed_buffer,
 	unsigned long *compressed_size,
-	unsigned long compressed_capacity)
+	unsigned long maximum_compressed_size)
 {
-	boolean result = FALSE;
+	boolean success = FALSE;
 
-	if (compressed_capacity >= sizeof(struct compressed_data_header))
+	if (maximum_compressed_size>=4)
 	{
-		struct compressed_data_header *header = compressed_data;
+		long compress_status;
 
-		header->decompressed_size = SWAP4(source_size);
-		*compressed_size = compressed_capacity - sizeof(struct compressed_data_header);
+		struct compressed_header *header = (struct compressed_header*)compressed_buffer;
+		header->size = SWAP4(uncompressed_size);
 
-		if (compress2(
-			(Bytef *)(header + 1),
-			compressed_size,
-			(Bytef const *)source,
-			source_size,
-			Z_BEST_COMPRESSION) == Z_OK)
+		*compressed_size = maximum_compressed_size - 4;
+
+		compress_status = compress2((byte*)compressed_buffer + sizeof(struct compressed_header), compressed_size, (byte*)uncompressed_buffer, uncompressed_size, 9);
+
+		if (compress_status==Z_OK)
 		{
-			*compressed_size += sizeof(struct compressed_data_header);
-			result = TRUE;
+			*compressed_size += 4;
+			success = TRUE;
 		}
 	}
 
-	return result;
+	return success;
 }
 
 unsigned long data_decompressed_size(
-	void const *compressed_data,
+	void const *compressed_buffer,
 	unsigned long compressed_size)
 {
-	unsigned long result = 0;
+	struct compressed_header *header = (struct compressed_header*)compressed_buffer;
+	unsigned long size = 0;
 
-	if (compressed_size >= sizeof(struct compressed_data_header))
+	if (compressed_size>=4)
 	{
-		struct compressed_data_header const *header = compressed_data;
-		result = SWAP4(header->decompressed_size);
+		size = SWAP4(header->size);
 	}
 
-	return result;
+	return size;
 }
 
 boolean data_decompress(
-	void const *compressed_data,
+	void const *compressed_buffer,
 	unsigned long compressed_size,
-	void *destination,
-	unsigned long *destination_size,
-	unsigned long destination_capacity)
+	void *decompressed_buffer,
+	unsigned long *decompressed_size,
+	unsigned long maximum_decompressed_size)
 {
-	boolean result = FALSE;
-	(void)destination_capacity;
+	boolean success = FALSE;
+	long uncompress_status;
 
-	*destination_size = data_decompressed_size(compressed_data, compressed_size);
-	if (uncompress(
-		(Bytef *)destination,
-		destination_size,
-		(Bytef const *)compressed_data + sizeof(struct compressed_data_header),
-		compressed_size) == Z_OK)
+	*decompressed_size = data_decompressed_size(compressed_buffer, compressed_size);
+
+	uncompress_status = uncompress((byte*)decompressed_buffer, decompressed_size, (byte*)compressed_buffer + sizeof(struct compressed_header), compressed_size);
+
+	if (uncompress_status==Z_OK)
 	{
-		result = TRUE;
+		success = TRUE;
 	}
 
-	return result;
+	return success;
 }
-
-/* ---------- private code */

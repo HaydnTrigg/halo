@@ -10,7 +10,7 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "objects/object_definitions.h"
+#include "object_definitions.h"
 
 /* ---------- constants */
 
@@ -20,6 +20,14 @@ enum
 	ITEM_DEFINITION_VERSION = 2,
 	ITEM_COLLECTION_DEFINITION_TAG = 'itmc',
 	ITEM_COLLECTION_DEFINITION_VERSION = 0,
+};
+
+enum
+{
+	_item_always_maintains_z_up_bit = 0,
+	_item_destroyed_by_explosions_bit,
+	_item_antigravity_bit,
+	NUMBER_OF_ITEM_DEFINITION_FLAGS,
 };
 
 /* ---------- macros */
@@ -52,22 +60,6 @@ struct item_definition
 {
 	struct _object_definition object;
 	struct _item_definition item;
-};
-
-struct item_permutation_definition
-{
-	long unused1[8];
-	real weight;
-	struct tag_reference item;
-	long unused2[8];
-};
-
-struct item_collection_definition
-{
-	struct tag_block permutations;
-	short spawn_time;
-	short pad;
-	long unused[19];
 };
 
 /* ---------- prototypes/EXAMPLE.C */

@@ -10,15 +10,14 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "tag_files/tag_groups.h"
-#include "text/text_group.h"
+#include "draw_string.h"
 
 /* ---------- constants */
 
 enum
 {
 	FONT_GROUP_TAG = 'font',
-	FONT_CHARACTER_SIZE = 0x14,
+	FONT_GROUP_VERSION = 1,
 };
 
 /* ---------- macros */
@@ -27,11 +26,27 @@ enum
 
 /* ---------- structures */
 
-struct font_character;
-
-struct font_character_table
+struct font_character_table_entry
 {
-	struct tag_block character_indices;
+	short character_index;
+};
+
+struct font_character_tables_entry
+{
+	struct tag_block table;		// font_character_table_entry
+};
+
+struct font_character
+{
+	word character;
+	short character_width;
+	short bitmap_width;
+	short bitmap_height;
+	short bitmap_origin_x;
+	short bitmap_origin_y;
+	short hardware_character_index;
+	word pad;
+	long pixels_offset;
 };
 
 struct font_header
@@ -42,18 +57,18 @@ struct font_header
 	short leading_height;
 	short leading_width;
 	long pad[9];
-	struct tag_block character_tables;
+	struct tag_block character_tables;		// font_character_tables_entry
 	struct tag_reference style_fonts[NUMBER_OF_TEXT_STYLES];
-	struct tag_block characters;
+	struct tag_block characters;			// font_character
 	struct tag_data pixels;
 };
 
 /* ---------- prototypes/FONT_GROUP.C */
 
+struct font_character *font_get_character_by_ascii_code(struct font_header *header, word character);
+
 /* ---------- globals */
 
 /* ---------- public code */
-
-struct font_character *font_get_character_by_ascii_code(struct font_header *font, word character_code);
 
 #endif // __FONT_GROUP_H

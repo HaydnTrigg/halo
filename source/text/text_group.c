@@ -1,22 +1,12 @@
 /*
 TEXT_GROUP.C
 
-symbols in this file:
-0018CC10 0060:
-	_string_list_get_string (0000)
-0018CC70 0060:
-	_unicode_string_list_get_string (0000)
-002A2A90 0011:
-	??_C@_0BB@DGIKDNEK@?$DMmissing?5string?$DO?$AA@ (0000)
-002A2AA4 0022:
-	??_C@_1CC@IMCEGIAL@?$AA?$DM?$AAm?$AAi?$AAs?$AAs?$AAi?$AAn?$AAg?$AA?5?$AAs?$AAt?$AAr?$AAi?$AAn?$AAg?$AA?$DO?$AA?$AA@ (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-#include "text/text_group.h"
-#include "tag_files/tag_groups.h"
+#include "text_group.h"
 
 /* ---------- constants */
 
@@ -30,56 +20,54 @@ symbols in this file:
 
 /* ---------- public code */
 
-char *string_list_get_string(long tag_index, short string_index)
+char *string_list_get_string(
+	long tag_index,
+	short string_index)
 {
-	char *result = "<missing string>";
+	char *string = "<missing string>";
 
 	if (tag_index != NONE)
 	{
-		struct string_list *list = string_list_definition_get(tag_index);
+		struct string_list_group_header *string_list = tag_get(STRING_LISTS_GROUP_TAG, tag_index);
 
-		if (string_index >= 0 && string_index < list->strings.count)
+		if (string_index >= 0 && string_index < string_list->string_references.count)
 		{
-			struct string_list_entry *entry = TAG_BLOCK_GET_ELEMENT(
-				&list->strings,
-				string_index,
-				struct string_list_entry);
+			struct string_list_string_reference *reference = TAG_BLOCK_GET_ELEMENT(&string_list->string_references, string_index, struct string_list_string_reference);
 
-			if (entry->string.size > 0)
+			if (reference->string.size > 0)
 			{
-				result = entry->string.address;
-				result[entry->string.size - 1] = '\0';
+				string = reference->string.address;
+				string[reference->string.size - 1] = '\0';
 			}
 		}
 	}
 
-	return result;
+	return string;
 }
 
-wchar_t *unicode_string_list_get_string(long tag_index, short string_index)
+wchar_t *unicode_string_list_get_string(
+	long tag_index,
+	short string_index)
 {
-	wchar_t *result = L"<missing string>";
+	wchar_t *string = L"<missing string>";
 
 	if (tag_index != NONE)
 	{
-		struct string_list *list = unicode_string_list_definition_get(tag_index);
+		struct unicode_string_list_group_header *string_list = tag_get(UNICODE_STRING_LISTS_GROUP_TAG, tag_index);
 
-		if (string_index >= 0 && string_index < list->strings.count)
+		if (string_index >= 0 && string_index < string_list->string_references.count)
 		{
-			struct string_list_entry *entry = TAG_BLOCK_GET_ELEMENT(
-				&list->strings,
-				string_index,
-				struct string_list_entry);
+			struct unicode_string_list_string_reference *reference = TAG_BLOCK_GET_ELEMENT(&string_list->string_references, string_index, struct unicode_string_list_string_reference);
 
-			if (entry->string.size > 0)
+			if (reference->string.size > 0)
 			{
-				result = entry->string.address;
-				result[entry->string.size / sizeof(wchar_t) - 1] = L'\0';
+				string = reference->string.address;
+				string[reference->string.size / sizeof(wchar_t) - 1] = L'\0';
 			}
 		}
 	}
 
-	return result;
+	return string;
 }
 
 /* ---------- private code */

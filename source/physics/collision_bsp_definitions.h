@@ -14,8 +14,6 @@ header included in hcex build.
 #include "bsp2d.h"
 #include "bsp3d.h"
 
-#include "math/real_math.h"
-
 /* ---------- constants */
 
 enum
@@ -28,9 +26,37 @@ enum
 	MAXIMUM_EDGES_PER_COLLISION_SURFACE = 8,
 };
 
+enum
+{
+	_collision_surface_two_sided_bit = 0,
+	_collision_surface_invisible_bit,
+	_collision_surface_climbable_bit,
+	_collision_surface_breakable_bit,
+	NUMBER_OF_COLLISION_SURFACE_FLAGS
+};
+
+enum
+{
+	_collision_leaf_contains_two_sided_bit = 0,
+	NUMBER_OF_COLLISION_LEAF_FLAGS
+};
+
 /* ---------- macros */
 
 /* ---------- structures */
+
+struct collision_leaf
+{
+	word flags;
+	short bsp2d_reference_count;
+	long first_bsp2d_reference_index;
+};
+
+struct bsp2d_reference
+{
+	long plane_designator;
+	long root_index;
+};
 
 struct collision_surface
 {
@@ -53,23 +79,6 @@ struct collision_vertex
 	real_point3d point;
 	long first_edge_index;
 };
-
-typedef char collision_surface_size_assert[
-	sizeof(struct collision_surface) == 0x0C ? 1 : -1];
-typedef char collision_surface_first_edge_index_offset_assert[
-	offsetof(struct collision_surface, first_edge_index) == 0x04 ? 1 : -1];
-typedef char collision_surface_material_index_offset_assert[
-	offsetof(struct collision_surface, material_index) == 0x0A ? 1 : -1];
-typedef char collision_edge_size_assert[
-	sizeof(struct collision_edge) == 0x18 ? 1 : -1];
-typedef char collision_edge_edge_indices_offset_assert[
-	offsetof(struct collision_edge, edge_indices) == 0x08 ? 1 : -1];
-typedef char collision_edge_surface_indices_offset_assert[
-	offsetof(struct collision_edge, surface_indices) == 0x10 ? 1 : -1];
-typedef char collision_vertex_size_assert[
-	sizeof(struct collision_vertex) == 0x10 ? 1 : -1];
-typedef char collision_vertex_first_edge_index_offset_assert[
-	offsetof(struct collision_vertex, first_edge_index) == 0x0C ? 1 : -1];
 
 struct collision_bsp
 {
@@ -99,7 +108,7 @@ struct collision_node
 
 /* ---------- globals */
 
-extern struct tag_field global_collision_bsp_fields[9];
+extern struct tag_field global_collision_bsp_fields[];
 
 /* ---------- public code */
 

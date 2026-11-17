@@ -8,8 +8,11 @@ symbols in this file:
 
 /* ---------- headers */
 
-#include "cseries/cseries.h"
-#include "ai/actors.h"
+#include "cseries.h"
+#include "actors.h"
+#include "encounters.h"
+#include "props.h"
+#include "units.h"
 
 /* ---------- constants */
 

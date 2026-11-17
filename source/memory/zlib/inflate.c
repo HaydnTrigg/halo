@@ -6,8 +6,6 @@
 #include "zutil.h"
 #include "infblock.h"
 
-static const Byte inflate_sync_mark[4] = {0, 0, 0xff, 0xff};
-
 struct inflate_blocks_state {int dummy;}; /* for buggy compilers */
 
 typedef enum {
@@ -325,7 +323,8 @@ z_streamp z;
   /* search */
   while (n && m < 4)
   {
-    if (*p == inflate_sync_mark[m])
+    static const Byte mark[4] = {0, 0, 0xff, 0xff};
+    if (*p == mark[m])
       m++;
     else if (*p)
       m = 0;

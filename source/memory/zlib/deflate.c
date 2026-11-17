@@ -51,6 +51,8 @@
 
 #include "deflate.h"
 
+const char deflate_copyright[] =
+   " deflate 1.1.3 Copyright 1995-1998 Jean-loup Gailly ";
 /*
   If you use the zlib library in a product, an acknowledgment is welcome
   in the documentation of your product. If for some reason you cannot
@@ -70,13 +72,6 @@ typedef enum {
 
 typedef block_state (*compress_func) OF((deflate_state *s, int flush));
 /* Compression function. Returns the block state after the call. */
-
-/* January-build private symbols, with their upstream zlib 1.1.3 identities:
- * 00100660 putShortMSB, 00100690 flush_pending, 00100be0 read_buf,
- * 00100c40 lm_init, 00100cc0 longest_match, 00100ed0 check_match,
- * 00100f90 fill_window, 00101130 deflate_stored, 001013c0 deflate_fast,
- * and 001016c0 deflate_slow.
- */
 
 local void fill_window    OF((deflate_state *s));
 local block_state deflate_stored OF((deflate_state *s, int flush));
@@ -128,13 +123,7 @@ typedef struct config_s {
    compress_func func;
 } config;
 
-typedef struct deflate_static_data_s {
-   char copyright[56];
-   config configuration_table[10];
-} deflate_static_data;
-
-const deflate_static_data deflate_copyright = {
-" deflate 1.1.3 Copyright 1995-1998 Jean-loup Gailly ", {
+local const config configuration_table[10] = {
 /*      good lazy nice chain */
 /* 0 */ {0,    0,  0,    0, deflate_stored},  /* store only */
 /* 1 */ {4,    4,  8,    4, deflate_fast}, /* maximum speed, no lazy matches */
@@ -146,9 +135,7 @@ const deflate_static_data deflate_copyright = {
 /* 6 */ {8,   16, 128, 128, deflate_slow},
 /* 7 */ {8,   32, 128, 256, deflate_slow},
 /* 8 */ {32, 128, 258, 1024, deflate_slow},
-/* 9 */ {32, 258, 258, 4096, deflate_slow}}}; /* maximum compression */
-
-#define configuration_table deflate_copyright.configuration_table
+/* 9 */ {32, 258, 258, 4096, deflate_slow}}; /* maximum compression */
 
 /* Note: the deflate() code requires max_lazy >= MIN_MATCH and max_chain >= 4
  * For deflate_fast() (levels <= 3) good is ignored and lazy has a different
@@ -225,7 +212,8 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
 {
     deflate_state *s;
     int noheader = 0;
-    static const char *my_version = ZLIB_VERSION;
+    static const char* my_version = ZLIB_VERSION;
+
     ushf *overlay;
     /* We overlay pending_buf and d_buf+l_buf. This works since the average
      * output size for (length,distance) codes is <= 24 bits.
@@ -953,7 +941,7 @@ local void check_match(s, start, match, length)
     }
     if (z_verbose > 1) {
         fprintf(stderr,"\\[%d,%d]", start-match, length);
-        do { (putc)(s->window[start++], stderr); } while (--length != 0);
+        do { putc(s->window[start++], stderr); } while (--length != 0);
     }
 }
 #else

@@ -10,8 +10,6 @@ file has inline function assertions.
 
 /* ---------- headers */
 
-#include "cseries/cseries.h"
-#include "math/real_math.h"
 
 /* ---------- constants */
 
@@ -19,22 +17,6 @@ enum
 {
 	PATH_NODE_LIST_SIZE = 0x400,
 	PATH_HASH_TABLE_SIZE = 0x1000,
-	MAXIMUM_DISC_COUNT = 128,
-	MAXIMUM_OBSTACLE_AVOIDANCE_STEPS = 128,
-	MAXIMUM_SMOOTHED_PATH_STEPS = 4,
-};
-
-enum
-{
-	_disc_optional_bit = 0,
-};
-
-enum
-{
-	PATH_HASH_TABLE_SIZE_PER_KEY = 8,
-	PATH_HASH_KEY_MASK = 511,
-	PATH_HASH_TABLE_MASK = 4095,
-	MAXIMUM_PATH_EDGES_PER_COLLISION_SURFACE = 64
 };
 
 enum
@@ -62,9 +44,13 @@ enum
 
 /* ---------- macros */
 
-/* ---------- structures */
+#define MAXIMUM_SMOOTHED_PATH_STEPS 4
+#define MAXIMUM_DISC_COUNT 128
+#define MAXIMUM_OBSTACLE_AVOIDANCE_STEPS 128
 
-struct structure_bsp;
+#define MAXIMUM_RAW_PATH_STEPS 64
+
+/* ---------- structures */
 
 struct path_destination
 {
@@ -86,7 +72,7 @@ struct path_result
 	boolean steps_finish_path;
 	char step_count;
 	char step_index;
-	struct path_step steps[4];
+	struct path_step steps[MAXIMUM_SMOOTHED_PATH_STEPS];
 };
 
 struct path_input
@@ -122,13 +108,10 @@ struct path_node
 	short quantized_cost_estimate;
 	short depth;
 	short heap_location;
-	short last_render_id;
-	real closest_distance_to_attractor;
-	real_point3d closest_point_to_attractor;
+	short debug_render_traverse_index;
+	real closest_distance;
+	real_point3d closest_point;
 };
-
-typedef char path_node_size_assert[
-	sizeof(struct path_node) == 0x44 ? 1 : -1];
 
 struct path_heap_element
 {
@@ -154,14 +137,14 @@ struct path_state
 	short hash_table[PATH_HASH_TABLE_SIZE];
 };
 
-struct obstacle_disc
+struct disc
 {
 	short flags;
 	short obstacle_index;
 	long object_index;
 	real_point2d center;
 	real radius;
-	real height;
+	real z;
 };
 
 struct obstacles
@@ -169,10 +152,10 @@ struct obstacles
 	short obstacle_count;
 	short disc_count;
 	short disc_optional_count;
-	struct obstacle_disc discs[MAXIMUM_DISC_COUNT];
+	struct disc discs[MAXIMUM_DISC_COUNT];
 };
 
-struct obstacle_path_step
+struct step
 {
 	real_point2d point;
 	long surface_index;
@@ -180,18 +163,15 @@ struct obstacle_path_step
 	real distance;
 	short obstacle_index;
 	byte obstacle_direction_index;
-	byte reserved1B;
 	short obstructed_goal_step_indices[2];
 	real total_distance;
 	short previous_step_index;
-	byte reserved26[2];
 };
 
 struct obstacle_path
 {
 	real radius;
 	boolean ignore_broken_surfaces;
-	byte reserved5[3];
 	struct obstacles const *obstacles;
 	struct structure_bsp const *structure;
 	real_point2d goal;
@@ -199,59 +179,15 @@ struct obstacle_path
 	short goal_obstacle_index;
 	short goal_step_index;
 	short best_goal_blocked_step_index;
-	byte reserved22[2];
 	real best_goal_blocked_distance;
 	boolean goal_found_exactly;
 	boolean finishing;
 	boolean ignore_optional;
-	byte reserved2B;
 	short step_count;
-	byte reserved2E[2];
-	struct obstacle_path_step steps[MAXIMUM_OBSTACLE_AVOIDANCE_STEPS];
+	struct step steps[MAXIMUM_OBSTACLE_AVOIDANCE_STEPS];
 	short heap_count;
 	short heap[MAXIMUM_OBSTACLE_AVOIDANCE_STEPS];
-	byte reserved1532[2];
 };
-
-typedef char obstacle_path_step_size_assert[
-	sizeof(struct obstacle_path_step) == 0x28 ? 1 : -1];
-typedef char obstacle_path_size_assert[
-	sizeof(struct obstacle_path) == 0x1534 ? 1 : -1];
-typedef char obstacle_path_step_count_offset_assert[
-	offsetof(struct obstacle_path, step_count) == 0x2C ? 1 : -1];
-typedef char obstacle_path_steps_offset_assert[
-	offsetof(struct obstacle_path, steps) == 0x30 ? 1 : -1];
-typedef char obstacle_path_heap_count_offset_assert[
-	offsetof(struct obstacle_path, heap_count) == 0x1430 ? 1 : -1];
-typedef char obstacle_path_heap_offset_assert[
-	offsetof(struct obstacle_path, heap) == 0x1432 ? 1 : -1];
-
-struct obstacles_test_pill_result
-{
-	real distance;
-	short disc_index;
-	short obstacle_index;
-};
-
-typedef char obstacles_test_pill_result_size_assert[
-	sizeof(struct obstacles_test_pill_result) == 0x8 ? 1 : -1];
-typedef char obstacles_test_pill_result_disc_index_offset_assert[
-	offsetof(struct obstacles_test_pill_result, disc_index) == 0x4 ? 1 : -1];
-typedef char obstacles_test_pill_result_obstacle_index_offset_assert[
-	offsetof(struct obstacles_test_pill_result, obstacle_index) == 0x6 ? 1 : -1];
-
-typedef char obstacle_disc_size_assert[
-	sizeof(struct obstacle_disc) == 0x18 ? 1 : -1];
-typedef char obstacle_disc_obstacle_index_offset_assert[
-	offsetof(struct obstacle_disc, obstacle_index) == 0x2 ? 1 : -1];
-typedef char obstacle_disc_height_offset_assert[
-	offsetof(struct obstacle_disc, height) == 0x14 ? 1 : -1];
-typedef char obstacles_size_assert[
-	sizeof(struct obstacles) == 0xC08 ? 1 : -1];
-typedef char obstacles_disc_count_offset_assert[
-	offsetof(struct obstacles, disc_count) == 0x2 ? 1 : -1];
-typedef char obstacles_discs_offset_assert[
-	offsetof(struct obstacles, discs) == 0x8 ? 1 : -1];
 
 struct path_debug_storage
 {
@@ -266,233 +202,41 @@ struct path_debug_storage
 	struct path_state path_state;
 	struct path_result result;
 	short raw_step_count;
-	word pad_140FE;
-	struct path_step raw_steps[64];
+	struct path_step raw_steps[MAXIMUM_RAW_PATH_STEPS];
 	short smoothed_step_count;
-	word pad_14502;
-	struct path_step smoothed_steps[4];
+	struct path_step smoothed_steps[MAXIMUM_SMOOTHED_PATH_STEPS];
 	short avoided_step_count;
-	word pad_14546;
-	struct path_step avoided_steps[4];
-	boolean use_stored_obstacles;
-	byte pad_14589;
-	short avoidance_path_count;
-	struct obstacles avoidance_obstacles[4];
-	struct obstacle_path avoidance_paths[4];
+	struct path_step avoided_steps[MAXIMUM_SMOOTHED_PATH_STEPS];
+	boolean debug_use_stored_obstacles;
+	short stored_obstacle_step_count;
+	struct obstacles path_obstacles[4];
+	struct obstacle_path path_obstacle_paths[4];
 };
-
-typedef char path_state_node_count_offset_assert[
-	offsetof(struct path_state, node_count) == 0x80 ? 1 : -1];
-typedef char path_state_node_list_offset_assert[
-	offsetof(struct path_state, node_list) == 0x84 ? 1 : -1];
-typedef char path_state_hash_table_offset_assert[
-	offsetof(struct path_state, hash_table) == 0x1208A ? 1 : -1];
-typedef char path_state_size_assert[
-	sizeof(struct path_state) == 0x1408C ? 1 : -1];
-
-typedef char path_debug_storage_size_assert[
-	sizeof(struct path_debug_storage) == 0x1CA7C ? 1 : -1];
-typedef char path_debug_storage_raw_steps_offset_assert[
-	offsetof(struct path_debug_storage, raw_steps) == 0x14100 ? 1 : -1];
-typedef char path_debug_storage_avoided_steps_offset_assert[
-	offsetof(struct path_debug_storage, avoided_steps) == 0x14548 ? 1 : -1];
 
 /* ---------- prototypes/PATH.C */
 
-// argument order is read off the call sites in ai_debug_update; every parameter
-// is dword-sized, so the middle names of path_input_new are not pinned by it
-void path_input_new(
-	struct path_input *input,
-	real pathfinding_radius,
-	boolean ignore_broken_surfaces,
-	long ignore_source_object_index);
-void path_input_set_start(
-	struct path_input *input,
-	real_point3d const *point,
-	long surface_index);
-void path_input_set_search_bounds(
-	struct path_input *input,
-	real maximum_distance);
-void path_input_set_attractor(
-	struct path_input *input,
-	real_point3d const *point,
-	real radius,
-	long object_index,
-	real weight);
-
-void path_state_new(
-	struct path_input const *input,
-	struct path_state *state,
-	struct path_debug_storage *debug);
-void path_state_destination(
-	struct path_state *state,
-	real_point3d const *point,
-	long surface_index,
-	real target_radius);
-boolean path_state_find(
-	struct path_state *state);
-boolean path_state_build_path(
-	struct path_state *state,
-	struct path_result *path);
-void path_smooth(
-	struct path_state *state,
-	short raw_step_count,
-	struct path_step const *raw_steps,
-	short *smoothed_step_count,
-	struct path_step *smoothed_steps,
-	boolean *steps_finish_path);
-
-struct path_node *path_get_node(
-	struct path_state *state,
-	short node_index);
-short path_node_from_hash_table(
-	struct path_state *state,
-	long surface_index);
-boolean path_3d_available(
-	struct structure_bsp *structure,
-	real_point3d const *start_point,
-	real avoidance_distance,
-	real_point3d const *end_point,
-	boolean *finishing_path_reference,
-	real_point3d *path_endpoint);
-boolean path_3d_build_path(
-	struct structure_bsp *structure,
-	real_point3d const *start_point,
-	real avoidance_distance,
-	real_point3d const *end_point,
-	struct path_result *path);
-void closest_point_to_attractor(
-	real_point3d const *p0,
-	real_point3d const *p1,
-	real_point3d const *q,
-	real_point3d *result);
-real path_attractor_weight(
-	struct path_state *state,
-	real_point3d const *point,
-	real_point3d const *previous_point,
-	real *closest_distance);
-boolean path_state_estimated_distance(
-	struct path_state *state,
-	real_point3d const *end_point,
-	long end_surface_index,
-	real *distance_reference,
-	real *closest_approach_to_attractor_reference,
-	real_vector3d *estimated_direction_reference);
-
-void paths_initialize(
-	void);
-void paths_dispose(
-	void);
-void paths_initialize_for_new_map(
-	void);
-void paths_dispose_from_old_map(
-	void);
+void path_input_new(struct path_input *input, real pathfinding_radius, boolean ignore_broken_surfaces, long source_object_index);
+void path_input_set_start(struct path_input *input, real_point3d const *start_point, long start_surface_index);
+void path_input_set_attractor(struct path_input *input, real_point3d const *attractor_point, real radius, long object_index, real weight);
+void path_input_set_search_bounds(struct path_input *input, real maximum_distance);
+void path_state_new(struct path_input const *input, struct path_state *state, struct path_debug_storage *debug);
+void path_state_destination(struct path_state *state, real_point3d const *destination_point, long destination_surface_index, real destination_accept_radius);
+boolean path_state_find(struct path_state *state);
+boolean path_state_build_path(struct path_state *state, struct path_result *path);
+short path_node_from_hash_table(struct path_state *state, long surface_index);
+struct path_node *path_get_node(struct path_state *state, short node_index);
+real path_attractor_weight(struct path_state const *state, real_point3d const *p0, real_point3d const *p1, real *distance_reference);
 
 /* ---------- prototypes/PATH_OBSTACLES.C */
 
-void obstacles_new(
-	struct obstacles *obstacles);
-boolean obstacles_add_disc(
-	struct obstacles *obstacles,
-	long object_index,
-	short flags,
-	real_point3d const *center,
-	real radius);
-short obstacles_test_circle(
-	struct obstacles const *obstacles,
-	short ignore_disc_index,
-	real_point2d const *center,
-	real radius);
-boolean obstacles_test_pill(
-	struct obstacles const *obstacles,
-	short ignore_disc_index,
-	real_point2d const *point,
-	real_vector2d const *direction,
-	real radius,
-	real distance,
-	boolean ignore_optional,
-	struct obstacles_test_pill_result *result);
-void obstacles_get_discs_in_sphere(
-	struct obstacles *obstacles,
-	real_point3d const *center,
-	real radius,
-	real_vector3d const *movement_direction,
-	long ignore_source_object_index,
-	long ignore_target_object_index);
-void obstacles_disc_tangents(
-	struct obstacles const *obstacles,
-	short disc_index,
-	real_point2d const *point,
-	real radius,
-	real_vector2d *right_direction,
-	real_vector2d *left_direction,
-	real *tangent_distance);
-void obstacles_recompute(
-	struct obstacles *obstacles,
-	real radius);
-void render_debug_obstacles(
-	struct obstacles const *obstacles,
-	real radius);
+void render_debug_obstacles(struct obstacles const *obstacles, real radius);
 
 /* ---------- prototypes/PATH_OBSTACLE_AVOIDANCE.C */
 
-__inline struct obstacle_disc const *obstacles_get_disc(
-	struct obstacles const *obstacles,
-	short disc_index);
-short obstacle_from_disc(
-	struct obstacles const *obstacles,
-	short disc_index);
-void render_debug_path(
-	struct obstacle_path *path);
-boolean path_avoid_obstacles(
-	struct path_state *state,
-	short input_step_count,
-	struct path_step const *input_steps,
-	short *avoided_step_count,
-	struct path_step *avoided_steps,
-	boolean *steps_finish_path);
-void render_debug_obstacle_path(
-	void);
+void render_debug_path(struct obstacle_path const *path);
 
 /* ---------- globals */
 
-extern boolean debug_obstacle_path;
-extern boolean debug_obstacle_path_on_failure;
-extern real_point3d debug_obstacle_path_start_point;
-extern long debug_obstacle_path_start_surface_index;
-extern real_point3d debug_obstacle_path_goal_point;
-extern long debug_obstacle_path_goal_surface_index;
-extern real debug_obstacle_path_radius;
-extern boolean debug_obstacle_path_finishing;
-extern boolean debug_ignore_broken_surfaces;
-
 /* ---------- public code */
 
-__inline struct obstacle_disc const *obstacles_get_disc(
-	struct obstacles const *obstacles,
-	short disc_index)
-{
-	match_assert(
-		"c:\\halo\\source\\ai\\path.h",
-		0x18C,
-		disc_index>=0 && disc_index<obstacles->disc_count && obstacles->disc_count<=MAXIMUM_DISC_COUNT);
-
-	return &obstacles->discs[disc_index];
-}
-
 #endif // __PATH_H
-
-/* Opt-in PATH.C declarations used by ActionFlee.  Keeping this block after
- * the legacy include guard preserves the C2 declaration schedule of the
- * shared path header for unrelated translation units. */
-#ifdef PATH_EXTERNAL_FLEE_ROUTINES
-void path_input_set_target_object(
-	struct path_input *input,
-	long target_object_index);
-boolean path_state_approach_point(
-	struct path_state *state,
-	real_point2d const *end_point,
-	long end_surface_index,
-	boolean *straight_line_reference,
-	real_point3d *approach_point_reference);
-#endif

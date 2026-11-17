@@ -6,50 +6,15 @@ OBJECT_TYPES.H
 #define __OBJECT_TYPES_H
 #pragma once
 
+/* ---------- headers */
+
+#include "objects.h"
+
 /* ---------- constants */
 
 enum
 {
 	MAXIMUM_CHILDREN_PER_OBJECT_TYPE_DEFINITION = 16,
-};
-
-enum
-{
-	_object_type_biped = 0,
-	_object_type_vehicle,
-	_object_type_weapon,
-	_object_type_equipment,
-	_object_type_garbage,
-	_object_type_projectile,
-	_object_type_scenery,
-	_object_type_machine,
-	_object_type_control,
-	_object_type_light_fixture,
-	_object_type_placeholder,
-	_object_type_sound_scenery,
-	NUMBER_OF_OBJECT_TYPES,
-
-	_object_mask_all =						UNSIGNED_LONG_MAX,
-	_object_mask_unit =						(FLAG(_object_type_biped)|FLAG(_object_type_vehicle)),
-	_object_mask_biped =					FLAG(_object_type_biped),
-	_object_mask_vehicle =					FLAG(_object_type_vehicle),
-	_object_mask_item =						(FLAG(_object_type_weapon)|FLAG(_object_type_equipment)|FLAG(_object_type_garbage)),
-	_object_mask_weapon =					FLAG(_object_type_weapon),
-	_object_mask_equipment =				FLAG(_object_type_equipment),
-	_object_mask_garbage =					FLAG(_object_type_garbage),
-	_object_mask_projectile =				FLAG(_object_type_projectile),
-	_object_mask_scenery =					FLAG(_object_type_scenery),
-	_object_mask_sound_scenery =			FLAG(_object_type_sound_scenery),
-	_object_mask_device =					(FLAG(_object_type_machine)|FLAG(_object_type_control)|FLAG(_object_type_light_fixture)),
-	_object_mask_machine =					FLAG(_object_type_machine),
-	_object_mask_control =					FLAG(_object_type_control),
-	_object_mask_light_fixture =			FLAG(_object_type_light_fixture),
-	_object_mask_placeholder =				FLAG(_object_type_placeholder),
-
-	_object_mask_sightblocking =			(FLAG(_object_type_vehicle)|FLAG(_object_type_scenery)|FLAG(_object_type_machine)),
-	_object_mask_cannot_interpolate =		(FLAG(_object_type_projectile)|FLAG(_object_type_scenery)|FLAG(_object_type_machine)|FLAG(_object_type_control)|
-											FLAG(_object_type_light_fixture)|FLAG(_object_type_placeholder)|FLAG(_object_type_sound_scenery)),
-	_object_mask_remove_on_bsp_switch =		(FLAG(_object_type_scenery)|FLAG(_object_type_light_fixture))
 };
 
 /* ---------- structures */
@@ -68,7 +33,7 @@ struct object_type_definition
 	void (*dispose_from_old_map)();
 	void (*datum_adjust_placement)(long, struct object_placement_data *);
 	boolean (*datum_new)(long);
-	void (*datum_place)(long, struct scenario_object_datum *);
+	void (*datum_place)(long, void *);
 	void (*datum_delete)(long);
 	boolean(*datum_update)(long);
 	void (*datum_export_function_values)(long);
@@ -90,30 +55,25 @@ struct object_type_definition
 struct object_type_definition *object_type_definition_get(short object_type);
 short object_type_get_datum_size(short object_type);
 char const *object_type_get_name(short object_type);
-short object_definition_index_to_object_type(
-	long definition_index);
 
-void object_types_place_all(
-	struct scenario *scenario);
-void object_names_postprocess(
-	struct scenario *scenario,
-	boolean postprocess);
+void object_types_place_all(struct scenario *scenario);
+void object_types_disconnect_from_structure_bsp(void);
+void object_types_reconnect_to_structure_bsp(void);
 
 void object_types_initialize(void);
 void object_types_dispose(void);
 void object_types_initialize_for_new_map(void);
 void object_types_dispose_from_old_map(void);
-void object_types_disconnect_from_structure_bsp(
-	void);
-void object_types_reconnect_to_structure_bsp(
-	void);
 void object_type_adjust_placement(long object_index, struct object_placement_data *data);
 boolean object_type_new(long object_index);
 void object_type_place(long object_index, struct scenario_object_datum *scenario_object);
 
+long object_type_synchronize(long object_index, struct scenario_object_datum *scenario_object, struct tag_block *palette, short object_type, short scenario_datum_index);
+
 void object_type_handle_deleted_object(long object_index, long deleted_object_index);
-void object_type_handle_region_destroyed(long object_index, short region_index, unsigned long damage_flags);
+void object_type_handle_region_destroyed(long object_index, short region_index, unsigned long damage_region_flags);
 boolean object_type_handle_parent_destroyed(long object_index);
+void object_type_notify_impulse_sound(long object_index, long sound_definition_index, long impulse_sound_index);
 
 void object_type_delete(long object_index);
 boolean object_type_update(long object_index);
@@ -124,14 +84,17 @@ void object_type_postprocess_node_matrices(long object_index, struct real_matrix
 void object_type_reset(long object_index);
 void object_type_disconnect_from_structure_bsp(long object_index);
 void object_type_render_debug(long object_index);
-void object_type_notify_impulse_sound(long object_index, long sound_index, long source_object_index);
 
-struct tag_block *scenario_get_object_type_scenario_datums(
-	struct scenario *scenario,
-	short object_type,
-	long *size);
-struct tag_block *scenario_get_object_type_scenario_palette(
-	struct scenario *scenario,
-	short object_type);
+short object_definition_index_to_object_type(long definition_index);
+
+struct tag_block *scenario_get_object_type_scenario_datums(struct scenario *scenario, short object_type, long *size);
+struct tag_block *scenario_get_object_type_scenario_palette(struct scenario *scenario, short object_type);
+
+void object_names_postprocess(struct scenario *scenario, boolean editing);
+void object_types_place_objects(boolean place);
+
+/* ---------- globals */
+
+extern struct object_type_definition *first_object_type_definition;
 
 #endif // __OBJECT_TYPES_H

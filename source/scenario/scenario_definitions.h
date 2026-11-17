@@ -10,19 +10,23 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "tag_files/tag_files.h"
-#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
 enum
 {
-	SCENARIO_TAG = 'scnr',
+	_scenario_cortana_hack_bit = 0,
+	_scenario_demo_ui_bit,
+	NUMBER_OF_SCENARIO_FLAGS,
+};
 
-	_scenario_type_solo = 0,
-	_scenario_type_multiplayer,
-	_scenario_type_main_menu,
+enum
+{
+	SCENARIO_GROUP_TAG = 'scnr'
+};
 
+enum
+{
 	_scenario_object_placement_not_automatic_bit = 0,
 	_scenario_object_placement_not_on_easy_bit,
 	_scenario_object_placement_not_on_normal_bit,
@@ -32,8 +36,10 @@ enum
 
 enum
 {
-	_scenario_trigger_volume_type_axis_aligned = 0,
-	_scenario_trigger_volume_type_oriented,
+	_equipment_created_at_rest_bit = 0,
+	_equipment_obsolete_bit,
+	_equipment_does_accelerate_bit,
+	NUMBER_OF_SCENARIO_EQUIPMENT_FLAGS,
 };
 
 enum
@@ -44,29 +50,22 @@ enum
 	NUMBER_OF_SCENARIO_WEAPON_FLAGS,
 };
 
-enum netgame_flag_type
+enum
 {
-	_netgame_flag_ctf_flag = 0,
-	_netgame_flag_ctf_vehicle,
-	_netgame_flag_oddball_ball_spawn,
-	_netgame_flag_race_track,
-	_netgame_flag_race_vehicle,
-	_netgame_flag_vegas_bank,
-	_netgame_flag_teleporter_source,
-	_netgame_flag_teleporter_target,
-	_netgame_flag_hill,
-	NUMBER_OF_NETGAME_FLAG_TYPES,
+	_trigger_volume_type_world_aligned_bounding_box = 0,
+	_trigger_volume_type_bounding_box,
+	NUMBER_OF_TRIGGER_VOLUME_TYPES
 };
 
 /* ---------- macros */
 
-#define scenario_definition_get(index) ((struct scenario *)tag_get(SCENARIO_TAG, (index)))
+#define scenario_definition_get(index) ((struct scenario *)tag_get(SCENARIO_GROUP_TAG, index)) /* fake name */
 
 /* ---------- structures */
 
 struct scenario_object_palette_entry
 {
-	struct tag_reference reference;
+	struct tag_reference reference;	// object_definition
 	unsigned long unused[8];
 };
 
@@ -83,16 +82,102 @@ struct scenario_object_datum
 	unsigned long unused;
 };
 
-struct scenario_placeholder_datum
-{
-	struct scenario_object_datum object;
-};
-
 struct scenario_object_permutation
 {
 	unsigned long change_colors[4];
 	byte region_permutations[8];
 	unsigned long unused2[2];
+};
+
+struct scenario_scenery_datum
+{
+	struct scenario_object_datum object;
+	struct scenario_object_permutation permutation;
+};
+
+struct scenario_placeholder_datum
+{
+	struct scenario_object_datum object;
+};
+
+struct scenario_equipment_datum
+{
+	struct scenario_object_datum object;
+};
+
+struct scenario_sound_scenery_datum /* fake name */
+{
+	struct scenario_object_datum object;
+};
+
+struct scenario_unit_datum
+{
+	real body_vitality;
+	unsigned long flags;
+	unsigned long unused[2];
+};
+
+struct scenario_biped_datum
+{
+	struct scenario_object_datum object;
+	struct scenario_object_permutation permutation;
+	struct scenario_unit_datum unit;
+	long unused[8];
+};
+
+struct scenario_vehicle_datum
+{
+	struct scenario_object_datum object;
+	struct scenario_object_permutation permutation;
+	struct scenario_unit_datum unit;
+	byte multiplayer_team_index;
+	byte unused_byte;
+	word multiplayer_spawn_flags;
+	long unused[7];
+};
+
+struct scenario_device_group
+{
+	char name[TAG_STRING_LENGTH+1];
+	real initial_value;
+	unsigned long flags;
+	unsigned long unused[3];
+};
+
+struct scenario_device_datum
+{
+	short power_group_index;
+	short position_group_index;
+	unsigned long flags;
+};
+
+struct scenario_machine_datum
+{
+	struct scenario_object_datum object;
+	struct scenario_device_datum device;
+	unsigned long flags;
+	unsigned long unused[3];
+};
+
+struct scenario_control_datum
+{
+	struct scenario_object_datum object;
+	struct scenario_device_datum device;
+	unsigned long flags;
+	short hud_override_string_list_index;
+	short pad;
+	unsigned long unused[2];
+};
+
+struct scenario_light_fixture_datum
+{
+	struct scenario_object_datum object;
+	struct scenario_device_datum device;
+	real_rgb_color color;
+	real intensity;
+	real falloff_angle;
+	real cutoff_angle;
+	unsigned long unused[4];
 };
 
 struct scenario_weapon_datum
@@ -113,20 +198,56 @@ struct scenario_object_name
 	short runtime_scenario_datum_index;
 };
 
-struct player_starting_location
+struct scenario_player
 {
 	real_point3d position;
 	real facing;
 	short team_index;
-	short structure_bsp_reference_index;
-	short game_types[4];
-	byte unused1C[0x18];
+	short bsp_index;
+	short game_type[4];
+	long unused[6];
 };
 
-typedef char player_starting_location_size_assert[
-	sizeof(struct player_starting_location) == 0x34 ? 1 : -1];
-typedef char player_starting_location_game_types_offset_assert[
-	offsetof(struct player_starting_location, game_types) == 0x14 ? 1 : -1];
+struct scenario_structure_bsp_reference
+{
+	long offset;
+	long size;
+	void *address;
+	unsigned long unused[1];
+	struct tag_reference structure_bsp;	// structure_bsp
+};
+
+struct scenario_trigger_volume
+{
+	short type;
+	word pad;
+	char name[TAG_STRING_LENGTH+1];
+	union
+	{
+		struct
+		{
+			long unused[3];
+			real_vector3d forward;
+			real_vector3d up;
+			real_point3d position;
+			real_vector3d extents;
+		} bounding_box;
+		struct
+		{
+			long unused[9];
+			real_rectangle3d rectangle;
+		} world_aligned_bounding_box;
+	};
+};
+
+struct scenario_cutscene_flag
+{
+	long flags;
+	char name[TAG_STRING_LENGTH+1];
+	real_point3d position;
+	real_euler_angles2d facing;
+	long unused[9];
+};
 
 struct scenario_cutscene_camera_point
 {
@@ -139,114 +260,31 @@ struct scenario_cutscene_camera_point
 	long unused[9];
 };
 
-struct scenario_decal_palette_entry
+struct scenario_cutscene_title
 {
-	struct tag_reference reference;
-};
-
-struct scenario_structure_bsp_reference
-{
-	long file_offset;
-	long file_size;
-	void *base_address;
-	byte unusedC[4];
-	struct tag_reference structure_bsp;
-};
-
-typedef char scenario_structure_bsp_reference_size_assert[
-	sizeof(struct scenario_structure_bsp_reference) == 0x20 ? 1 : -1];
-
-struct scenario_trigger_volume
-{
-	short type;
-	word pad;
+	long flags;
 	char name[TAG_STRING_LENGTH+1];
-	byte unused[0xC];
-	real_vector3d forward;
-	real_vector3d up;
-	union
-	{
-		struct
-		{
-			real_point3d position;
-			real_vector3d extents;
-		};
-		real_rectangle3d bounds;
-	};
-};
-
-typedef char scenario_trigger_volume_size_assert[
-	sizeof(struct scenario_trigger_volume) == 0x60 ? 1 : -1];
-
-struct scenario_starting_profile_weapon
-{
-	struct tag_reference weapon;
-	short rounds_loaded;
-	short rounds_total;
-};
-
-struct scenario_starting_profile
-{
-	char name[32];
-	real starting_health_modifier;
-	real starting_shield_modifier;
-	struct scenario_starting_profile_weapon primary_weapon;
-	struct scenario_starting_profile_weapon secondary_weapon;
-	char grenade_counts[2];
-	byte pad[22];
-};
-
-typedef char scenario_starting_profile_size_assert[
-	sizeof(struct scenario_starting_profile) == 0x68 ? 1 : -1];
-
-struct encounter_player_starting_location
-{
-	real_point3d position;
-	real facing;
-	short team_index;
-	word pad12;
-	short game_types[4];
-	char __unknown1c[24];
-};
-
-struct scenario_netgame_flag
-{
-	real_point3d position;
-	real facing;
-	short type;
-	short team_index;
-	long unused[32];
-};
-
-struct scenario_netgame_equipment
-{
-	long flags;
-	short game_type[4];
-	short team_index;
-	short spawn_time;
-	long run_time_spawned_item_index;
-	long unused1[11];
-	real_point3d position;
-	real facing;
-	struct tag_reference item_collection;
-	long unused2[12];
-};
-
-struct scenario_starting_equipment
-{
-	long flags;
-	short game_type[4];
-	long unused1[12];
-	struct tag_reference item_collection[6];
-	long unused2[12];
+	long pad0;
+	rectangle2d bounds;
+	short text_index;
+	short style;
+	short justification;
+	short pad1;
+	unsigned long text_flags;
+	pixel32 foreground_color;
+	pixel32 shadow_color;
+	real fade_in_time;
+	real up_time;
+	real fade_out_time;
+	long unused[4];
 };
 
 struct scenario
 {
-	struct tag_reference ugly_structure_bsp;
-	struct tag_reference unloved_globals;
-	struct tag_reference bad_sky;
-	struct tag_block sky_references; // tag_reference
+	struct tag_reference ugly_structure_bsp;	// structure_bsp
+	struct tag_reference unloved_globals;	// game_globals
+	struct tag_reference bad_sky;			// sky
+	struct tag_block sky_references;				// tag_reference
 	short type;
 	word flags;
 	struct tag_block scenario_references;
@@ -280,8 +318,8 @@ struct scenario
 	struct tag_block sound_scenery_palette;
 	struct tag_block unused_blocks[7];
 	struct tag_block starting_profiles;
-	struct tag_block players;
-	struct tag_block trigger_volumes; // scenario_trigger_volume
+	struct tag_block players;						// scenario_player
+	struct tag_block trigger_volumes;				// scenario_trigger_volume
 	struct tag_block recorded_animations;
 	struct tag_block netgame_flags;
 	struct tag_block netgame_equipment;
@@ -297,7 +335,7 @@ struct scenario
 	struct tag_block ai_animation_references;
 	struct tag_block ai_script_references;
 	struct tag_block ai_recording_references;
-	struct tag_block ai_conversations;
+	struct tag_block ai_conversations;					// ai_conversation
 	struct tag_data hs_syntax_data;
 	struct tag_data hs_string_constants;
 	struct tag_block hs_scripts;
@@ -309,19 +347,10 @@ struct scenario
 	struct tag_block cutscene_camera_points;			// scenario_cutscene_camera_point
 	struct tag_block cutscene_chapter_titles;
 	long rapidly_dwindling_unused_space[27];
-	struct tag_reference custom_object_names;
-	struct tag_reference ingame_help_text;
-	struct tag_reference hud_messages;
-	struct tag_block structure_bsp_references; // scenario_structure_bsp_reference
-};
-
-struct scenario_cutscene_flag
-{
-	long runtime_unused;
-	char name[TAG_STRING_LENGTH];
-	real_point3d position;
-	real_euler_angles2d facing;
-	byte unused[0x24];
+	struct tag_reference custom_object_names;	// unicode_string_list_group_header
+	struct tag_reference ingame_help_text;	// unicode_string_list_group_header
+	struct tag_reference hud_messages;		// hud_state_messages
+	struct tag_block structure_bsp_references;		// scenario_structure_bsp_reference
 };
 
 /* ---------- prototypes/EXAMPLE.C */

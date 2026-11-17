@@ -11,59 +11,59 @@ header included in hcex build.
 /* ---------- headers */
 
 #include "render_cameras.h"
-#include "structures/structures.h"
-#include "structures/structure_render.h"
+#include "structure_bsp_definitions.h"
 
 /* ---------- constants */
-
-enum
-{
-	MAXIMUM_RENDERED_DISTANT_LIGHTS = 2,
-	MAXIMUM_RENDERED_POINT_LIGHTS = 2,
-	MAXIMUM_RENDERED_ENVIRONMENT_SURFACES = 16384,
-	MAXIMUM_RENDERED_CLUSTERS = 128,
-	MAXIMUM_SURFACES_PER_STRUCTURE = 0x20000,
-	MAXIMUM_RENDERED_LIGHTS = 128,
-	MAXIMUM_LIGHTS_PER_MAP = 896,
-	MAXIMUM_LENS_FLARES_PER_LIGHT = 8,
-	MAXIMUM_QUEUED_LENS_FLARES = 8,
-};
 
 /* ---------- macros */
 
 /* ---------- structures */
 
-struct render_distant_light
+struct render_animation
 {
-	real_rgb_color color;
-	real_vector3d direction;
+	real_rgb_color const *colors;
+	real const *values;
 };
 
-struct render_lighting
-{
-	real_rgb_color ambient_color;
-	short distant_light_count;
-	word pad;
-	struct render_distant_light distant_lights[MAXIMUM_RENDERED_DISTANT_LIGHTS];
-	short point_light_count;
-	word pad1;
-	long point_light_indices[MAXIMUM_RENDERED_POINT_LIGHTS];
-	real_argb_color reflection_tint_color;
-	real_vector3d shadow_vector;
-	real_rgb_color shadow_color;
-};
-
-/* HCEX and the PC-demo PDB type node_matrices as a non-const `real_matrix4x3 *`.
-   It is declared const here because its users store const node-matrix pointers
-   into it (transparent_geometry_group.node_matrices is const in HCEX as well);
-   the qualifier changes no emitted byte, and the non-const spelling would add
-   eleven C4090 const-qualifier warnings in five translation units. */
 struct render_skinning
 {
-	real_matrix4x3 const *node_matrices;
+	real_matrix4x3 *node_matrices;
 	short node_matrix_count;
 };
 
+struct render_sort_filth
+{
+	short *prev_group_presorted_index_reference;
+	short *next_group_presorted_index_reference;
+	short group_index;
+	short next_part_index;
+	short part_index;
+	word pad;
+};
+
+struct render_model_effect
+{
+	short type;
+	real intensity;
+	real parameter;
+	long source_object_index;
+	real_point3d source_object_centroid;
+	struct shader *modifier_shader;
+	struct render_animation modifier_animation;
+};
+
+struct render_screen_flash
+{
+	short type;
+	real intensity;
+	real_argb_color color;
+};
+
+struct render_screen_effect
+{
+	short type;
+	real intensity;
+};
 
 struct rendered_cluster
 {
@@ -99,61 +99,30 @@ struct render_globals
 
 /* ---------- prototypes/RENDER.C */
 
+void render_frame(struct render_window const *windoze, short window_count, point2d const *screenshot_page_index, point2d const *screenshot_index, struct bitmap_data *screenshot_bitmap, real time_delta_since_tick_sec);
+
 void render_effects(boolean enable);
 void render_initialize(void);
 void render_initialize_for_new_map(void);
 void render_dispose_from_old_map(void);
 void render_dispose(void);
 
-void render_frame(
-	struct render_window *windoze,
-	short window_count,
-	point2d const *screenshot_page_index,
-	point2d const *screenshot_index,
-	struct bitmap_data *screenshot_bitmap,
-	real time_delta_since_tick_sec);
-void render_frame_pregame(
-	struct render_window const *window,
-	struct bitmap_data *bitmap);
-void render_frame_present(
-	const point2d *screenshot_index,
-	struct bitmap_data *bitmap);
-boolean render_location_visible(
-	struct location *location);
-struct rendered_cluster *rendered_cluster_get(
-	short rendered_cluster_index);
-
-/* ---------- prototypes/RENDER_CONTRAILS.C */
-
-void render_contrails_ground_mapped(
-	void);
-void render_contrails_media_mapped(
-	void);
-void render_contrails_normal(
-	void);
+void render_frame_pregame(struct render_window const *window, struct bitmap_data *screenshot_bitmap);
+void render_frame_present(point2d const *screenshot_index, struct bitmap_data *bitmap);
+boolean render_location_visible(struct location *location);
+struct rendered_cluster *rendered_cluster_get(short rendered_cluster_index);
 
 /* ---------- prototypes/RENDER_OBJECTS.C */
 
-void render_objects_initialize(
-	void);
-void render_objects_initialize_for_new_map(
-	void);
-void render_objects_dispose_from_old_map(
-	void);
-void render_objects_dispose(
-	void);
-struct render_lighting *object_get_cached_render_lighting(
-	long object_index,
-	real level_of_detail_pixels);
-void render_objects(
-	void);
-void render_object_shadows(
-	void);
+void render_objects_initialize(void);
+void render_objects_initialize_for_new_map(void);
+void render_objects_dispose_from_old_map(void);
+void render_objects_dispose(void);
 
 /* ---------- globals */
 
 extern struct render_globals render;
-extern boolean render_particle_systems_enabled;
+extern boolean debug_render_freeze;
 
 /* ---------- public code */
 

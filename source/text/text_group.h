@@ -10,41 +10,42 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "tag_files/tag_groups.h"
+#include "unicode.h"
 
 /* ---------- constants */
 
 enum
 {
-	STRING_LIST_TAG = 'str#',
-	UNICODE_STRING_LIST_TAG = 'ustr',
-};
-
-enum
-{
-	_text_style_plain = NONE,
-	_text_style_bold = 0,
-	_text_style_italic,
-	_text_style_condense,
-	_text_style_underline,
-	NUMBER_OF_TEXT_STYLES
+	STRING_LISTS_GROUP_TAG = 'str#',
+	STRING_LISTS_GROUP_VERSION = 1,
+	UNICODE_STRING_LISTS_GROUP_TAG = 'ustr',
+	UNICODE_STRING_LISTS_GROUP_VERSION = 1
 };
 
 /* ---------- macros */
 
-#define string_list_definition_get(index) ((struct string_list *)tag_get(STRING_LIST_TAG, (index)))
-#define unicode_string_list_definition_get(index) ((struct string_list *)tag_get(UNICODE_STRING_LIST_TAG, (index)))
+#define unicode_string_list_definition_get(index) ((struct unicode_string_list_group_header *)tag_get(UNICODE_STRING_LISTS_GROUP_TAG, (index))) /* fake name */
 
 /* ---------- structures */
 
-struct string_list
-{
-	struct tag_block strings;
-};
-
-struct string_list_entry
+struct string_list_string_reference
 {
 	struct tag_data string;
+};
+
+struct string_list_group_header
+{
+	struct tag_block string_references;		// string_list_string_reference
+};
+
+struct unicode_string_list_string_reference
+{
+	struct tag_data string;
+};
+
+struct unicode_string_list_group_header
+{
+	struct tag_block string_references;		// unicode_string_list_string_reference
 };
 
 /* ---------- prototypes/TEXT_GROUP.C */

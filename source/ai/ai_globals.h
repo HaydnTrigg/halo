@@ -10,9 +10,28 @@ header included in hcex build.
 
 /* ---------- constants */
 
+enum
+{
+	_ai_spatial_effect_environmental_noise = 0,
+	_ai_spatial_effect_weapon_impact,
+	_ai_spatial_effect_weapon_detonation,
+	NUMBER_OF_AI_SPATIAL_EFFECTS,
+};
+
 /* ---------- macros */
 
+#define MAXIMUM_ENTERABLE_VEHICLES 32
+
 /* ---------- structures */
+
+struct recent_conversation
+{
+	short definition_index;
+	boolean unable_to_begin;
+	boolean finished_successfully;
+	long finish_time;
+	unsigned long unused[2];
+};
 
 struct ai_spatial_effect
 {
@@ -22,15 +41,6 @@ struct ai_spatial_effect
 	long last_tick;
 };
 
-struct recent_conversation
-{
-	short scenario_conversation_index;
-	boolean unable_to_begin;
-	boolean finished_successfully;
-	long finish_time;
-	byte __unknown08[8];
-};
-
 struct ai_vehicle_enterable
 {
 	long vehicle_index;
@@ -38,7 +48,6 @@ struct ai_vehicle_enterable
 	short team_bitmask;
 	short actor_type_bitmask;
 	short ai_indices_count;
-	word __pad0E;
 	long ai_indices[6];
 };
 
@@ -53,7 +62,6 @@ struct ai_globals
 	long first_encounterless_actor_index;
 	real major_upgrade_error;
 	boolean dialogue_triggers_enabled;
-	byte reserved011[0x3];
 	long last_chatter_time[2];
 	long last_talk_time[2];
 	long last_shout_time[2];
@@ -64,11 +72,9 @@ struct ai_globals
 	short spatial_effects_last_index;
 	struct ai_spatial_effect spatial_effects[32];
 	boolean grenades_enabled;
-	byte reserved3B5;
 	short enterable_vehicle_count;
-	struct ai_vehicle_enterable enterable_vehicles[32];
+	struct ai_vehicle_enterable enterable_vehicles[MAXIMUM_ENTERABLE_VEHICLES];
 	short mounted_weapon_unit_count;
-	byte reserved8BA[0x2];
 	long mounted_weapon_unit_indices[8];
 };
 

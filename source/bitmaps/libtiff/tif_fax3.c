@@ -35,12 +35,6 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_fax3.c,v 1.
 #include <stdio.h>
 #include <assert.h>
 #include "tif_fax3.h"
-extern void *debug_malloc(unsigned int, int, const char *, long);
-extern void debug_free(void *, const char *, long);
-extern void *csmemset(void *, long, unsigned long);
-extern void *csmemcpy(void *, const void *, unsigned long);
-/* The January object owns every fax lookup table in writable .data. */
-#define const
 #define	G3CODES
 #include "t4.h"
 #define	G3STATES
@@ -255,8 +249,7 @@ Fax3SetupState(tif, space)
 	}
 	if (is2DEncoding(tif) || td->td_compression == COMPRESSION_CCITTFAX4)
 		cc += rowbytes+1;
-	tif->tif_data = debug_malloc(cc, 0,
-	    "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_fax3.c", 252);
+	tif->tif_data = match_malloc("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_fax3.c", 252, cc);
 	if (tif->tif_data == NULL) {
 		TIFFError("Fax3SetupState",
 		    "%s: No space for Fax3 state block", tif->tif_name);
@@ -364,7 +357,7 @@ Fax3Decode(tif, buf, occ, s)
 {
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
 
-	csmemset(buf, 0, occ);		/* decoding only sets non-zero bits */
+	bzero(buf, occ);		/* decoding only sets non-zero bits */
 	while (occ > 0) {
 		if (sp->b.tag == G3_1D) {
 			if (!Fax3Decode1DRow(tif, buf, sp->b.rowpixels))
@@ -383,7 +376,7 @@ Fax3Decode(tif, buf, occ, s)
 			 */
 			sp->b.tag = nextbit(tif) ? G3_1D : G3_2D;
 			if (sp->b.tag == G3_2D)
-				csmemcpy(sp->b.refline, buf, sp->b.rowbytes);
+				bcopy(buf, sp->b.refline, sp->b.rowbytes);
 		}
 		buf += sp->b.rowbytes;
 		occ -= sp->b.rowbytes;
@@ -793,7 +786,7 @@ putspan(tif, span, tab)
 	}
 	if (span >= 64) {
 		tableentry const *te = &tab[63 + (span>>6)];
-		/* The January 2002 Xbox object omits the upstream consistency assert. */
+		assert(te->runlen == 64*(span>>6));
 		putcode(tif, te);
 		span -= te->runlen;
 	}
@@ -1042,7 +1035,7 @@ Fax3Encode(tif, bp, cc, s)
 				sp->b.tag = G3_1D;
 				sp->k = sp->maxk-1;
 			} else
-				csmemcpy(sp->b.refline, bp, sp->b.rowbytes);
+				bcopy(bp, sp->b.refline, sp->b.rowbytes);
 		} else {
 			if (!Fax3Encode1DRow(tif, bp, sp->b.rowpixels))
 				return (0);
@@ -1081,8 +1074,7 @@ Fax3Cleanup(tif)
 	TIFF *tif;
 {
 	if (tif->tif_data) {
-		debug_free(tif->tif_data,
-		    "c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_fax3.c", 1077);
+		match_free("c:\\halo\\SOURCE\\bitmaps\\libtiff\\tif_fax3.c", 1077, tif->tif_data);
 		tif->tif_data = NULL;
 	}
 }

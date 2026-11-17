@@ -1,265 +1,256 @@
 /*
 SOUND_AIFF.C
-
-symbols in this file:
-001B6370 0080:
-	_sound_file_is_aiff (0000)
-001B63F0 0220:
-	_sound_file_aiff_info_get (0000)
-001B6610 00d0:
-	_sound_file_aiff_raw_data_get (0000)
-001B66E0 0010:
-	_sound_file_aiff_format (0000)
-002AA8A8 0014:
-	??_C@_0BE@PMHCOHBH@aiff?5format?5info?5p1?$AA@ (0000)
-002AA8BC 000b:
-	??_C@_0L@GBBDAFEP@aiff?5chunk?$AA@ (0000)
-002AA8C8 0015:
-	??_C@_0BF@EADPPKIJ@aiff?5container?5chunk?$AA@ (0000)
-00316944 0018:
-	_aiff_container_chunk_bs_codes (0000)
-0031695C 0014:
-	_aiff_container_chunk_bs_definition (0000)
-00316970 0014:
-	_aiff_chunk_bs_codes (0000)
-00316984 0014:
-	_aiff_chunk_bs_definition (0000)
-00316998 0020:
-	_aiff_format_info_bs_codes (0000)
-003169B8 0014:
-	_aiff_format_info_bs_definition (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
 #include "sound_import.h"
-
-#include "memory/byte_swapping.h"
-#include "tag_files/files.h"
+#include "files.h"
 
 /* ---------- constants */
 
 enum
 {
-	AIFF_CONTAINER_HEADER_SIZE= 12,
-	AIFF_CHUNK_HEADER_SIZE= 8,
-	AIFF_COMMON_CHUNK_SIZE= 18,
-	AIFC_COMMON_CHUNK_SIZE= 22,
-	AIFF_SOUND_DATA_HEADER_SIZE= 8
-};
+	AIFF_FORM_CHUNK_TYPE = 'FORM', /* fake name */
+	AIFF_CONTAINER_TYPE = 'AIFF', /* fake name */
+	AIFC_CONTAINER_TYPE = 'AIFC', /* fake name */
+	AIFF_COMMON_CHUNK_TYPE = 'COMM', /* fake name */
+	AIFF_SOUND_DATA_CHUNK_TYPE = 'SSND', /* fake name */
+	AIFF_NO_COMPRESSION_TYPE = 'NONE', /* fake name */
 
-/* ---------- macros */
+	AIFF_EXTENDED_REAL_SIZE = 10 /* fake name */
+};
 
 /* ---------- structures */
 
 struct aiff_container_chunk
 {
-	tag signature;
-	long data_size;
-	tag form_type;
+	long chunk_type; /* fake name */
+	long chunk_length; /* fake name */
+	long container_type; /* fake name */
 };
 
 struct aiff_chunk
 {
-	tag signature;
-	long data_size;
+	long chunk_type; /* fake name */
+	long chunk_length; /* fake name */
 };
 
-struct aiff_common_chunk
+#pragma pack(push, 2)
+struct aiff_format_info_p1
 {
-	short channel_count;
-	byte sample_frame_count[4];
-	short significant_bits_per_sample;
-	byte sample_rate[10];
-	byte compression_type[4];
+	short channel_count; /* fake name */
+	long sample_frame_count; /* fake name */
+	short sample_size; /* fake name */
+	byte sample_rate[AIFF_EXTENDED_REAL_SIZE]; /* fake name */
+	long compression_type; /* fake name */
 };
+#pragma pack(pop)
 
 /* ---------- prototypes */
 
 /* ---------- globals */
 
-/* Names and types of these six file statics are attested by a later first-party build (the 2003 PC demo PDB's
-sound_aiff.obj); January's own PDB has no static names. Their offsets and January's single 4-byte-aligned .data
-contribution agree with that build. */
-
-static byte_swap_code aiff_container_chunk_bs_codes[6] =
+static byte_swap_code aiff_container_chunk_bs_codes[] = /* fake name */
 {
 	_begin_bs_array, 1,
-	_4byte, _4byte, _4byte,
-	_end_bs_array,
+	_4byte,
+	_4byte,
+	_4byte,
+	_end_bs_array
 };
 
-static struct byte_swap_definition aiff_container_chunk_bs_definition =
+static struct byte_swap_definition aiff_container_chunk_bs_definition = /* fake name */
 {
 	"aiff container chunk",
 	sizeof(struct aiff_container_chunk),
 	aiff_container_chunk_bs_codes,
 	BYTE_SWAP_DEFINITION_SIGNATURE,
-	FALSE,
+	FALSE
 };
 
-static byte_swap_code aiff_chunk_bs_codes[5] =
+static byte_swap_code aiff_chunk_bs_codes[] = /* fake name */
 {
 	_begin_bs_array, 1,
-	_4byte, _4byte,
-	_end_bs_array,
+	_4byte,
+	_4byte,
+	_end_bs_array
 };
 
-static struct byte_swap_definition aiff_chunk_bs_definition =
+static struct byte_swap_definition aiff_chunk_bs_definition = /* fake name */
 {
 	"aiff chunk",
 	sizeof(struct aiff_chunk),
 	aiff_chunk_bs_codes,
 	BYTE_SWAP_DEFINITION_SIGNATURE,
-	FALSE,
+	FALSE
 };
 
-static byte_swap_code aiff_format_info_bs_codes[8] =
+static byte_swap_code aiff_format_info_p1_bs_codes[] = /* fake name */
 {
 	_begin_bs_array, 1,
-	_2byte, _4byte, _2byte, 10, _4byte,
-	_end_bs_array,
+	_2byte,
+	_4byte,
+	_2byte,
+	AIFF_EXTENDED_REAL_SIZE,
+	_4byte,
+	_end_bs_array
 };
 
-static struct byte_swap_definition aiff_format_info_bs_definition =
+static struct byte_swap_definition aiff_format_info_p1_bs_definition = /* fake name */
 {
 	"aiff format info p1",
-	AIFC_COMMON_CHUNK_SIZE,
-	aiff_format_info_bs_codes,
+	sizeof(struct aiff_format_info_p1),
+	aiff_format_info_p1_bs_codes,
 	BYTE_SWAP_DEFINITION_SIGNATURE,
-	FALSE,
+	FALSE
 };
 
 /* ---------- public code */
 
 boolean sound_file_is_aiff(
-	struct file_reference const *file)
+	struct file_reference *file)
 {
-	struct aiff_container_chunk container;
-	boolean result= FALSE;
+	boolean result = FALSE;
 
-	if (file_open((struct file_reference *)file, FLAG(_permission_read_bit)))
+	if (file_open(file, FLAG(_permission_read_bit)))
 	{
-		if (file_read_from_position(file, 0, sizeof(container), &container))
+		struct aiff_container_chunk chunk;
+
+		if (file_read_from_position(file, 0, sizeof(chunk), &chunk))
 		{
-			byte_swap_data(&aiff_container_chunk_bs_definition, &container, 1);
-			if (container.signature=='FORM' &&
-				(container.form_type=='AIFF' || container.form_type=='AIFC'))
+			byte_swap_data(&aiff_container_chunk_bs_definition, &chunk, 1);
+			if (chunk.chunk_type == AIFF_FORM_CHUNK_TYPE &&
+				(chunk.container_type == AIFF_CONTAINER_TYPE || chunk.container_type == AIFC_CONTAINER_TYPE))
 			{
-				result= TRUE;
+				result = TRUE;
 			}
 		}
-		file_close((struct file_reference *)file);
+
+		file_close(file);
 	}
 
 	return result;
 }
 
 boolean sound_file_aiff_info_get(
-	struct file_reference const *file,
+	struct file_reference *file,
 	struct sound_file_info *info)
 {
-	struct aiff_chunk chunk;
-	struct aiff_common_chunk common;
-	boolean result= FALSE;
-	long position= AIFF_CONTAINER_HEADER_SIZE;
+	boolean success = FALSE;
+	long offset = sizeof(struct aiff_container_chunk);
 
-	if (file_open((struct file_reference *)file, FLAG(_permission_read_bit)))
+	if (file_open(file, FLAG(_permission_read_bit)))
 	{
-		while (file_read_from_position(file, position, sizeof(chunk), &chunk))
+		struct aiff_chunk chunk;
+
+		while (file_read_from_position(file, offset, sizeof(chunk), &chunk))
 		{
 			byte_swap_data(&aiff_chunk_bs_definition, &chunk, 1);
-			if (chunk.signature=='COMM')
+			if (chunk.chunk_type == AIFF_COMMON_CHUNK_TYPE)
 			{
-				position+= sizeof(chunk);
-				if (!file_read_from_position(file, position, sizeof(common), &common))
-					break;
+				struct aiff_format_info_p1 format_info;
 
+				offset += sizeof(chunk);
+				if (file_read_from_position(file, offset, sizeof(format_info), &format_info))
 				{
-					byte sample_rate_11025[10]= { 0x40, 0x0c, 0xac, 0x44, 0, 0, 0, 0, 0, 0 };
-					byte sample_rate_22050[10]= { 0x40, 0x0d, 0xac, 0x44, 0, 0, 0, 0, 0, 0 };
-					byte sample_rate_44100[10]= { 0x40, 0x0e, 0xac, 0x44, 0, 0, 0, 0, 0, 0 };
+					byte rate_11025[AIFF_EXTENDED_REAL_SIZE] = { 0x40, 0x0c, 0xac, 0x44, 0, 0, 0, 0, 0, 0 };
+					byte rate_22050[AIFF_EXTENDED_REAL_SIZE] = { 0x40, 0x0d, 0xac, 0x44, 0, 0, 0, 0, 0, 0 };
+					byte rate_44100[AIFF_EXTENDED_REAL_SIZE] = { 0x40, 0x0e, 0xac, 0x44, 0, 0, 0, 0, 0, 0 };
 
-				byte_swap_data(&aiff_format_info_bs_definition, &common, 1);
-				if (csmemcmp(sample_rate_11025, common.sample_rate, sizeof(common.sample_rate))==0)
-				{
-					info->samples_per_second= 11025;
-					info->significant_bits_per_sample= common.significant_bits_per_sample;
-					info->channel_count= common.channel_count;
-					if (chunk.data_size==AIFF_COMMON_CHUNK_SIZE || *(tag *)common.compression_type=='NONE')
-						result= TRUE;
-				}
-				else if (csmemcmp(sample_rate_22050, common.sample_rate, sizeof(common.sample_rate))==0)
-				{
-					info->samples_per_second= 22050;
-					info->significant_bits_per_sample= common.significant_bits_per_sample;
-					info->channel_count= common.channel_count;
-					if (chunk.data_size==AIFF_COMMON_CHUNK_SIZE || *(tag *)common.compression_type=='NONE')
-						result= TRUE;
-				}
-				else if (csmemcmp(sample_rate_44100, common.sample_rate, sizeof(common.sample_rate))==0)
-				{
-					info->samples_per_second= 44100;
-					info->significant_bits_per_sample= common.significant_bits_per_sample;
-					info->channel_count= common.channel_count;
-					if (chunk.data_size==AIFF_COMMON_CHUNK_SIZE || *(tag *)common.compression_type=='NONE')
-						result= TRUE;
-				}
-				else
-					info->samples_per_second= NONE;
+					byte_swap_data(&aiff_format_info_p1_bs_definition, &format_info, 1);
+					if (!memcmp(rate_11025, format_info.sample_rate, sizeof(format_info.sample_rate)))
+					{
+						info->samples_per_second = 11025;
+						info->significant_bits_per_sample = format_info.sample_size;
+						info->channel_count = format_info.channel_count;
+						if (chunk.chunk_length == 18 || format_info.compression_type == AIFF_NO_COMPRESSION_TYPE)
+						{
+							success = TRUE;
+						}
+					}
+					else if (!memcmp(rate_22050, format_info.sample_rate, sizeof(format_info.sample_rate)))
+					{
+						info->samples_per_second = 22050;
+						info->significant_bits_per_sample = format_info.sample_size;
+						info->channel_count = format_info.channel_count;
+						if (chunk.chunk_length == 18 || format_info.compression_type == AIFF_NO_COMPRESSION_TYPE)
+						{
+							success = TRUE;
+						}
+					}
+					else if (!memcmp(rate_44100, format_info.sample_rate, sizeof(format_info.sample_rate)))
+					{
+						info->samples_per_second = 44100;
+						info->significant_bits_per_sample = format_info.sample_size;
+						info->channel_count = format_info.channel_count;
+						if (chunk.chunk_length == 18 || format_info.compression_type == AIFF_NO_COMPRESSION_TYPE)
+						{
+							success = TRUE;
+						}
+					}
+					else
+					{
+						info->samples_per_second = NONE;
+					}
 				}
 				break;
 			}
 
-			position+= sizeof(chunk)+(chunk.data_size&1 ? chunk.data_size+1 : chunk.data_size);
+			offset += sizeof(chunk) + ((chunk.chunk_length & 1) ? chunk.chunk_length + 1 : chunk.chunk_length);
 		}
-		file_close((struct file_reference *)file);
+
+		file_close(file);
 	}
 
-	return result;
+	return success;
 }
 
 boolean sound_file_aiff_raw_data_get(
-	struct file_reference const *file,
+	struct file_reference *file,
 	long *size,
-	void *data)
+	void *buffer)
 {
-	struct aiff_chunk chunk;
-	boolean result= FALSE;
-	long position= AIFF_CONTAINER_HEADER_SIZE;
+	boolean success = FALSE;
+	long offset = sizeof(struct aiff_container_chunk);
 
-	if (file_open((struct file_reference *)file, FLAG(_permission_read_bit)))
+	if (file_open(file, FLAG(_permission_read_bit)))
 	{
-		while (file_read_from_position(file, position, sizeof(chunk), &chunk))
+		struct aiff_chunk chunk;
+
+		while (file_read_from_position(file, offset, sizeof(chunk), &chunk))
 		{
 			byte_swap_data(&aiff_chunk_bs_definition, &chunk, 1);
-			if (chunk.signature=='SSND')
+			if (chunk.chunk_type == AIFF_SOUND_DATA_CHUNK_TYPE)
 			{
-				*size= chunk.data_size-AIFF_SOUND_DATA_HEADER_SIZE;
-				position+= sizeof(chunk)+AIFF_SOUND_DATA_HEADER_SIZE;
-				if (file_read_from_position(file, position, *size, data))
-					result= TRUE;
+				*size = chunk.chunk_length - 8;
+				offset += sizeof(chunk) + 8;
+				if (file_read_from_position(file, offset, *size, buffer))
+				{
+					success = TRUE;
+				}
 				break;
 			}
 
-			position+= sizeof(chunk)+(chunk.data_size&1 ? chunk.data_size+1 : chunk.data_size);
+			offset += sizeof(chunk) + ((chunk.chunk_length & 1) ? chunk.chunk_length + 1 : chunk.chunk_length);
 		}
-		file_close((struct file_reference *)file);
+
+		file_close(file);
+
+		if (success)
+		{
+			byte_swap_memory(buffer, *size >> 1, _2byte);
+		}
 	}
 
-	if (result)
-		byte_swap_memory(data, *size>>1, _2byte);
-
-	return result;
+	return success;
 }
 
 void sound_file_aiff_format(
 	struct sound_file_info const *info,
 	long *size,
-	void *data)
+	void *buffer)
 {
 	return;
 }
-
-/* ---------- private code */

@@ -8,99 +8,50 @@ header included in hcex build.
 #define __S3TC_H
 #pragma once
 
-#include "cseries/cseries.h"
-
 /* ---------- constants */
-
-enum
-{
-	S3TC_BLOCK_PIXELS = 16,
-	S3TC_ALPHA = 3,
-};
 
 /* ---------- macros */
 
 /* ---------- structures */
 
-struct s3tc_color
+struct S3TC_COLOR
 {
 	byte rgba[4];
 };
 
-struct s3tc_block_rgb
+struct S3TCBlockRGB
 {
-	word color0;
-	word color1;
-	unsigned long bitmap;
+	word rgb0;
+	word rgb1;
+	unsigned long pixbm;
 };
 
-struct s3tc_block_alpha4
+struct S3TCBlockAlpha4
 {
-	word alpha_bitmap[4];
-	struct s3tc_block_rgb rgb;
+	word alphabm[4];
+	struct S3TCBlockRGB rgb;
 };
 
-struct s3tc_block_alpha3
+struct S3TCBlockAlpha3
 {
 	byte alpha0;
 	byte alpha1;
-	byte alpha_bitmap[6];
-	struct s3tc_block_rgb rgb;
+	byte alphabm[6];
+	struct S3TCBlockRGB rgb;
 };
-
-typedef char s3tc_color_size_assert[
-	sizeof(struct s3tc_color) == 0x4 ? 1 : -1];
-typedef char s3tc_block_rgb_size_assert[
-	sizeof(struct s3tc_block_rgb) == 0x8 ? 1 : -1];
-typedef char s3tc_block_alpha4_rgb_offset_assert[
-	offsetof(struct s3tc_block_alpha4, rgb) == 0x8 ? 1 : -1];
-typedef char s3tc_block_alpha4_size_assert[
-	sizeof(struct s3tc_block_alpha4) == 0x10 ? 1 : -1];
-typedef char s3tc_block_alpha3_rgb_offset_assert[
-	offsetof(struct s3tc_block_alpha3, rgb) == 0x8 ? 1 : -1];
-typedef char s3tc_block_alpha3_size_assert[
-	sizeof(struct s3tc_block_alpha3) == 0x10 ? 1 : -1];
 
 /* ---------- prototypes/S3TC.C */
 
-void DecodeBlockRGB(
-	struct s3tc_block_rgb *source,
-	struct s3tc_color colors[S3TC_BLOCK_PIXELS]);
-void DecodeBlockAlpha4(
-	struct s3tc_block_alpha4 *source,
-	struct s3tc_color colors[S3TC_BLOCK_PIXELS]);
-void DecodeBlockAlpha3(
-	struct s3tc_block_alpha3 *source,
-	struct s3tc_color colors[S3TC_BLOCK_PIXELS]);
-void DecodeBlockRGB__single_pixel(
-	struct s3tc_block_rgb const *pblockSrc,
-	struct s3tc_color *colorDst,
-	short u,
-	short v);
-void DecodeBlockAlpha3__single_pixel(
-	struct s3tc_block_alpha3 const *source,
-	struct s3tc_color *color,
-	short u,
-	short v);
-void DecodeBlockAlpha4__single_pixel(
-	struct s3tc_block_alpha4 const *source,
-	struct s3tc_color *color,
-	short u,
-	short v);
-
-void EncodeBlockRGBColorKey(
-	struct s3tc_color colorSrc[S3TC_BLOCK_PIXELS],
-	struct s3tc_block_rgb *pblockDst,
-	byte alphaKey);
-void EncodeBlockRGB(
-	struct s3tc_color colors[S3TC_BLOCK_PIXELS],
-	struct s3tc_block_rgb *block);
-void EncodeBlockAlpha4(
-	struct s3tc_color colors[S3TC_BLOCK_PIXELS],
-	struct s3tc_block_alpha4 *block);
-void EncodeBlockAlpha3(
-	struct s3tc_color colors[S3TC_BLOCK_PIXELS],
-	struct s3tc_block_alpha3 *block);
+void EncodeBlockRGB(struct S3TC_COLOR *colorSrc, struct S3TCBlockRGB *pblockDst);
+void EncodeBlockRGBColorKey(struct S3TC_COLOR *colorSrc, struct S3TCBlockRGB *pblockDst, byte alphaKey);
+void DecodeBlockRGB(struct S3TCBlockRGB *pblockSrc, struct S3TC_COLOR *colorDst);
+void DecodeBlockRGB__single_pixel(struct S3TCBlockRGB const *pblockSrc, struct S3TC_COLOR *colorDst, short u, short v);
+void EncodeBlockAlpha4(struct S3TC_COLOR *colorSrc, struct S3TCBlockAlpha4 *pblockDst);
+void DecodeBlockAlpha4(struct S3TCBlockAlpha4 *pblockSrc, struct S3TC_COLOR *colorDst);
+void DecodeBlockAlpha4__single_pixel(struct S3TCBlockAlpha4 const *pblockSrc, struct S3TC_COLOR *colorDst, short u, short v);
+void EncodeBlockAlpha3(struct S3TC_COLOR *colorSrc, struct S3TCBlockAlpha3 *pblockDst);
+void DecodeBlockAlpha3(struct S3TCBlockAlpha3 *pblockSrc, struct S3TC_COLOR *colorDst);
+void DecodeBlockAlpha3__single_pixel(struct S3TCBlockAlpha3 const *pblockSrc, struct S3TC_COLOR *colorDst, short u, short v);
 
 /* ---------- globals */
 

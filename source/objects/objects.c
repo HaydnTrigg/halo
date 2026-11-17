@@ -6,55 +6,81 @@ OBJECTS.C
 
 #include "cseries.h"
 #include "objects.h"
-
-#include "damage.h"
 #include "light_definitions.h"
 #include "object_lights.h"
 #include "object_types.h"
-
-#include "ai/ai_debug.h"
-#include "bitmaps/bitmaps.h"
-#include "cache/predicted_resources.h"
-#include "cseries/errors.h"
-#include "cseries/profile.h"
-#include "devices/device_definitions.h"
-#include "devices/devices.h"
-#include "editor/editor_stubs.h"
-#include "effects/contrail_definitions.h"
-#include "effects/contrails.h"
-#include "effects/effect_definitions.h"
-#include "effects/effects.h"
-#include "effects/particle_system_definitions.h"
-#include "effects/particle_systems.h"
-#include "game/game.h"
-#include "game/game_engine.h"
-#include "game/players.h"
-#include "items/weapons.h"
-#include "main/console.h"
-#include "math/periodic_functions.h"
-#include "memory/memory_pool.h"
-#include "models/model_animation_definitions.h"
-#include "models/model_definitions.h"
-#include "models/models.h"
-#include "objects/widgets/widgets.h"
-#include "physics/collision_bsp.h"
-#include "physics/collision_model_definitions.h"
-#include "physics/collision_models.h"
-#include "physics/collision_usage.h"
-#include "physics/collisions.h"
-#include "physics/physics.h"
-#include "physics/physics_definitions.h"
-#include "render/render_debug.h"
-#include "saved games/game_state.h"
-#include "scenario/scenario.h"
-#include "scenario/scenario_definitions.h"
-#include "sound/sound_definitions.h"
-#include "sound/game_sound.h"
-#include "structures/structure_bsp_definitions.h"
-#include "units/units.h"
+#include "render.h"
+#include "network_game_globals.h"
+#include "units.h"
+#include "players.h"
+#include "actor_definitions.h"
+#include "console.h"
+#include "game_state.h"
+#include "network_messages.h"
+#include "collisions.h"
+#include "sound_manager.h"
+#include "meter_definitions.h"
+#include "weapon_interface_definitions.h"
+#include "render_debug.h"
+#include "weapons.h"
+#include "game_sound.h"
+#include "sound_definitions.h"
+#include "structures.h"
+#include "physics_constants.h"
+#include "editor_stubs.h"
+#include "network_client_manager.h"
+#include "effects.h"
+#include "network_server_message_handler.h"
+#include "physics_definitions.h"
+#include "predicted_resources.h"
+#include "widgets.h"
+#include "contrails.h"
+#include "particle_systems.h"
+#include "contrail_definitions.h"
+#include "particle_system_definitions.h"
+#include "scenario_placement.h"
+#ifdef DEBUG
+#include "collision_model_definitions.h"
+#include "collision_models.h"
+#include "physics.h"
+#include "device_definitions.h"
+#include "devices.h"
+#include "ai_debug.h"
+#endif
 
 /* ---------- constants */
 
+enum
+{
+	OBJECT_ITERATOR_SIGNATURE = 0x86868686,
+	MAXIMUM_CLUSTERS_PER_OBJECT = 32,
+	OBJECT_MEMORY_POOL_SIZE = 0x100000,
+	GARBAGE_LIMIT_FREE_MEMORY_CRITICAL = 26214,
+	GARBAGE_LIMIT_FREE_MEMORY_TRIGGER = 52428,
+	GARBAGE_LIMIT_FREE_MEMORY_TARGET = 104857,
+	GARBAGE_LIMIT_FREE_OBJECTS_CRITICAL = 51,
+	GARBAGE_LIMIT_FREE_OBJECTS_TRIGGER = 102,
+	GARBAGE_LIMIT_FREE_OBJECTS_TARGET = 204,
+	GARBAGE_LIMIT_ACTIVE_GARBAGE_CRITICAL = 75,
+	GARBAGE_LIMIT_ACTIVE_GARBAGE_TRIGGER = 50,
+	GARBAGE_LIMIT_ACTIVE_GARBAGE_TARGET = 30,
+};
+
+enum
+{
+	_pvs_activation_normal = 0,
+	_pvs_activation_object,
+	_pvs_activation_cluster,
+	NUMBER_OF_OBJECT_PVS_ACTIVATION_TYPES,
+};
+
+enum
+{
+	_garbage_collect_everything = 0,
+	_garbage_collect_active_objects,
+	_garbage_collect_for_space,
+	NUMBER_OF_GARBAGE_COLLECTION_MODES,
+};
 
 /* ---------- macros */
 
@@ -149,9 +175,11 @@ static const struct object_memory_release_function object_memory_release_procs[3
 	{ ai_find_inactive_encounters, ai_release_inactive_encounters },
 	{ NULL, NULL }
 };
-static long *object_name_list = NULL;
-static struct memory_pool *object_memory_pool = NULL;
-static struct object_globals *object_globals = NULL;
+static struct object_globals *object_globals;
+static struct memory_pool *object_memory_pool;
+static long *object_name_list;
+
+static struct profile_section objects_update_section = {"objects_update", NONE, TRUE};
 
 boolean debug_objects_names;
 boolean debug_objects_pathfinding_spheres;
@@ -168,6 +196,8 @@ boolean debug_object_garbage_collection;
 struct data_array *object_header_data;
 
 boolean debug_objects_position_velocity = FALSE;
+boolean debug_objects_bounding_spheres = TRUE;
+boolean debug_objects_collision_models = TRUE;
 
 /* ---------- public code */
 
@@ -336,7 +366,7 @@ void object_set_object_index_for_name_index(
 	short name_index,
 	long object_index)
 {
-	if (VALID_INDEX(name_index, global_scenario_get()->object_names.count))
+	if (name_index >= 0 && name_index < global_scenario_get()->object_names.count)
 	{
 		object_name_list[name_index] = object_index;
 	}
@@ -799,7 +829,7 @@ long find_objects_from_point_vector(
 
 		if (cluster_index!=NONE)
 		{
-			unsigned long *cluster_pvs;
+			unsigned long* cluster_pvs;
 			short i;
 			short bit_vector_size;
 
@@ -808,11 +838,11 @@ long find_objects_from_point_vector(
 			cluster_pvs = structure_bsp_get_cluster_pvs(global_structure_bsp_get(), cluster_index);
 			bit_vector_size = BIT_VECTOR_SIZE_IN_LONGS(global_structure_bsp_get()->clusters.count);
 
-			for (i = 0; i<bit_vector_size; ++i)
+			for (i =0; i<bit_vector_size; ++i)
 			{
 				if (cluster_pvs[i])
 				{
-					short offset = (short)(i << 5);
+					short offset = (short)(i << LONG_BITS_BITS);
 					short size = MIN(offset + LONG_BITS, global_structure_bsp_get()->clusters.count);
 					short j;
 
@@ -1235,7 +1265,8 @@ short object_get_first_cluster(
 real_matrix4x3 *object_get_node_matrices(
 	long object_index)
 {
-	return (real_matrix4x3 *)object_header_block_get(object_index, &object_get(object_index)->object.node_matrices);
+	struct object_datum *object = object_get(object_index);
+	return (real_matrix4x3 *)object_header_block_get(object_index, &object->object.node_matrices);
 }
 
 char const *object_get_attachment_marker_name(
@@ -1247,7 +1278,7 @@ char const *object_get_attachment_marker_name(
 	struct object_datum *object = object_get(object_index);
 	struct object_definition *object_definition = object_definition_get(object->definition_index);
 
-	if (VALID_INDEX(attachment_index, object_definition->object.attachments.count))
+	if (attachment_index >= 0 && attachment_index < object_definition->object.attachments.count)
 	{
 		result = TAG_BLOCK_GET_ELEMENT(
 			&object_definition->object.attachments,
@@ -1280,7 +1311,7 @@ boolean object_has_node(
 	else
 	{
 		struct model *model = model_definition_get(model_index);
-		if (VALID_INDEX(node_index, model->nodes.count))
+		if (node_index >= 0 && node_index < model->nodes.count)
 		{
 			result = TRUE;
 		}
@@ -1815,9 +1846,15 @@ real_matrix4x3 *object_get_node_matrix(
 	long object_index,
 	short node_index)
 {
+	real_matrix4x3 *node_matrices;
+	struct object_datum *object;
+
 	match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 1060, object_has_node(object_index, node_index));
 
-	return &((real_matrix4x3 *)object_header_block_get(object_index, &object_get(object_index)->object.node_matrices))[node_index];
+	object = object_get(object_index);
+	node_matrices = (real_matrix4x3 *)object_header_block_get(object_index, &object->object.node_matrices);
+
+	return &node_matrices[node_index];
 }
 
 short object_get_marker_by_name(
@@ -1830,9 +1867,7 @@ short object_get_marker_by_name(
 
 	struct object_datum const *object = object_get(object_index);
 	struct object_definition const *object_definition = object_definition_get(object->definition_index);
-	struct object_datum *matrix_object = object_get(object_index);
-	real_matrix4x3 const *matrices = (real_matrix4x3 *)object_header_block_get(object_index,
-		&matrix_object->object.node_matrices);
+	real_matrix4x3 const *matrices = object_get_node_matrices(object_index);
 
 	marker = model_get_marker_by_name(
 		object_definition->object.model.index,
@@ -2258,74 +2293,11 @@ void object_export_function_values(
 	return;
 }
 
-// These local variants preserve the original XDK 3911 operand provenance for
-// this large function.  They are semantically identical to the shared matrix
-// validation macros, but the typed aliases reproduce the January codegen.
-#define ocnm_root_matrix_internal(file, line, matrix, string) \
-match_vassert(file, line, valid_real((*matrix).scale), csprintf(temporary, "%s had a bad scale %f", string, (*matrix).scale)); \
-match_vassert(file, line, valid_real_normal3d(&(*matrix).forward), csprintf(temporary, "%s had a bad forward (%f,%f,%f)", string, (*matrix).forward.i, (*matrix).forward.j, (*matrix).forward.k)); \
-match_vassert(file, line, valid_real_normal3d(&(*matrix).left), csprintf(temporary, "%s had a bad left (%f,%f,%f)", string, (*matrix).left.i, (*matrix).left.j, (*matrix).left.k)); \
-match_vassert(file, line, valid_real_normal3d(&(*matrix).up), csprintf(temporary, "%s had a bad up (%f,%f,%f)", string, (*matrix).up.i, (*matrix).up.j, (*matrix).up.k)); \
-match_vassert(file, line, valid_real_point3d(&(*matrix).position), csprintf(temporary, "%s had a bad position (%f,%f,%f)", string, (*matrix).position.x, (*matrix).position.y, (*matrix).position.z)); \
-match_vassert(file, line, \
-	valid_realcmp(dot_product3d(&(*matrix).forward, &(*matrix).left), 0.f), \
-	csprintf(temporary, "%s had a forward (%f,%f,%f) not perpendicular to left (%f,%f,%f)", string, (*matrix).forward.i, (*matrix).forward.j, (*matrix).forward.k, (*matrix).left.i, (*matrix).left.j, (*matrix).left.k)); \
-match_vassert(file, line, \
-	valid_realcmp(dot_product3d(ocnm_left, &(*matrix).up), 0.f), \
-	csprintf(temporary, "%s had a up (%f,%f,%f) not perpendicular to left (%f,%f,%f)", string, (*matrix).up.i, (*matrix).up.j, (*matrix).up.k, (*matrix).left.i, (*matrix).left.j, (*matrix).left.k)); \
-match_vassert(file, line, \
-	valid_realcmp(dot_product3d(ocnm_forward, ocnm_up), 0.f), \
-	csprintf(temporary, "%s had a forward (%f,%f,%f) not perpendicular to up (%f,%f,%f)", string, (*matrix).forward.i, (*matrix).forward.j, (*matrix).forward.k, (*matrix).up.i, (*matrix).up.j, (*matrix).up.k)); \
-match_vassert(file, line, valid_real_matrix4x3(matrix), csprintf(temporary, "%s: assert_valid_real_matrix4x3", string));
-
-#define ocnm_root_matrix_custom(file, line, matrix, custom_string) \
-if (!valid_real_matrix4x3(matrix)) \
-{ \
-	char const *string = (custom_string); \
-	real_vector3d const *ocnm_forward = &(*matrix).forward; \
-	real_vector3d const *ocnm_left = &(*matrix).left; \
-	real_vector3d const *ocnm_up = &(*matrix).up; \
-	ocnm_root_matrix_internal(file, line, matrix, string); \
-}
-
-#define ocnm_parent_matrix_internal(file, line, matrix, string) \
-match_vassert(file, line, valid_real((*matrix).scale), csprintf(temporary, "%s had a bad scale %f", string, (*matrix).scale)); \
-match_vassert(file, line, valid_real_normal3d(&(*matrix).forward), csprintf(temporary, "%s had a bad forward (%f,%f,%f)", string, (*matrix).forward.i, (*matrix).forward.j, (*matrix).forward.k)); \
-match_vassert(file, line, valid_real_normal3d(&(*matrix).left), csprintf(temporary, "%s had a bad left (%f,%f,%f)", string, (*matrix).left.i, (*matrix).left.j, (*matrix).left.k)); \
-match_vassert(file, line, valid_real_normal3d(&(*matrix).up), csprintf(temporary, "%s had a bad up (%f,%f,%f)", string, (*matrix).up.i, (*matrix).up.j, (*matrix).up.k)); \
-match_vassert(file, line, valid_real_point3d(&(*matrix).position), csprintf(temporary, "%s had a bad position (%f,%f,%f)", string, (*matrix).position.x, (*matrix).position.y, (*matrix).position.z)); \
-match_vassert(file, line, \
-	valid_realcmp(dot_product3d(&(*matrix).forward, &(*matrix).left), 0.f), \
-	csprintf(temporary, "%s had a forward (%f,%f,%f) not perpendicular to left (%f,%f,%f)", string, (*matrix).forward.i, (*matrix).forward.j, (*matrix).forward.k, (*matrix).left.i, (*matrix).left.j, (*matrix).left.k)); \
-match_vassert(file, line, \
-	valid_realcmp(dot_product3d(ocnm_up, ocnm_left), 0.f), \
-	csprintf(temporary, "%s had a up (%f,%f,%f) not perpendicular to left (%f,%f,%f)", string, (*matrix).up.i, (*matrix).up.j, (*matrix).up.k, (*matrix).left.i, (*matrix).left.j, (*matrix).left.k)); \
-match_vassert(file, line, \
-	valid_realcmp(dot_product3d(&(*matrix).forward, &(*matrix).up), 0.f), \
-	csprintf(temporary, "%s had a forward (%f,%f,%f) not perpendicular to up (%f,%f,%f)", string, (*matrix).forward.i, (*matrix).forward.j, (*matrix).forward.k, (*matrix).up.i, (*matrix).up.j, (*matrix).up.k)); \
-match_vassert(file, line, valid_real_matrix4x3(matrix), csprintf(temporary, "%s: assert_valid_real_matrix4x3", string));
-
-#define ocnm_parent_matrix_custom(file, line, matrix, custom_string) \
-if (!valid_real_matrix4x3(matrix)) \
-{ \
-	char const *string = (custom_string); \
-	real_vector3d const *ocnm_left = &(*matrix).left; \
-	real_vector3d const *ocnm_up = &(*matrix).up; \
-	ocnm_parent_matrix_internal(file, line, matrix, string); \
-}
-
 void object_compute_node_matrices(
 	long object_index)
 {
 	real_orientation cannot_interpolate_node_orientations_storage[MAXIMUM_NODES_PER_MODEL];
 	short node_stack[MAXIMUM_NODES_PER_MODEL];
-	real_matrix4x3 center_matrix;
-	real_matrix4x3 offset_matrix;
-	real_matrix4x3 node_matrix;
-	real_matrix4x3 object_translation_matrix;
-	real_matrix4x3 object_rotation_matrix;
-	real_point3d center;
-	real_matrix4x3 parent_node_matrix_no_scale_no_mirror;
 
 	struct object_datum *object = object_get(object_index);
 	struct object_definition *object_definition = object_definition_get(object->definition_index);
@@ -2343,7 +2315,6 @@ void object_compute_node_matrices(
 
 		short node_count;
 		short node_index;
-		long unknown_var;
 
 		struct object_type_definition *object_type_definition = object_type_definition_get(object->object.type);
 		
@@ -2375,7 +2346,6 @@ void object_compute_node_matrices(
 
 				if (TEST_FLAG(object->object.flags, _object_animates_automatically_bit) && animation->frame_count>0)
 				{
-
 					frame_index = OBJECT_FRAME_INDEX_GET(object_index) % (unsigned long)animation->frame_count;
 
 					match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 2704, frame_index>=0)
@@ -2495,39 +2465,41 @@ void object_compute_node_matrices(
 					object->object.position.x,
 					object->object.position.y,
 					object->object.position.z));
-			{
-				real_vector3d const *validated_forward = &object->object.forward;
-
-				match_vassert(
-					"c:\\halo\\SOURCE\\objects\\objects.c",
-					2787,
-					valid_real_vector3d_axes2(validated_forward, &object->object.up),
-					csprintf(
-						temporary,
-						"%s had a bad forward and up before compute_node_matrices (%f,%f,%f)x(%f,%f,%f)",
-						tag_get_name(object->definition_index),
-						object->object.forward.i,
-						object->object.forward.j,
-						object->object.forward.k,
-						object->object.up.i,
-						object->object.up.j,
-						object->object.up.k));
-			}
+			match_vassert(
+				"c:\\halo\\SOURCE\\objects\\objects.c",
+				2787,
+				valid_real_vector3d_axes2(&object->object.forward, &object->object.up),
+				csprintf(
+					temporary,
+					"%s had a bad forward and up before compute_node_matrices (%f,%f,%f)x(%f,%f,%f)",
+					tag_get_name(object->definition_index),
+					object->object.forward.i,
+					object->object.forward.j,
+					object->object.forward.k,
+					object->object.up.i,
+					object->object.up.j,
+					object->object.up.k));
 		}
 
 		node_index = 0;
 		node_count = 1;
-		unknown_var = 0;
 		node_stack[0] = 0;
 
-		while (TRUE)
+		while (node_index!=node_count)
 		{
 			short node_stack_index = node_stack[node_index++];
-			short next_sibling_node_index;
 			struct model_node *node = TAG_BLOCK_GET_ELEMENT(&model->nodes, node_stack_index, struct model_node);
 			
 			if (node_stack_index==0)
 			{
+				real_matrix4x3 node_matrix;
+				real_matrix4x3 object_translation_matrix;
+				real_matrix4x3 object_rotation_matrix;
+				real_matrix4x3 center_matrix;
+				real_point3d center;
+				real_matrix4x3 offset_matrix;
+				real_matrix4x3 parent_node_matrix_no_scale_no_mirror;
+
 				matrix4x3_from_orientation(&node_matrix, node_orientations);
 				
 				if (!world_relative)
@@ -2555,20 +2527,15 @@ void object_compute_node_matrices(
 
 					if (object_node_matrix)
 					{
-						real_matrix4x3 const *validated_parent_node_matrix;
-
 						if (object_node_matrix->scale!=1.f)
 						{
-							real scaled_z;
-
 							object_translation_matrix.position.x *= object_node_matrix->scale;
 							object_translation_matrix.position.y *= object_node_matrix->scale;
-							scaled_z = object_translation_matrix.position.z * object_node_matrix->scale;
+							object_translation_matrix.position.z *= object_node_matrix->scale;
 
 							parent_node_matrix_no_scale_no_mirror= *object_node_matrix;
-							object_translation_matrix.position.z = scaled_z;
 							object_node_matrix= &parent_node_matrix_no_scale_no_mirror;
-							parent_node_matrix_no_scale_no_mirror.scale= 1.f;
+							object_node_matrix->scale= 1.f;
 						}
 
 						if (TEST_FLAG(object_get(object->object.parent_object_index)->object.flags, _object_mirrored_bit))
@@ -2582,11 +2549,10 @@ void object_compute_node_matrices(
 							negate_vector3d(&object_node_matrix->left, &object_node_matrix->left);
 						}
 
-						validated_parent_node_matrix = object_node_matrix;
-						ocnm_parent_matrix_custom(
+						match_assert_valid_real_matrix4x3_custom_string(
 							"c:\\halo\\SOURCE\\objects\\objects.c",
 							2871,
-							validated_parent_node_matrix,
+							object_node_matrix,
 							csprintf(
 								temporary,
 								"%s as parent node of %s",
@@ -2611,8 +2577,6 @@ void object_compute_node_matrices(
 
 				if (!valid_real_matrix4x3(&object_nodes[node_stack_index]))
 				{
-					real_matrix4x3 const *validated_root_node_matrix;
-
 					error(_error_silent, "object_compute_node_matrices FAILURE on root node of %s", tag_get_name(object->definition_index));
 					error(
 						_error_silent,
@@ -2702,19 +2666,16 @@ void object_compute_node_matrices(
 						object_nodes[node_stack_index].position.z);
 					error(_error_silent, "                scale %f", object_nodes[node_stack_index].scale);
 
-					validated_root_node_matrix = &object_nodes[node_stack_index];
-					ocnm_root_matrix_custom(
+					match_assert_valid_real_matrix4x3_custom_string(
 						"c:\\halo\\SOURCE\\objects\\objects.c",
 						2921,
-						validated_root_node_matrix,
+						&object_nodes[node_stack_index],
 						"object_compute_node_matrices root node matrix");
 				}
 			}
 			else
 			{
-				real_orientation *orientation = &node_orientations[node_stack_index];
-
-				matrix4x3_from_orientation(&object_nodes[node_stack_index], orientation);
+				matrix4x3_from_orientation(&object_nodes[node_stack_index], &node_orientations[node_stack_index]);
 				match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 2929, node->parent_node_index!=NONE);
 				matrix4x3_multiply(
 					&object_nodes[node->parent_node_index],
@@ -2724,29 +2685,20 @@ void object_compute_node_matrices(
 
 			if (node_stack_index==0)
 			{
-				real_matrix4x3 *final_matrix = &object_nodes[node_stack_index];
-				if (!valid_real_matrix4x3(final_matrix))
-				{
-					char *name2 = tag_get_name(object->definition_index);
-					char *string = name2;
-					match_assert_valid_real_matrix4x3_internal("c:\\halo\\SOURCE\\objects\\objects.c", 2935, final_matrix, string);
-				}
+				match_assert_valid_real_matrix4x3_custom_string(
+					"c:\\halo\\SOURCE\\objects\\objects.c",
+					2935,
+					&object_nodes[node_stack_index],
+					tag_get_name(object->definition_index));
 			}
 
-			next_sibling_node_index = node->next_sibling_node_index;
-
-			if (next_sibling_node_index!=NONE)
+			if (node->next_sibling_node_index!=NONE)
 			{
-				node_stack[node_count++] = next_sibling_node_index;
+				node_stack[node_count++] = node->next_sibling_node_index;
 			}
 			if (node->first_child_node_index!=NONE)
 			{
 				node_stack[node_count++] = node->first_child_node_index;
-			}
-
-			if (node_index==node_count)
-			{
-				break;
 			}
 		}
 	}
@@ -2769,11 +2721,6 @@ void object_compute_node_matrices(
 
 	return;
 }
-
-#undef ocnm_root_matrix_custom
-#undef ocnm_root_matrix_internal
-#undef ocnm_parent_matrix_custom
-#undef ocnm_parent_matrix_internal
 
 static void object_postprocess_node_matrices(
 	long object_index)
@@ -3280,18 +3227,11 @@ long object_new(
 			object->object.translational_velocity = data->translational_velocity;
 			object->object.angular_velocity = data->angular_velocity;
 			
-			// Preserve the January inline schedule without emitting a point_from_line3d COMDAT.
-			{
-				real_point3d const *p = &object->object.position;
-				real_vector3d const *v = &object->object.up;
-				real t = data->height;
-				real_point3d *result = &object->object.position;
-				real height = t;
-
-				result->x = (v->i*height) + p->x;
-				result->y = (v->j*height) + p->y;
-				result->z = (v->k*height) + p->z;
-			}
+			point_from_line3d(
+				&object->object.position,
+				&object->object.up,
+				(data->height),
+				&object->object.position);
 
 			SET_FLAG(object->object.flags, _object_mirrored_bit, TEST_FLAG(data->flags, _new_object_mirrored_bit));
 
@@ -3417,20 +3357,17 @@ long object_new(
 				object_header_delete(object_header_data, object_index);
 				object_index = NONE;
 			}
-			else
+			else if (object_definition->object.creation_effect.index!=NONE)
 			{
-				if (object_definition->object.creation_effect.index!=NONE)
-				{
-					effect_new_from_object(
-						object_definition->object.creation_effect.index,
-						object_index,
-						object_index,
-						NONE,
-						0.f,
-						0.f,
-						NULL,
-						NULL);
-				}
+				effect_new_from_object(
+					object_definition->object.creation_effect.index,
+					object_index,
+					object_index,
+					NONE,
+					0.f,
+					0.f,
+					NULL,
+					NULL);
 			}
 		}
 	}
@@ -3452,32 +3389,20 @@ void object_attach_to_node(
 	long child_object_index,
 	short parent_node_index)
 {
-	long object_index;
-	struct object_datum *object;
-	void *(*get_object)(
-		long,
-		unsigned long) = object_get_and_verify_type;
-	boolean (*has_node)(
-		long,
-		short) = object_has_node;
-	real_matrix4x3 *(*get_node_matrix)(
-		long,
-		short) = object_get_node_matrix;
-
+	long object_index = parent_object_index;
 	boolean valid = TRUE;
 
-	for (
-		object_index = parent_object_index;
-		object_index!=NONE;
-		object_index = object->object.parent_object_index)
+	while (object_index!=NONE)
 	{
-		object = object_get(object_index);
+		struct object_datum *object = object_get(object_index);
 
 		if (object_index==child_object_index)
 		{
 			valid = FALSE;
 			break;
 		}
+
+		object_index = object->object.parent_object_index;
 	}
 
 	match_vassert(
@@ -3488,27 +3413,26 @@ void object_attach_to_node(
 
 	if (valid)
 	{
-		real_matrix4x3 inverse_node_matrix;
+		real_matrix4x3 inverted_matrix;
 
-		struct object_datum *child_object = (struct object_datum *)get_object(child_object_index, _object_mask_all);
-		struct object_datum *parent_object = (struct object_datum *)get_object(parent_object_index, _object_mask_all);
+		struct object_datum *child_object = object_get(child_object_index);
+		struct object_datum *parent_object = object_get(parent_object_index);
 		boolean connected_to_map = TEST_FLAG(child_object->object.flags, _object_connected_to_map_bit);
 
-		match_vassert(
+		match_assert(
 			"c:\\halo\\SOURCE\\objects\\objects.c",
 			1235,
-			has_node(parent_object_index, parent_node_index),
-			"object_has_node(parent_object_index, parent_node_index)");
+			object_has_node(parent_object_index, parent_node_index));
 
 		if (connected_to_map)
 		{
 			object_disconnect_from_map(child_object_index);
 		}
 		
-		matrix4x3_inverse(get_node_matrix(parent_object_index, parent_node_index), &inverse_node_matrix);
-		matrix4x3_transform_point(&inverse_node_matrix, &child_object->object.position, &child_object->object.position);
-		matrix4x3_transform_normal(&inverse_node_matrix, &child_object->object.forward, &child_object->object.forward);
-		matrix4x3_transform_normal(&inverse_node_matrix, &child_object->object.up, &child_object->object.up);
+		matrix4x3_inverse(object_get_node_matrix(parent_object_index, parent_node_index), &inverted_matrix);
+		matrix4x3_transform_point(&inverted_matrix, &child_object->object.position, &child_object->object.position);
+		matrix4x3_transform_normal(&inverted_matrix, &child_object->object.forward, &child_object->object.forward);
+		matrix4x3_transform_normal(&inverted_matrix, &child_object->object.up, &child_object->object.up);
 
 		child_object->object.parent_object_index = parent_object_index;
 		child_object->object.parent_node_index = parent_node_index;
@@ -3518,15 +3442,7 @@ void object_attach_to_node(
 			object_reconnect_to_map(child_object_index, NULL);
 		}
 
-		{
-			struct object_header_datum *header = object_header_get(child_object_index);
-			struct object_datum *deactivated_object = (struct object_datum *)get_object(child_object_index, _object_mask_all);
-
-			if (TEST_FLAG(header->flags, _object_header_active_bit))
-			{
-				SET_FLAG(header->flags, _object_header_active_bit, FALSE);
-			}
-		}
+		object_deactivate(child_object_index);
 
 		{
 			struct object_header_datum *header = object_header_get(child_object_index);
@@ -3548,8 +3464,7 @@ boolean object_force_inside_bsp(
 	struct object_datum *object = object_get(object_index);
 	boolean result = FALSE;
 
-	match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 2365, global_current_collision_user_depth < MAXIMUM_COLLISION_USER_STACK_DEPTH);
-	global_current_collision_users[global_current_collision_user_depth++] = 19;
+	match_collision_log_begin_user("c:\\halo\\SOURCE\\objects\\objects.c", 2365, _collision_user_objects);
 	
 	if (collision_test_line(_collision_test_for_projectiles_flags, known_good_point, &object->object.position, NONE, &collision) ||
 		object->object.location.cluster_index==NONE)
@@ -3566,13 +3481,12 @@ boolean object_force_inside_bsp(
 		result = TRUE;
 	}
 
-	match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 2387, global_current_collision_user_depth > 1);
-	--global_current_collision_user_depth;
+	match_collision_log_end_user("c:\\halo\\SOURCE\\objects\\objects.c", 2387);
 
 	return result;
 }
 
-static boolean object_update(
+boolean object_update(
 	long object_index)
 {
 	struct object_header_datum *header = object_header_get(object_index);
@@ -3813,11 +3727,11 @@ void objects_garbage_collection(
 	{
 		garbage_collect_mode = _garbage_collect_everything;
 	}
-	else if (memory_pool_get_contiguous_free_size(object_memory_pool)<=GARBAGE_LIMIT_FREE_MEMORY_CRITICAL)
+	else if (memory_pool_get_contiguous_free_size(object_memory_pool)<=GARBAGE_LIMIT_FREE_MEMORY_TRIGGER)
 	{
 		memory_pool_compact(object_memory_pool);
 		
-		if (memory_pool_get_contiguous_free_size(object_memory_pool)<=GARBAGE_LIMIT_FREE_MEMORY_TRIGGER)
+		if (memory_pool_get_contiguous_free_size(object_memory_pool)<=GARBAGE_LIMIT_FREE_MEMORY_TARGET)
 		{
 			garbage_collect_mode = _garbage_collect_for_space;
 		}
@@ -3839,111 +3753,103 @@ void objects_garbage_collection(
 	
 	if (garbage_collect_mode!=NONE)
 	{
-		long garbage_collect_mode_wide;
+		long garbage_object_indices[MAXIMUM_OBJECTS_PER_MAP];
+
 		short garbage_object_count = 0;
 		boolean should_collect = FALSE;
 
+		if (debug_object_garbage_collection)
 		{
-			long garbage_object_indices[MAXIMUM_OBJECTS_PER_MAP];
+			console_printf(
+				FALSE,
+				"#%d objects using 0x%x bytes (0x%x contiguous free)",
+				object_header_data->actual_count,
+				OBJECT_MEMORY_POOL_SIZE - memory_pool_get_free_size(object_memory_pool),
+				memory_pool_get_contiguous_free_size(object_memory_pool));
+		}
 
-			if (debug_object_garbage_collection)
+		{
+			long garbage_object_index;
+			struct object_datum *object;
+
+			for (
+				garbage_object_index = object_globals->first_garbage_object_index;
+				garbage_object_index!=NONE;
+				garbage_object_index = object->object.next_garbage_object_index)
 			{
-				console_printf(
-					FALSE,
-					"#%d objects using 0x%x bytes (0x%x contiguous free)",
-					object_header_data->actual_count,
-					OBJECT_MEMORY_POOL_SIZE - memory_pool_get_free_size(object_memory_pool),
-					memory_pool_get_contiguous_free_size(object_memory_pool));
-			}
+				object = object_get(garbage_object_index);
 
+				match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 4289, garbage_object_count<MAXIMUM_OBJECTS_PER_MAP);
+
+				garbage_object_indices[garbage_object_count++] = garbage_object_index;
+			}
+		}
+
+		while (TRUE)
+		{
+			long object_index;
+			struct object_header_datum *header;
+			boolean garbage_collect;
+
+			switch (garbage_collect_mode)
 			{
-				long garbage_object_index;
-				struct object_datum *object;
-
-				for (
-					garbage_object_index = object_globals->first_garbage_object_index;
-					garbage_object_index!=NONE;
-					garbage_object_index = object->object.next_garbage_object_index)
-				{
-					object = object_get(garbage_object_index);
-
-					match_assert("c:\\halo\\SOURCE\\objects\\objects.c", 4289, garbage_object_count<MAXIMUM_OBJECTS_PER_MAP);
-
-					garbage_object_indices[garbage_object_count++] = garbage_object_index;
-				}
+			case _garbage_collect_everything:
+				should_collect = FALSE;
+				break;
+			case _garbage_collect_active_objects:
+				should_collect = object_globals->active_garbage_object_count<=GARBAGE_LIMIT_ACTIVE_GARBAGE_TARGET;
+				break;
+			case _garbage_collect_for_space:
+				should_collect =
+					memory_pool_get_free_size(object_memory_pool)>=GARBAGE_LIMIT_FREE_MEMORY_TARGET &&
+					MAXIMUM_OBJECTS_PER_MAP-object_header_data->count>=GARBAGE_LIMIT_FREE_OBJECTS_TARGET;
+				break;
+			default:
+				match_vassert("c:\\halo\\SOURCE\\objects\\objects.c", 4314, FALSE, NULL);
+				break;
 			}
 
-			garbage_collect_mode_wide = garbage_collect_mode;
-
-			while (TRUE)
+			if (should_collect || garbage_object_count==0)
 			{
-				long object_index;
-				struct object_header_datum *header;
-				boolean garbage_collect;
-
-				switch (garbage_collect_mode_wide)
-				{
-				case _garbage_collect_everything:
-					should_collect = FALSE;
-					break;
-				case _garbage_collect_active_objects:
-					should_collect = object_globals->active_garbage_object_count<=GARBAGE_LIMIT_ACTIVE_GARBAGE_TARGET;
-					break;
-				case _garbage_collect_for_space:
-					should_collect =
-						memory_pool_get_free_size(object_memory_pool)>=GARBAGE_LIMIT_FREE_MEMORY_TRIGGER &&
-						MAXIMUM_OBJECTS_PER_MAP-object_header_data->count>=GARBAGE_LIMIT_FREE_OBJECTS_TARGET;
-					break;
-				default:
-					match_vassert("c:\\halo\\SOURCE\\objects\\objects.c", 4314, FALSE, NULL);
-					break;
-				}
-
-				if (should_collect || garbage_object_count==0)
-				{
-					break;
-				}
-
-
-				object_index = garbage_object_indices[--garbage_object_count];
-				header = object_header_get(object_index);
-				garbage_collect = TRUE;
-
-				if (garbage_collect_mode==_garbage_collect_active_objects)
-				{
-					garbage_collect = TEST_FLAG(header->flags, _object_header_active_bit);
-				}
-
-				if (object_visible_to_any_player(object_index))
-				{
-					garbage_collect = FALSE;
-				}
-
-				if (garbage_collect)
-				{
-					struct object_datum *garbage_object = object_get(object_index);
-
-					if (TEST_FLAG(_object_mask_unit, garbage_object->object.type) &&
-						!TEST_FLAG(garbage_object->object.damage_flags, _object_dead_bit))
-					{
-						error(
-							_error_silent,
-							"WARNING: garbage collecting a living unit (%s)",
-							ai_debug_describe_actor(NONE, object_index, TRUE, temporary, NUMBEROF(temporary)));
-					}
-
-
-					if (TEST_FLAG(header->flags, _object_header_active_bit))
-					{
-						--object_globals->active_garbage_object_count;
-					}
-
-					object_set_garbage(object_index, FALSE);
-					object_delete_immediately(object_index);
-				}
+				break;
 			}
 
+			object_index = garbage_object_indices[--garbage_object_count];
+			header = object_header_get(object_index);
+			garbage_collect = TRUE;
+
+			if (garbage_collect_mode==_garbage_collect_active_objects)
+			{
+				garbage_collect = TEST_FLAG(header->flags, _object_header_active_bit);
 			}
+
+			if (object_visible_to_any_player(object_index))
+			{
+				garbage_collect = FALSE;
+			}
+
+			if (garbage_collect)
+			{
+				struct object_datum *garbage_object = object_get(object_index);
+
+				if (TEST_FLAG(_object_mask_unit, garbage_object->object.type) &&
+					!TEST_FLAG(garbage_object->object.damage_flags, _object_dead_bit))
+				{
+					error(
+						_error_silent,
+						"WARNING: garbage collecting a living unit (%s)",
+						ai_debug_describe_actor(NONE, object_index, TRUE, temporary, NUMBEROF(temporary)));
+				}
+
+				if (TEST_FLAG(header->flags, _object_header_active_bit))
+				{
+					--object_globals->active_garbage_object_count;
+				}
+
+				object_set_garbage(object_index, FALSE);
+				object_delete_immediately(object_index);
+			}
+		}
 
 		memory_pool_compact(object_memory_pool);
 		
@@ -3958,67 +3864,59 @@ void objects_garbage_collection(
 
 		if (!should_collect)
 		{
-			char warningbuf[512];
-			unsigned char release_proc_working_memory[4096];
-			char released_resultbuf[512];
 			const struct object_memory_release_function *current_release_procs = object_memory_release_procs;
-			boolean v0 = FALSE;
+			boolean release_procs_initialized = FALSE;
+			unsigned char release_proc_working_memory[4096];
+			char warningbuf[512];
 			boolean garbage_collection_after_first_attempt = FALSE;
 			boolean garbage_should_warn = object_globals->last_garbage_warn_time==NONE || object_globals->last_garbage_warn_time+150<game_time_get();
 			boolean update_time = FALSE;
+			boolean debug_garbage_collection;
+			boolean status_still_critical;
 
-			while (TRUE)
+			do
 			{
-				boolean debug_garbage_collection = FALSE;
-				boolean status_still_critical = FALSE;
+				debug_garbage_collection = FALSE;
+				status_still_critical = FALSE;
 
-				switch (garbage_collect_mode_wide)
+				switch (garbage_collect_mode)
 				{
 				case _garbage_collect_for_space:
-				{
-					long free_size = memory_pool_get_contiguous_free_size(object_memory_pool);
-					long free_objects = MAXIMUM_OBJECTS_PER_MAP-object_header_data->count;
-					boolean debug_slots_free = FALSE;
+					{
+						long free_size = memory_pool_get_contiguous_free_size(object_memory_pool);
+						long free_objects = MAXIMUM_OBJECTS_PER_MAP-object_header_data->count;
+						boolean debug_slots_free = FALSE;
 
-					if (free_size<=GARBAGE_LIMIT_FREE_MEMORY_CRITICAL/2)
-					{
-						status_still_critical = TRUE;
-						debug_garbage_collection = TRUE;
-					}
-					else
-					{
-						if (free_objects<=GARBAGE_LIMIT_FREE_OBJECTS_CRITICAL)
+						if (free_size<=GARBAGE_LIMIT_FREE_MEMORY_CRITICAL)
+						{
+							status_still_critical = TRUE;
+							debug_garbage_collection = TRUE;
+						}
+						else if (free_objects<=GARBAGE_LIMIT_FREE_OBJECTS_CRITICAL)
 						{
 							status_still_critical = TRUE;
 							debug_garbage_collection = TRUE;
 							debug_slots_free = TRUE;
 						}
+						else if (free_size<=GARBAGE_LIMIT_FREE_MEMORY_TRIGGER)
+						{
+							debug_garbage_collection = TRUE;
+						}
+						else if (free_objects<=GARBAGE_LIMIT_FREE_OBJECTS_TRIGGER)
+						{
+							debug_garbage_collection = TRUE;
+							debug_slots_free = TRUE;
+						}
+
+						if (debug_slots_free)
+						{
+							sprintf(warningbuf, "%d slots free", free_objects);
+						}
 						else
 						{
-							if (free_size<=GARBAGE_LIMIT_FREE_MEMORY_CRITICAL)
-							{
-								debug_garbage_collection = TRUE;
-							}
-							else
-							{
-								if (free_objects<=GARBAGE_LIMIT_FREE_OBJECTS_TRIGGER)
-								{
-									debug_garbage_collection = TRUE;
-									debug_slots_free = TRUE;
-								}
-							}
+							sprintf(warningbuf, "%4.2f%% memory free", ((free_size * 100.f) / (real)OBJECT_MEMORY_POOL_SIZE));
 						}
 					}
-
-					if (debug_slots_free)
-					{
-						sprintf(warningbuf, "%d slots free", free_objects);
-					}
-					else
-					{
-						sprintf(warningbuf, "%4.2f%% memory free", ((free_size * 100.f) / (real)OBJECT_MEMORY_POOL_SIZE));
-					}
-				}
 					break;
 				}
 
@@ -4026,7 +3924,7 @@ void objects_garbage_collection(
 				{
 					char tempbuffer[512];
 					const char *status;
-					
+
 					if (garbage_collection_after_first_attempt)
 					{
 						status = status_still_critical ? "still " : "not ";
@@ -4049,20 +3947,25 @@ void objects_garbage_collection(
 
 				if (status_still_critical)
 				{
-					if (current_release_procs->function)
+					if (!current_release_procs->function)
+					{
+						break;
+					}
+					else
 					{
 						boolean result = FALSE;
+						char released_resultbuf[512];
 
 						while (current_release_procs->function && !result)
 						{
 							boolean more_to_release = FALSE;
 
-							if (!v0 && current_release_procs->init_function)
+							if (!release_procs_initialized && current_release_procs->init_function)
 							{
 								current_release_procs->init_function(
 									release_proc_working_memory,
 									sizeof(release_proc_working_memory));
-								v0 = TRUE;
+								release_procs_initialized = TRUE;
 							}
 
 							result = current_release_procs->function(
@@ -4083,28 +3986,23 @@ void objects_garbage_collection(
 							if (!more_to_release)
 							{
 								++current_release_procs;
-								v0 = FALSE;
+								release_procs_initialized = FALSE;
 							}
 						}
 
-						if (!result)
+						if (result)
+						{
+							garbage_collection_after_first_attempt = TRUE;
+							memory_pool_compact(object_memory_pool);
+						}
+						else
 						{
 							break;
 						}
-
-						garbage_collection_after_first_attempt = TRUE;
-						memory_pool_compact(object_memory_pool);
 					}
-					else
-					{
-						break;
-					}
-				}
-				else
-				{
-					break;
 				}
 			}
+			while (status_still_critical);
 
 			if (update_time)
 			{
@@ -4122,8 +4020,6 @@ void objects_garbage_collection(
 void objects_update(
 	void)
 {
-	static struct profile_section section = {"objects_update", NONE, TRUE};
-
 	unsigned long *last_active_cluster_bits;
 	unsigned long *active_cluster_bits;
 	short cluster_count;
@@ -4132,7 +4028,7 @@ void objects_update(
 
 	boolean dont_update_object = ((game_time_get()&1)!=0) && game_players_are_double_speed();
 
-	profile_enter(section);
+	profile_enter(objects_update_section);
 
 	object_globals->active_garbage_object_count = 0;
 	
@@ -4235,13 +4131,10 @@ void objects_update(
 
 	objects_garbage_collection();
 
-	profile_exit(section);
+	profile_exit(objects_update_section);
 
 	return;
 }
-
-boolean debug_objects_bounding_spheres = TRUE;
-boolean debug_objects_collision_models = TRUE;
 
 void objects_memory_compact(
 	void)
@@ -4362,7 +4255,7 @@ static void object_name_list_delete(
 static long object_name_list_lookup(
 	short name_index)
 {
-	return VALID_INDEX(name_index, MAXIMUM_OBJECT_NAMES_PER_SCENARIO) ? object_name_list[name_index] : NONE;
+	return (name_index >= 0 && name_index < MAXIMUM_OBJECT_NAMES_PER_SCENARIO) ? object_name_list[name_index] : NONE;
 }
 
 static long recursive_object_adder(
@@ -4893,6 +4786,7 @@ static void object_compute_change_colors(
 	if (TEST_FLAG(object_definition->object.runtime_flags, _object_runtime_scaled_change_colors_bit))
 	{
 		short cc_index;
+		
 		for (cc_index = 0; cc_index<object_definition->object.change_colors.count; cc_index++)
 		{
 			struct object_change_color_definition *change_color = TAG_BLOCK_GET_ELEMENT(

@@ -9,7 +9,7 @@ symbols in this file:
 /* ---------- headers */
 
 #include "cseries.h"
-#include "tag_files/tag_groups.h"
+#include "contrail_definitions.h"
 
 /* ---------- constants */
 

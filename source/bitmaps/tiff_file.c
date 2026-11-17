@@ -1,71 +1,15 @@
 /*
 TIFF_FILE.C
-
-symbols in this file:
-0006DBE0 0070:
-	_tiff_get_bounds (0000)
-0006DC50 0420:
-	_tiff_export (0000)
-0006E070 0540:
-	_tiff_import (0000)
-00255454 0002:
-	??_C@_01KDCPPGHE@r?$AA@ (0000)
-00255458 0014:
-	??_C@_0BE@FPJPBLAF@failed?5to?5open?5tiff?$AA@ (0000)
-0025546C 000e:
-	??_C@_0O@BNNCBLEN@out?5of?5memory?$AA@ (0000)
-0025547C 0019:
-	??_C@_0BJ@EDBMJEAG@failed?5to?5write?5scanline?$AA@ (0000)
-00255498 0029:
-	??_C@_0CJ@CNFFKPJI@invalid?5bitmap?5encoding?5for?5tiff@ (0000)
-002554C4 0023:
-	??_C@_0CD@MEPHMAHO@c?3?2halo?2SOURCE?2bitmaps?2tiff_file@ (0000)
-002554E8 0002:
-	??_C@_01NOFIACDB@w?$AA@ (0000)
-002554EC 0014:
-	??_C@_0BE@DABJOKOK@file?5does?5not?5exist?$AA@ (0000)
-00255500 0010:
-	??_C@_0BA@GNLHBLFA@not?5a?5TIFF?5file?$AA@ (0000)
-00255510 0030:
-	??_C@_0DA@NCFNHNBH@unsupported?5TIFF?5orientation?5?$CImu@ (0000)
-00255540 0036:
-	??_C@_0DG@CEDAGLPJ@unsupported?5bits?5per?5sample?5?$CI?$CFd?$CJ@ (0000)
-00255578 0033:
-	??_C@_0DD@OCPJGOKH@unsupported?5TIFF?5photometric?0?5pl@ (0000)
-002555AC 000f:
-	??_C@_0P@HCMCPNNJ@TIFF?5too?5large?$AA@ (0000)
-002555BC 001e:
-	??_C@_0BO@DJPDCIEM@failed?5to?5read?5TIFF?5scan?5line?$AA@ (0000)
-002555DC 0013:
-	??_C@_0BD@NKJFFLKL@unsupported?5format?$AA@ (0000)
-0031C320 0200:
-	_bss_0031c320 (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
-
-#include "bitmaps/bitmaps.h"
-#include "bitmaps/bitmap_group.h"
-#include "bitmaps/libtiff/tiffio.h"
-#include "bitmaps/tiff_file.h"
-#include "math/integer_math.h"
-#include "tag_files/files.h"
+#include "bitmaps.h"
+#include "bitmap_macros.h"
+#include "tiffio.h"
 
 /* ---------- constants */
-
-enum
-{
-	_bitmap_format_a8 = 0,
-	_bitmap_format_y8 = 1,
-	_bitmap_format_ay8 = 2,
-	_bitmap_format_r5g6b5 = 6,
-	_bitmap_format_a1r5g5b5 = 8,
-	_bitmap_format_a4r4g4b4 = 9,
-	_bitmap_format_x8r8g8b8 = 10,
-	_bitmap_format_a8r8g8b8 = 11,
-};
 
 /* ---------- macros */
 
@@ -75,78 +19,80 @@ enum
 
 /* ---------- globals */
 
-static char error_message_buffer[512] = {0};
+static char tiff_error_string[512]; /* fake name */
 
 /* ---------- public code */
 
-boolean
-tiff_get_bounds(
+boolean tiff_get_bounds(
 	struct file_reference *file,
-	unsigned long *width,
-	unsigned long *height)
+	long *width,
+	long *height)
 {
-	char path[256];
-	TIFF *tiff;
-	boolean result = FALSE;
+	char name[MAXIMUM_FILENAME_LENGTH+1];
+	boolean success = FALSE;
+	TIFF *tiff = TIFFOpen(file_reference_get_name(file, FLAG(_name_directory_bit)|FLAG(_name_filename_bit)|FLAG(_name_extension_bit), name), "r");
 
-	tiff = TIFFOpen(
-		file_reference_get_name(file, 0xD, path),
-		"r");
 	if (tiff)
 	{
 		TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, width);
 		TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, height);
 		TIFFClose(tiff);
-		result = TRUE;
+		success = TRUE;
 	}
 
-	return result;
+	return success;
 }
 
-char const *
-tiff_export(
+char *tiff_export(
 	struct file_reference *file,
-	struct bitmap_data *bitmap)
+	struct bitmap_data const *bitmap)
 {
-	char const *error_message = NULL;
-	short tiff_format;
-	short photometric;
+	short format;
 	short samples_per_pixel;
+	short bits_per_sample;
+	short photometric;
+	char *error = NULL;
 
 	switch (bitmap->format)
 	{
 	case _bitmap_format_a8:
 	case _bitmap_format_y8:
 	case _bitmap_format_ay8:
-		tiff_format = _bitmap_format_a8;
+		format = _bitmap_format_a8;
 		photometric = PHOTOMETRIC_MINISBLACK;
 		samples_per_pixel = 1;
+		bits_per_sample = 8;
 		break;
 	case _bitmap_format_r5g6b5:
 	case _bitmap_format_a1r5g5b5:
 	case _bitmap_format_a4r4g4b4:
 	case _bitmap_format_x8r8g8b8:
 	case _bitmap_format_a8r8g8b8:
-		tiff_format = _bitmap_format_a8r8g8b8;
+		format = _bitmap_format_a8r8g8b8;
 		photometric = PHOTOMETRIC_RGB;
 		samples_per_pixel = 4;
+		bits_per_sample = 8;
 		break;
 	default:
-		error_message = "invalid bitmap encoding for tiff export.";
+		format = NONE;
+		photometric = NONE;
+		samples_per_pixel = NONE;
+		bits_per_sample = NONE;
+		error = "invalid bitmap encoding for tiff export.";
 		break;
 	}
 
-	if (!error_message)
+	if (!error)
 	{
-		char path[256];
-		TIFF *tiff = TIFFOpen(file_reference_get_name(file, 0xD, path), "w");
+		char name[MAXIMUM_FILENAME_LENGTH+1];
+		TIFF *tiff = TIFFOpen(file_reference_get_name(file, FLAG(_name_directory_bit)|FLAG(_name_filename_bit)|FLAG(_name_extension_bit), name), "w");
 
 		if (tiff)
 		{
-			short row_size = bitmap_format_get_bits_per_pixel(tiff_format) * bitmap->width / 8;
-			byte *row_buffer = match_malloc("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 107, row_size);
+			short row_size = bitmap_format_get_bits_per_pixel(format)*bitmap->width/8;
+			byte *buffer = match_malloc("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 107, row_size);
 
-			if (row_buffer)
+			if (buffer)
 			{
 				short y;
 
@@ -156,321 +102,315 @@ tiff_export(
 				TIFFSetField(tiff, TIFFTAG_PHOTOMETRIC, photometric);
 				TIFFSetField(tiff, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 				TIFFSetField(tiff, TIFFTAG_SAMPLESPERPIXEL, samples_per_pixel);
-				TIFFSetField(tiff, TIFFTAG_BITSPERSAMPLE, 8);
+				TIFFSetField(tiff, TIFFTAG_BITSPERSAMPLE, bits_per_sample);
 				TIFFSetField(tiff, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
 
-				for (y = 0; y < bitmap->height; y++)
+				for (y = 0; y<bitmap->height; y++)
 				{
-					void *source_row = bitmap_2d_address(bitmap, 0, y, 0);
+					void *pixels = bitmap_2d_address(bitmap, 0, y, 0);
 
-					// TIFF rows are stored red, green, blue, alpha
 					switch (bitmap->format)
 					{
 					case _bitmap_format_a1r5g5b5:
 						{
 							short x;
 
-							for (x = 0; x < bitmap->width; x++)
+							for (x = 0; x<bitmap->width; x++)
 							{
-								word pixel = ((word *)source_row)[x];
+								word pixel = ((word *)pixels)[x];
 
-								row_buffer[x * 4 + 3] = 0xFF;
-								row_buffer[x * 4 + 2] = ((pixel & 0x1F) << 3) | ((pixel & 0x1F) << 2);
-								row_buffer[x * 4 + 1] = (((pixel >> 5) & 0x1F) << 3) | (((pixel >> 5) & 0x1F) << 2);
-								row_buffer[x * 4] = ((pixel >> 10) << 3) | ((pixel >> 10) << 2);
+								buffer[4*x+3] = 0xff;
+								buffer[4*x+2] = PIXEL16_1555_BLUE(pixel);
+								buffer[4*x+1] = PIXEL16_1555_GREEN(pixel);
+								buffer[4*x+0] = PIXEL16_1555_RED(pixel);
 							}
 						}
 						break;
-
 					case _bitmap_format_r5g6b5:
 						{
 							short x;
 
-							for (x = 0; x < bitmap->width; x++)
+							for (x = 0; x<bitmap->width; x++)
 							{
-								word pixel = ((word *)source_row)[x];
+								word pixel = ((word *)pixels)[x];
 
-								row_buffer[x * 4 + 3] = 0xFF;
-								row_buffer[x * 4 + 2] = ((pixel & 0x1F) << 3) | ((pixel & 0x1F) >> 2);
-								row_buffer[x * 4 + 1] = (((pixel >> 5) & 0x3F) << 2) | (((pixel >> 5) & 0x3F) >> 4);
-								row_buffer[x * 4] = ((pixel >> 11) << 3) | ((pixel >> 11) >> 2);
+								buffer[4*x+3] = 0xff;
+								buffer[4*x+2] = PIXEL16_565_BLUE(pixel);
+								buffer[4*x+1] = PIXEL16_565_GREEN(pixel);
+								buffer[4*x+0] = PIXEL16_565_RED(pixel);
 							}
 						}
 						break;
-
 					case _bitmap_format_a4r4g4b4:
 						{
 							short x;
 
-							for (x = 0; x < bitmap->width; x++)
+							for (x = 0; x<bitmap->width; x++)
 							{
-								word pixel = ((word *)source_row)[x];
+								word pixel = ((word *)pixels)[x];
 
-								row_buffer[x * 4 + 3] = (((pixel >> 12) & 0xF) << 4) | ((pixel >> 12) & 0xF);
-								row_buffer[x * 4 + 2] = ((pixel & 0xF) << 4) | (pixel & 0xF);
-								row_buffer[x * 4 + 1] = (((pixel >> 4) & 0xF) << 4) | ((pixel >> 4) & 0xF);
-								row_buffer[x * 4] = (((pixel >> 8) & 0xF) << 4) | ((pixel >> 8) & 0xF);
+								buffer[4*x+3] = PIXEL16_4444_ALPHA(pixel);
+								buffer[4*x+2] = PIXEL16_4444_BLUE(pixel);
+								buffer[4*x+1] = PIXEL16_4444_GREEN(pixel);
+								buffer[4*x+0] = PIXEL16_4444_RED(pixel);
 							}
 						}
 						break;
-
 					case _bitmap_format_x8r8g8b8:
 						{
 							short x;
 
-							for (x = 0; x < bitmap->width; x++)
+							for (x = 0; x<bitmap->width; x++)
 							{
-								pixel32 pixel = ((pixel32 *)source_row)[x];
+								pixel32 pixel = ((pixel32 *)pixels)[x];
 
-								row_buffer[x * 4 + 3] = 0xFF;
-								row_buffer[x * 4 + 2] = (byte)pixel;
-								row_buffer[x * 4 + 1] = (byte)(pixel >> 8);
-								row_buffer[x * 4] = (byte)(pixel >> 16);
+								buffer[4*x+3] = 0xff;
+								buffer[4*x+2] = (byte)PIXEL32_BLUE(pixel);
+								buffer[4*x+1] = (byte)PIXEL32_GREEN(pixel);
+								buffer[4*x+0] = (byte)PIXEL32_RED(pixel);
 							}
 						}
 						break;
-
 					case _bitmap_format_a8r8g8b8:
 						{
 							short x;
 
-							for (x = 0; x < bitmap->width; x++)
+							for (x = 0; x<bitmap->width; x++)
 							{
-								pixel32 pixel = ((pixel32 *)source_row)[x];
+								pixel32 pixel = ((pixel32 *)pixels)[x];
 
-								row_buffer[x * 4 + 3] = (byte)(pixel >> 24);
-								row_buffer[x * 4 + 2] = (byte)pixel;
-								row_buffer[x * 4 + 1] = (byte)(pixel >> 8);
-								row_buffer[x * 4] = (byte)(pixel >> 16);
+								buffer[4*x+3] = (byte)PIXEL32_ALPHA(pixel);
+								buffer[4*x+2] = (byte)PIXEL32_BLUE(pixel);
+								buffer[4*x+1] = (byte)PIXEL32_GREEN(pixel);
+								buffer[4*x+0] = (byte)PIXEL32_RED(pixel);
 							}
 						}
 						break;
-
 					default:
-						csmemcpy(row_buffer, source_row, row_size);
+						memcpy(buffer, pixels, row_size);
 						break;
 					}
 
-					if (TIFFWriteScanline(tiff, row_buffer, y, 0) < 0)
+					if (TIFFWriteScanline(tiff, buffer, y, 0)<0)
 					{
-						error_message = "failed to write scanline";
+						error = "failed to write scanline";
 						break;
 					}
 				}
 
-				match_free("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 231, row_buffer);
+				match_free("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 231, buffer);
 			}
 			else
 			{
-				error_message = "out of memory";
+				error = "out of memory";
 			}
 
 			TIFFClose(tiff);
 		}
 		else
 		{
-			error_message = "failed to open tiff";
+			error = "failed to open tiff";
 		}
 	}
 
-	return error_message;
+	return error;
 }
 
-char const *
-tiff_import(
+char *tiff_import(
 	struct file_reference *file,
-	struct bitmap_data **bitmap_result,
-	rectangle2d const *requested_bounds,
+	struct bitmap_data **bitmap,
+	rectangle2d const *bounds,
 	short format)
 {
-	char const *error_message = NULL;
+	char *error = NULL;
 
 	if (file_exists(file))
 	{
-		char path[256];
-		TIFF *tiff = TIFFOpen(file_reference_get_name(file, 0xD, path), "r");
+		char name[MAXIMUM_FILENAME_LENGTH+1];
+		TIFF *tiff = TIFFOpen(file_reference_get_name(file, FLAG(_name_directory_bit)|FLAG(_name_filename_bit)|FLAG(_name_extension_bit), name), "r");
 
 		if (tiff)
 		{
+			rectangle2d import_bounds;
+			unsigned short bits_per_sample;
+			unsigned short samples_per_pixel;
+			unsigned short planar_configuration;
+			unsigned short photometric;
+			unsigned short orientation;
+			unsigned long width;
+			unsigned long height;
+			short import_format;
 			long scanline_size = TIFFScanlineSize(tiff);
-			word bits_per_sample;
-			word orientation;
-			word samples_per_pixel;
-			word planar_config;
-			word photometric;
-			unsigned long image_width;
-			unsigned long image_height;
-			rectangle2d bounds;
 
 			TIFFGetFieldDefaulted(tiff, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
 			TIFFGetFieldDefaulted(tiff, TIFFTAG_ORIENTATION, &orientation);
 			TIFFGetFieldDefaulted(tiff, TIFFTAG_SAMPLESPERPIXEL, &samples_per_pixel);
-			TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar_config);
+			TIFFGetField(tiff, TIFFTAG_PLANARCONFIG, &planar_configuration);
 			TIFFGetField(tiff, TIFFTAG_PHOTOMETRIC, &photometric);
-			TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &image_width);
-			TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &image_height);
+			TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &width);
+			TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height);
 
-			if (requested_bounds)
+			if (bounds)
 			{
-				bounds = *requested_bounds;
+				import_bounds = *bounds;
 			}
 			else
 			{
-				bounds.y0 = 0;
-				bounds.x0 = 0;
-				bounds.x1 = (short)image_width;
-				bounds.y1 = (short)image_height;
+				import_bounds.y0 = 0;
+				import_bounds.x0 = 0;
+				import_bounds.x1 = (short)width;
+				import_bounds.y1 = (short)height;
 			}
 
-			if (orientation == ORIENTATION_TOPLEFT)
+			if (orientation==ORIENTATION_TOPLEFT)
 			{
-				if (bits_per_sample == 8 &&
-					(samples_per_pixel == 4 || samples_per_pixel == 3 || samples_per_pixel == 2 || samples_per_pixel == 1))
+				import_format = NONE;
+				if (bits_per_sample==8 && samples_per_pixel==4) import_format = _bitmap_format_a8r8g8b8;
+				if (bits_per_sample==8 && samples_per_pixel==3) import_format = _bitmap_format_a8r8g8b8;
+				if (bits_per_sample==8 && samples_per_pixel==2) import_format = _bitmap_format_a8r8g8b8;
+				if (bits_per_sample==8 && samples_per_pixel==1) import_format = _bitmap_format_a8r8g8b8;
+
+				if (import_format!=NONE)
 				{
-					if (format != NONE && format != _bitmap_format_a8r8g8b8)
+					if (format==NONE || import_format==format)
 					{
-						error_message = "unsupported format";
-					}
-					else if (planar_config == PLANARCONFIG_CONTIG)
-					{
-						short width = rectangle2d_width(&bounds);
-						short height = rectangle2d_height(&bounds);
-
-						if (width >= 0 && width <= 30000 && height >= 0 && height <= 30000)
+						if (planar_configuration==PLANARCONFIG_CONTIG)
 						{
-							struct bitmap_data *bitmap = bitmap_2d_new(width, height, 0, _bitmap_format_a8r8g8b8);
-							byte *scanline = match_malloc("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 319, scanline_size);
+							short import_width = rectangle2d_width(&import_bounds);
+							short import_height = rectangle2d_height(&import_bounds);
 
-							if (bitmap && scanline)
+							if (import_width<0 || import_width>MAXIMUM_BITMAP_WIDTH || import_height<0 || import_height>MAXIMUM_BITMAP_HEIGHT)
 							{
-								short y;
-
-								*bitmap_result = bitmap;
-								for (y = bounds.y0; y < bounds.y1; y++)
-								{
-									if (TIFFReadScanline(tiff, scanline, PIN(y, 0, image_height - 1), 0) < 0)
-									{
-										error_message = "failed to read TIFF scan line";
-										break;
-									}
-
-									switch (samples_per_pixel)
-									{
-									case 1:
-										{
-											pixel32 *destination = bitmap_2d_address(bitmap, 0, (short)(y - bounds.y0), 0);
-											short x;
-
-											for (x = bounds.x0; x < bounds.x1; x++)
-											{
-												short source_x = PIN(x, 0, image_width - 1);
-												byte value = scanline[source_x];
-
-												destination[x - bounds.x0] = (value << 24) | (value << 16) | (value << 8) | value;
-											}
-										}
-										break;
-									case 2:
-										{
-											pixel32 *destination = bitmap_2d_address(bitmap, 0, (short)(y - bounds.y0), 0);
-											short x;
-
-											for (x = bounds.x0; x < bounds.x1; x++)
-											{
-												short source_x = PIN(x, 0, image_width - 1);
-												byte *pixel = scanline + source_x * 2;
-
-												destination[x - bounds.x0] = (pixel[1] << 24) | (pixel[0] << 16) | (pixel[0] << 8) | pixel[0];
-											}
-										}
-										break;
-									case 3:
-										{
-											pixel32 *destination = bitmap_2d_address(bitmap, 0, (short)(y - bounds.y0), 0);
-											short x;
-
-											for (x = bounds.x0; x < bounds.x1; x++)
-											{
-												short source_x = PIN(x, 0, image_width - 1);
-												byte *pixel = scanline + source_x * 3;
-
-												destination[x - bounds.x0] = 0xFF000000 | (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
-											}
-										}
-										break;
-									case 4:
-										{
-											pixel32 *destination = bitmap_2d_address(bitmap, 0, (short)(y - bounds.y0), 0);
-											short x;
-
-											for (x = bounds.x0; x < bounds.x1; x++)
-											{
-												short source_x = PIN(x, 0, image_width - 1);
-												byte *pixel = scanline + source_x * 4;
-
-												destination[x - bounds.x0] = (pixel[3] << 24) | (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
-											}
-										}
-										break;
-									default:
-										match_vassert("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 406, FALSE, NULL);
-									}
-								}
+								error = "TIFF too large";
 							}
 							else
 							{
-								error_message = "out of memory";
-							}
+								struct bitmap_data *new_bitmap = bitmap_2d_new(import_width, import_height, 0, import_format);
+								byte *buffer = match_malloc("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 319, scanline_size);
 
-							// a failed scan line still leaves *bitmap_result pointing at the deleted bitmap
-							if (error_message && bitmap)
-							{
-								bitmap_delete(bitmap);
-							}
-							if (scanline)
-							{
-								match_free("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 422, scanline);
+								if (new_bitmap && buffer)
+								{
+									short y;
+
+									*bitmap = new_bitmap;
+									for (y = import_bounds.y0; y<import_bounds.y1; y++)
+									{
+										if (TIFFReadScanline(tiff, buffer, PIN(y, 0, height-1), 0)<0)
+										{
+											error = "failed to read TIFF scan line";
+											break;
+										}
+
+										switch (samples_per_pixel)
+										{
+										case 1:
+											{
+												short x;
+												pixel32 *pixels = (pixel32 *)bitmap_2d_address(new_bitmap, 0, y-import_bounds.y0, 0);
+
+												for (x = import_bounds.x0; x<import_bounds.x1; x++)
+												{
+													short pixel_index = PIN(x, 0, width-1);
+													pixel32 value = buffer[pixel_index];
+
+													pixels[x-import_bounds.x0] = PIXEL32_FROM_ARGB(value, value, value, value);
+												}
+											}
+											break;
+										case 2:
+											{
+												short x;
+												pixel32 *pixels = (pixel32 *)bitmap_2d_address(new_bitmap, 0, y-import_bounds.y0, 0);
+
+												for (x = import_bounds.x0; x<import_bounds.x1; x++)
+												{
+													short pixel_index = PIN(x, 0, width-1);
+
+													pixels[x-import_bounds.x0] = PIXEL32_FROM_ARGB(buffer[2*pixel_index+1], buffer[2*pixel_index], buffer[2*pixel_index], buffer[2*pixel_index]);
+												}
+											}
+											break;
+										case 3:
+											{
+												short x;
+												pixel32 *pixels = (pixel32 *)bitmap_2d_address(new_bitmap, 0, y-import_bounds.y0, 0);
+
+												for (x = import_bounds.x0; x<import_bounds.x1; x++)
+												{
+													short pixel_index = PIN(x, 0, width-1);
+
+													pixels[x-import_bounds.x0] = PIXEL32_FROM_ARGB(0xff, buffer[3*pixel_index], buffer[3*pixel_index+1], buffer[3*pixel_index+2]);
+												}
+											}
+											break;
+										case 4:
+											{
+												short x;
+												pixel32 *pixels = (pixel32 *)bitmap_2d_address(new_bitmap, 0, y-import_bounds.y0, 0);
+
+												for (x = import_bounds.x0; x<import_bounds.x1; x++)
+												{
+													short pixel_index = PIN(x, 0, width-1);
+
+													pixels[x-import_bounds.x0] = PIXEL32_FROM_ARGB(buffer[4*pixel_index+3], buffer[4*pixel_index], buffer[4*pixel_index+1], buffer[4*pixel_index+2]);
+												}
+											}
+											break;
+										default:
+											match_vassert("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 406, FALSE, NULL);
+											break;
+										}
+									}
+								}
+								else
+								{
+									error = "out of memory";
+								}
+
+								if (error && new_bitmap)
+								{
+									bitmap_delete(new_bitmap);
+								}
+								if (buffer)
+								{
+									match_free("c:\\halo\\SOURCE\\bitmaps\\tiff_file.c", 422, buffer);
+								}
 							}
 						}
 						else
 						{
-							error_message = "TIFF too large";
+							error = "unsupported TIFF photometric, planar configuration";
 						}
 					}
 					else
 					{
-						error_message = "unsupported TIFF photometric, planar configuration";
+						error = "unsupported format";
 					}
 				}
 				else
 				{
-					_snprintf(
-						error_message_buffer,
-						NUMBEROF(error_message_buffer),
-						"unsupported bits per sample (%d) or sample count (%d)",
-						bits_per_sample,
-						samples_per_pixel);
-					error_message = error_message_buffer;
+					_snprintf(tiff_error_string, sizeof(tiff_error_string), "unsupported bits per sample (%d) or sample count (%d)", bits_per_sample, samples_per_pixel);
+					error = tiff_error_string;
 				}
 			}
 			else
 			{
-				error_message = "unsupported TIFF orientation (must be top left)";
+				error = "unsupported TIFF orientation (must be top left)";
 			}
 
 			TIFFClose(tiff);
 		}
 		else
 		{
-			error_message = "not a TIFF file";
+			error = "not a TIFF file";
 		}
 	}
 	else
 	{
-		error_message = "file does not exist";
+		error = "file does not exist";
 	}
 
-	return error_message;
+	return error;
 }
 
 /* ---------- private code */

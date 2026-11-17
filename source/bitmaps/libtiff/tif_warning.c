@@ -1,5 +1,5 @@
 #ifndef lint
-static char tif_warning_rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_warning.c,v 1.13 92/02/10 19:06:44 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_warning.c,v 1.13 92/02/10 19:06:44 sam Exp $";
 #endif
 
 /*
@@ -33,34 +33,36 @@ static char tif_warning_rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif
 #include "tiffioP.h"
 #include "prototypes.h"
 
-static void defaultHandler(
-	char *module,
-	char *fmt,
-	va_list ap)
+static void
+DECLARE3(defaultHandler, char*, module, char*, fmt, va_list, ap)
 {
 	if (module != NULL)
 		fprintf(stderr, "%s: ", module);
 	fprintf(stderr, "Warning, ");
 	vfprintf(stderr, fmt, ap);
 	fprintf(stderr, ".\n");
-
-	return;
 }
 
 static TIFFErrorHandler _warningHandler = defaultHandler;
 
-TIFFErrorHandler TIFFSetWarningHandler(
-	TIFFErrorHandler handler)
+TIFFErrorHandler
+DECLARE1(TIFFSetWarningHandler, TIFFErrorHandler, handler)
 {
 	TIFFErrorHandler prev = _warningHandler;
 	_warningHandler = handler;
 	return (prev);
 }
 
-void TIFFWarning(
-	char *module,
-	char *fmt,
-	...)
+void
+#if USE_PROTOTYPES
+TIFFWarning(char *module, char *fmt, ...)
+#else
+/*VARARGS2*/
+TIFFWarning(module, fmt, va_alist)
+	char *module;
+	char *fmt;
+	va_dcl
+#endif
 {
 	if (_warningHandler) {
 		va_list ap;
@@ -68,6 +70,4 @@ void TIFFWarning(
 		(*_warningHandler)(module, fmt, ap);
 		va_end(ap);
 	}
-
-	return;
 }

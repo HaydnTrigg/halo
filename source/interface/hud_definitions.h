@@ -1,7 +1,5 @@
 /*
 HUD_DEFINITIONS.H
-
-header included in hcex build.
 */
 
 #ifndef __HUD_DEFINITIONS_H
@@ -10,31 +8,81 @@ header included in hcex build.
 
 /* ---------- headers */
 
-#include "math/real_math.h"
-#include "tag_files/tag_groups.h"
 
 /* ---------- constants */
 
-enum hud_anchor
+enum
 {
-	_hud_anchor_top_left,
-	_hud_anchor_top_right,
-	_hud_anchor_bottom_left,
-	_hud_anchor_bottom_right,
-	_hud_anchor_center,
-
-	NUMBER_OF_HUD_ANCHORS
+	_hud_draw_flashing_bit = 0,
+	_hud_draw_disabled_bit,
+	_hud_draw_in_multiplayer_bit,
+	NUMBER_OF_HUD_DRAW_FLAGS,
 };
 
-/* ---------- macros */
+enum
+{
+	MAXIMUM_NUMBER_OF_HUD_SOUNDS = 12,
+	MAXIMUM_NUMBER_OF_WAYPOINTS = 16,
+	MAXIMUM_NUMBER_OF_HUD_DECIMAL_DIGITS = 4,
+};
+
+enum
+{
+	_hud_top_left = 0,
+	_hud_top_right,
+	_hud_bottom_left,
+	_hud_bottom_right,
+	_hud_center,
+	NUMBER_OF_HUD_ANCHORS,
+};
+
+enum
+{
+	_waypoint_on_screen,
+	_waypoint_off_screen,
+	_waypoint_occluded,
+	NUMBER_OF_WAYPOINT_TYPES,
+};
+
+enum
+{
+	_hud_waypoint_dont_rotate_offscreen,
+	NUMBER_OF_WAYPOINT_FLAGS,
+};
+
+enum
+{
+	_hud_number_show_all_leading_zeros_bit,
+	_hud_number_show_only_when_zoomed,
+	_hud_number_show_trailing_m,
+	NUMBER_OF_HUD_NUMBER_FLAGS,
+};
 
 /* ---------- structures */
 
-struct hud_absolute_placement_definition
+struct hud_waypoint_arrow
 {
-	short corner;
+	char name[TAG_STRING_LENGTH+1];
+	long unused0[2];
+	unsigned long color;
+	real opacity;
+	real fade;
+	short sequence_indices[NUMBER_OF_WAYPOINT_TYPES];
 	short pad;
-	long unused[8];
+	long unused1[4];
+	unsigned long flags;
+	long unused2[6];
+};
+
+struct sound_hud_element_definition
+{
+	struct tag_reference sound;
+	long type_flags;
+	real scale;
+	long unused[3];
+	byte pad0;
+	byte pad[3];
+	long unused2[4];
 };
 
 struct hud_placement_definition
@@ -46,6 +94,13 @@ struct hud_placement_definition
 	long unused0[5];
 };
 
+struct hud_absolute_placement_definition
+{
+	short corner;
+	short pad;
+	long unused[8];
+};
+
 struct hud_color_definition
 {
 	unsigned long color;
@@ -53,18 +108,106 @@ struct hud_color_definition
 	real flash_period;
 	real flash_delay;
 	short number_of_flashes;
-	word flash_flags;
+	unsigned short flash_flags;
 	real flash_length;
 	unsigned long disabled_color;
 	union
 	{
 		long unused;
-		struct
-		{
-			short up_ticks;
-			short fade_ticks;
-		} objective;
+		struct { short up_ticks, fade_ticks; } objective;
 	} custom;
+};
+
+struct static_hud_element_definition
+{
+	struct hud_placement_definition placement;
+	struct tag_reference interface_bitmap;
+	struct hud_color_definition colors;
+	short sequence_index;
+	short pad;
+	struct tag_block multitexture_overlays;
+	long unused0[1];
+};
+
+struct meter_hud_element_definition
+{
+	struct hud_placement_definition placement;
+	struct tag_reference meter_bitmap;
+	unsigned long min_color;
+	unsigned long max_color;
+	unsigned long flash_color;
+	unsigned long empty_color;
+	byte meter_flags;
+	byte minimum_value;
+	short sequence_index;
+	byte alpha_multiplier;
+	byte alpha_bias;
+	short value_scale;
+	real opacity;
+	real fade;
+	unsigned long disabled_color;
+	struct tag_block multitexture_overlays;
+	long unused0[1];
+};
+
+struct number_hud_element_definition
+{
+	struct hud_placement_definition placement;
+	struct hud_color_definition colors;
+	char digits;
+	byte number_flags;
+	char fractional_digits;
+	byte pad;
+	long unused1[3];
+};
+
+struct hud_damage_indicators_definition
+{
+	short top_offset;
+	short bottom_offset;
+	short left_offset;
+	short right_offset;
+	long unused[8];
+	struct tag_reference indicator_bitmap;
+	short sequence_index;
+	short multiplayer_sequence_index;
+	unsigned long color;
+	long unused2[4];
+};
+
+struct hud_multiplayer_parameters_definition
+{
+	real hud_scale;
+	long unused[64];
+};
+
+struct hud_waypoint_definition
+{
+	real top_offset;
+	real bottom_offset;
+	real left_offset;
+	real right_offset;
+	long unused0[8];
+	struct tag_reference arrow_bitmap;
+	struct tag_block arrows;
+	long unused1[20];
+};
+
+struct hud_defaults_definition
+{
+	struct tag_reference default_weapon_hud;
+	real motion_sensor_range;
+	real motion_sensor_velocity_sensitivity;
+	real motion_sensor_scale;
+	rectangle2d default_title_bounds;
+	long unused[11];
+};
+
+struct hud_timer_definition
+{
+	struct hud_color_definition color;
+	struct hud_color_definition time_up_color;
+	long unused[10];
 };
 
 struct hud_messaging_parameters_definition
@@ -87,55 +230,6 @@ struct hud_messaging_parameters_definition
 	struct hud_color_definition objective_color;
 };
 
-struct hud_waypoint_definition
-{
-	real top_offset;
-	real bottom_offset;
-	real left_offset;
-	real right_offset;
-	long unused0[8];
-	struct tag_reference arrow_bitmap;
-	struct tag_block arrows;
-	long unused1[20];
-};
-
-struct hud_multiplayer_parameters_definition
-{
-	real hud_scale;
-	long unused[64];
-};
-
-struct hud_defaults_definition
-{
-	struct tag_reference default_weapon_hud;
-	real motion_sensor_range;
-	real motion_sensor_velocity_sensitivity;
-	real motion_sensor_scale;
-	rectangle2d default_title_bounds;
-	long unused[11];
-};
-
-struct hud_damage_indicators_definition
-{
-	short top_offset;
-	short bottom_offset;
-	short left_offset;
-	short right_offset;
-	long unused[8];
-	struct tag_reference indicator_bitmap;
-	short sequence_index;
-	short multiplayer_sequence_index;
-	unsigned long color;
-	long unused2[4];
-};
-
-struct hud_timer_definition
-{
-	struct hud_color_definition color;
-	struct hud_color_definition time_up_color;
-	long unused[10];
-};
-
 struct hud_globals_definition
 {
 	struct hud_messaging_parameters_definition messaging;
@@ -152,56 +246,5 @@ struct hud_globals_definition
 	struct tag_reference checkpoint_sound;
 	long unused2[24];
 };
-
-struct icon_hud_element_definition
-{
-	short sequence_index;
-	short width_offset;
-	point2d offset;
-	unsigned long color;
-	char frame_rate;
-	byte flags;
-	short text_index;
-};
-
-struct hud_screen_effect_definition
-{
-	long unused1[1];
-	word mask_flags;
-	word mask_pad;
-	long mask_unused[4];
-	struct tag_reference mask_fullscreen;
-	struct tag_reference mask_splitscreen;
-	long unused2[2];
-	word convolution_flags;
-	word convolution_pad;
-	real convolution_radius_in_bounds[2];
-	real convolution_radius_out_bounds[2];
-	long unused3[6];
-	word light_enhancement_flags;
-	short light_enhancement_script_source;
-	real light_enhancement_intensity;
-	long unused4[6];
-	word desaturation_flags;
-	short desaturation_script_source;
-	real desaturation_intensity;
-	real_rgb_color desaturation_tint;
-	long unused5[6];
-};
-
-typedef char hud_absolute_placement_definition_size_assert[
-	sizeof(struct hud_absolute_placement_definition) == 0x24 ? 1 : -1];
-typedef char hud_placement_definition_size_assert[
-	sizeof(struct hud_placement_definition) == 0x24 ? 1 : -1];
-typedef char hud_color_definition_size_assert[
-	sizeof(struct hud_color_definition) == 0x20 ? 1 : -1];
-
-/* ---------- prototypes/EXAMPLE.C */
-
-/* ---------- globals */
-
-extern char const *global_hud_anchor_names[NUMBER_OF_HUD_ANCHORS];
-
-/* ---------- public code */
 
 #endif // __HUD_DEFINITIONS_H

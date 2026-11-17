@@ -10,7 +10,6 @@ file has inline function assertions.
 
 /* ---------- headers */
 
-#include "game_state.h"
 
 /* ---------- constants */
 

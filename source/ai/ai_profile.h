@@ -8,68 +8,63 @@ header included in hcex build.
 #define __AI_PROFILE_H
 #pragma once
 
-#include "cseries/cseries.h"
-
 /* ---------- constants */
 
 enum
 {
-	AI_METER_HISTORY_TICKS = 60,
-	NUMBER_OF_AI_METERS = 28,
-};
-
-enum
-{
-	_ai_meter_encounters = 0,
-	_ai_meter_encounters_updated,
-	_ai_meter_actors,
-	_ai_meter_actors_updated,
-	_ai_meter_actors_active,
-	_ai_meter_units,
-	_ai_meter_units_updated,
-	_ai_meter_units_active,
-	_ai_meter_props,
-	_ai_meter_dead_props_acknowledged,
-	_ai_meter_dead_props_orphaned,
-	_ai_meter_dead_props_unacknowledged,
-	_ai_meter_enemy_props_acknowledged,
-	_ai_meter_enemy_props_orphaned,
-	_ai_meter_enemy_props_unacknowledged,
-	_ai_meter_friendly_props_acknowledged,
-	_ai_meter_friendly_props_orphaned,
-	_ai_meter_friendly_props_unacknowledged,
-	_ai_meter_swarm_actors,
-	_ai_meter_swarms,
-	_ai_meter_swarm_components,
-	_ai_meter_collisions,
+	_ai_meter_encounter = 0, /* fake name */
+	_ai_meter_encounter_active,
+	_ai_meter_actor,
+	_ai_meter_actor_active,
+	_ai_meter_actor_non_dormant,
+	_ai_meter_unit,
+	_ai_meter_unit_active,
+	_ai_meter_unit_non_dormant,
+	_ai_meter_prop,
+	_ai_meter_prop_acknowledged_body,
+	_ai_meter_prop_orphaned_body,
+	_ai_meter_prop_unacknowledged_body,
+	_ai_meter_prop_acknowledged_enemy,
+	_ai_meter_prop_orphaned_enemy,
+	_ai_meter_prop_unacknowledged_enemy,
+	_ai_meter_prop_acknowledged_friend,
+	_ai_meter_prop_orphaned_friend,
+	_ai_meter_prop_unacknowledged_friend,
+	_ai_meter_swarm, /* fake name */
+	_ai_meter_swarm_actor,
+	_ai_meter_swarm_component, /* fake name */
+	_ai_meter_collision_vector,
 	_ai_meter_line_of_sight,
 	_ai_meter_line_of_fire,
 	_ai_meter_path_flood,
 	_ai_meter_path_find,
 	_ai_meter_action_change,
-	_ai_meter_firing_point,
+	_ai_meter_firing_point_eval,
+	NUMBER_OF_AI_METERS,
 };
 
 /* ---------- macros */
+
+#define AI_METER_HISTORY_TICKS 60
 
 /* ---------- structures */
 
 struct ai_meter
 {
-	short accumulator;
-	short current_value;
-	real average;
-	long history_sum;
+	short current_count;
+	short last_count;
+	real average_count;
+	long average_total;
 	short history_next_index;
-	short history_count;
-	short history[AI_METER_HISTORY_TICKS];
+	short history_max_index;
+	short history_count[AI_METER_HISTORY_TICKS];
 };
 
-struct ai_profile_globals
+struct ai_profile_state
 {
-	boolean disabled;
-	boolean move_actors_randomly;
-	short render_spray;
+	boolean disable_ai;
+	boolean move_randomly;
+	short render_spray_mode;
 	boolean show;
 	boolean show_stats;
 	boolean show_actors;
@@ -83,27 +78,11 @@ struct ai_profile_globals
 
 /* ---------- prototypes/AI_PROFILE.C */
 
-void ai_profile_initialize(
-	void);
-void ai_profile_initialize_for_new_map(
-	void);
-
-void ai_profile_dispose(
-	void);
-void ai_profile_dispose_from_old_map(
-	void);
-void ai_profile_update(
-	void);
-void ai_profile_display(
-	char *buffer);
-void ai_profile_render(
-	void);
-short ai_profile_change_render_spray(
-	void);
+void ai_profile_change_render_spray(void);
 
 /* ---------- globals */
 
-extern struct ai_profile_globals ai_profile;
+extern struct ai_profile_state ai_profile;
 
 /* ---------- public code */
 
