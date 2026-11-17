@@ -1,25 +1,5 @@
 /*
 PROBABILITY.C
-
-symbols in this file:
-000FA5F0 0030:
-	_factorial (0000)
-000FA620 0030:
-	_permutations (0000)
-000FA650 0050:
-	_combinations (0000)
-000FA6A0 00f0:
-	_permute (0000)
-000FA790 0120:
-	_combine (0000)
-0027AE48 0008:
-	??_C@_07OKCKIPNN@indices?$AA@ (0000)
-0027AE50 0007:
-	??_C@_06POCLMCPF@base?$DO0?$AA@ (0000)
-0027AE58 0022:
-	??_C@_0CC@JNAEFKFC@c?3?2halo?2SOURCE?2math?2probability?4@ (0000)
-0027AE7C 000c:
-	??_C@_0M@EDJJGKEM@base?$DO?$DNcount?$AA@ (0000)
 */
 
 /* ---------- headers */
@@ -38,17 +18,18 @@ symbols in this file:
 
 /* ---------- public code */
 
-long factorial(short value)
+long factorial(
+	short n)
 {
 	long result = 0;
-	short factor;
 
-	if (value >= 0)
+	if (n>=0)
 	{
 		result = 1;
-		for (factor = value; factor > 1; factor--)
+		while (n>1)
 		{
-			result *= factor;
+			result*= n;
+			n--;
 		}
 	}
 
@@ -56,19 +37,18 @@ long factorial(short value)
 }
 
 long permutations(
-	short count,
-	short selection_count)
+	short n,
+	short r)
 {
 	long result = 0;
 
-	if (count >= selection_count && selection_count >= 0)
+	if (n>=r && r>=0)
 	{
 		result = 1;
-		while (selection_count != 0)
+		while (r--)
 		{
-			result *= count;
-			count--;
-			selection_count--;
+			result*= n;
+			n--;
 		}
 	}
 
@@ -76,23 +56,23 @@ long permutations(
 }
 
 long combinations(
-	short count,
-	short selection_count)
+	short n,
+	short r)
 {
 	long result = 0;
-	short divisor;
 
-	if (count >= selection_count && selection_count >= 0)
+	if (n>=r && r>=0)
 	{
-		if (selection_count > count - selection_count)
+		if (r>n-r)
 		{
-			selection_count = count - selection_count;
+			r = n-r;
 		}
 
-		result = permutations(count, selection_count);
-		for (divisor = selection_count; divisor > 1; divisor--)
+		result = permutations(n, r);
+		while (r>1)
 		{
-			result /= divisor;
+			result/= r;
+			r--;
 		}
 	}
 
@@ -110,11 +90,11 @@ boolean permute(
 	match_assert("c:\\halo\\SOURCE\\math\\probability.c", 78, count>0);
 	match_assert("c:\\halo\\SOURCE\\math\\probability.c", 79, indices);
 
-	for (index = 0; index < count; index++)
+	for (index = 0; index<count; index++)
 	{
-		if (indices[index] < 0 || indices[index] >= base)
+		if (indices[index]<0 || indices[index]>=base)
 		{
-			for (index = 0; index < count; index++)
+			for (index = 0; index<count; index++)
 			{
 				indices[index] = 0;
 			}
@@ -123,14 +103,12 @@ boolean permute(
 		}
 	}
 
-	for (index = count - 1; index >= 0; index--)
+	for (index = count-1; index>=0; index--)
 	{
-		if (indices[index] < base - 1)
+		if (indices[index]<base-1)
 		{
 			indices[index]++;
-			index++;
-
-			for (; index < count; index++)
+			while (++index<count)
 			{
 				indices[index] = 0;
 			}
@@ -153,13 +131,11 @@ boolean combine(
 	match_assert("c:\\halo\\SOURCE\\math\\probability.c", 120, count>0);
 	match_assert("c:\\halo\\SOURCE\\math\\probability.c", 121, indices);
 
-	for (index = 0; index < count; index++)
+	for (index = 0; index<count; index++)
 	{
-		if (indices[index] < 0 ||
-			indices[index] >= base ||
-			(index > 0 && indices[index] <= indices[index - 1]))
+		if (indices[index]<0 || indices[index]>=base || (index>0 && indices[index]<=indices[index-1]))
 		{
-			for (index = 0; index < count; index++)
+			for (index = 0; index<count; index++)
 			{
 				indices[index] = index;
 			}
@@ -168,16 +144,14 @@ boolean combine(
 		}
 	}
 
-	for (index = count - 1; index >= 0; index--)
+	for (index = count-1; index>=0; index--)
 	{
-		if (indices[index] < base - count + index)
+		if (indices[index]<base-(count-index))
 		{
 			indices[index]++;
-			index++;
-
-			for (; index < count; index++)
+			while (++index<count)
 			{
-				indices[index] = indices[index - 1] + 1;
+				indices[index] = indices[index-1]+1;
 			}
 
 			return TRUE;

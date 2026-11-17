@@ -101,7 +101,6 @@ enum
 
 /* ---------- macros */
 
-#define SECONDS_PER_TICK (1.f/TICKS_PER_SECOND) /* fake name */
 #define METERS_PER_UNIT 3.048f /* fake name */
 
 #define STRINGIFY_DETAIL(x) #x
@@ -111,9 +110,15 @@ enum
 #ifdef NON_MATCHING
 	#define MATCH_FILE(file) __FILE__
 	#define MATCH_LINE(line) __LINE__
+	#define MATCH_LINE_NTSC(ntsc, pal) __LINE__
 #else
 	#define MATCH_FILE(file) file
 	#define MATCH_LINE(line) line
+	#if CONFIG_VERSION == 2276
+		#define MATCH_LINE_NTSC(ntsc, pal) ntsc
+	#else
+		#define MATCH_LINE_NTSC(ntsc, pal) pal
+	#endif
 #endif
 
 #define match_halt(file, line) { display_assert(NULL, MATCH_FILE(file), MATCH_LINE(line), TRUE); system_exit(-1); }
@@ -139,12 +144,13 @@ enum
 
 #define FLOOR(n,floor) ((n)<(floor)?(floor):(n))
 #define CEILING(n,ceiling) ((n)>(ceiling)?(ceiling):(n))
-#define PIN(n,floor,ceiling) ((n)<(floor) ? (floor) : CEILING((n),(ceiling)))
+#define PIN(n,floor,ceiling) ((n)<(floor) ? (floor) : CEILING(n,ceiling))
 
 #define FLAG(b) (1<<(b))
 #define MASK(b) (FLAG((b)) - 1)
 #define TEST_FLAG(flags, bit) (((flags)&(unsigned)FLAG(bit))!=0)
 #define SET_FLAG(f, b, v) ((v) ? ((f)|=(unsigned)FLAG(b)) : ((f)&=(unsigned)~FLAG(b)))
+#define SWAP_FLAG(f, b) ((f)^=(unsigned)FLAG(b))
 
 #define BIT_VECTOR_SIZE_IN_LONGS(bit_count) (((bit_count) + (LONG_BITS - 1)) >> LONG_BITS_BITS)
 #define BIT_VECTOR_SIZE_IN_BYTES(bit_count) (sizeof(long) * BIT_VECTOR_SIZE_IN_LONGS(bit_count))
@@ -332,43 +338,6 @@ extern const union real_rgb_color *global_real_rgb_salmon;
 extern const union real_rgb_color *global_real_rgb_violet;
 
 /* ---------- public code */
-
-// HCEX indicates these live here despite the lack of real type
-__inline long fast_ftol(
-	float d)
-{
-	long result;
-
-	__asm
-	{
-		fld d
-		fistp result
-	}
-
-	return result;
-}
-
-__inline long fast_ftol_C(
-	float x)
-{
-	long result = fast_ftol(x);
-
-	// This is to simulate a C-cast where the result is truncated 
-	// Default float rounding is to nearest whole number (even numbers preferred when .5)
-	if (x >= 0.f)
-	{
-		if ((float)result > x)
-		{
-			result--;
-		}
-	}
-	else if ((float)result < x)
-	{
-		result++;
-	}
-
-	return result;
-}
 
 __inline unsigned int address_from_pointer(
 	void const *pointer)

@@ -33,7 +33,7 @@ enum
 
 enum
 {
-	_game_team_default = 0x0,
+	_game_team_default = 0,
 	_game_team_player,
 	_game_team_human,
 	_game_team_covenant,
@@ -141,7 +141,7 @@ void game_unload(void);
 void game_dispose_from_old_map(void);
 void game_frame(real dt);
 void remove_quitting_players_from_game(void);
-void game_tick(long ticks_remaining_this_frame);
+void game_tick(void);
 void game_options_new(struct game_options *options);
 boolean game_options_verify(struct game_options *options);
 void game_initial_pulse(void);
@@ -162,13 +162,24 @@ void game_set_game_variant_from_name(const char *name);
 
 /* ---------- prototypes/GAME_ALLEGIANCE.C */
 
+void game_allegiance_initialize(void);
+void game_allegiance_dispose(void);
+void game_allegiance_initialize_for_new_map(void);
+void game_allegiance_dispose_from_old_map(void);
+void game_allegiance_update(void);
 boolean game_team_is_enemy(short our_team, short other_team);
 boolean game_team_is_ally(short our_team, short other_team);
+boolean game_team_ally_status_changed(short our_team_index, short other_team_index);
 short game_allegiance_get_incidents(short our_team_index, short other_team_index, short *incident_threshold);
 boolean game_allegiance_incident(short aggressor_team_index, short victim_team_index, short type, boolean *notify_immediately);
+void game_allegiance_create(short team1_index, boolean team1_suspicious, short team2_index, boolean team2_suspicious, short incident_threshold, short incident_decay_time, boolean allegiance_requires_communication);
+boolean game_allegiance_remove(short team1_index, short team2_index);
+void game_allegiance_provoke(short aggressor_team_index, short victim_team_index);
+void game_allegiance_notify_change(short aggressor_team_index, short victim_team_index);
 
 /* ---------- prototypes/GAME_STATISTICS.C */
 
+void game_statistics_start(void);
 void game_statistics_record_damage(long object_index, real damage, long owner_player_index, long owner_object_index, short owner_team_index);
 void game_statistics_record_kill(long object_index, long owner_player_index, long owner_object_index, short owner_team_index);
 
@@ -199,6 +210,7 @@ short game_connection(void);
 
 /* ---------- globals */
 
+extern char const *global_game_difficulty_level_names[NUMBER_OF_GAME_DIFFICULTY_LEVELS];
 extern char const *global_game_team_names[NUMBER_OF_SOLO_CAMPAIGN_TEAMS];
 
 /* ---------- public code */

@@ -19,6 +19,17 @@ file has inline function assertions.
 #define MAXIMUM_PLATOONS_PER_ENCOUNTER 32
 #define MAXIMUM_PLATOONS_PER_MAP 256
 
+#define MAXIMUM_ACTIVATION_LINK_INDICES_PER_ENCOUNTER 3
+
+enum
+{
+	_follow_target_none = 0,
+	_follow_target_players,
+	_follow_target_unit,
+	_follow_target_ai,
+	NUMBER_OF_FOLLOW_TARGET_TYPES,
+};
+
 /* ---------- macros */
 
 #define MAXIMUM_FIRING_POSITIONS_PER_ENCOUNTER 512
@@ -127,8 +138,25 @@ struct encounter_actor_iterator
 	long next_index;
 };
 
+struct encounter_iterator
+{
+	struct data_iterator encounter_iterator;
+	long index;
+	boolean active_only;
+};
+
 /* ---------- prototypes/ENCOUNTERS.C */
 
+void encounters_initialize(void);
+void encounters_dispose(void);
+void encounters_initialize_for_new_map(void);
+void encounters_dispose_from_old_map(void);
+void encounters_create_for_new_map(void);
+void encounters_update(void);
+void encounters_unit_died(long unit_index);
+void encounter_iterator_new(struct encounter_iterator *iterator, boolean active_only);
+struct encounter_datum *encounter_iterator_next(struct encounter_iterator *iterator);
+void encounter_force_deactivate(long encounter_index);
 void actor_iterator_new(struct actor_iterator *iterator, boolean active_only);
 struct actor_datum *actor_iterator_next(struct actor_iterator *iterator);
 void encounter_actor_iterator_new(struct encounter_actor_iterator *iterator, long encounter_index);
@@ -138,6 +166,28 @@ long encounter_get_by_name(char const *encounter_name);
 void encounter_build_firing_position_owner_actor_indices(long encounter_index, long *firing_position_owner_actor_indices);
 boolean encounter_pursuit_position_already_examined(long encounter_index, long actor_index, short firing_position_index, long history_start_time, short *actor_count_reference, long *last_examined_time_reference);
 void encounter_compute_activation_cluster_bit_vector(long encounter_index, boolean update_actor_dormancy, long bit_vector_size, unsigned long const *active_area, unsigned long *bit_vector);
+void encounter_create(long encounter_index, short desired_platoon_index, short desired_squad_index);
+boolean encounter_spawn_actor(long encounter_index, short squad_index);
+void encounter_set_respawn(long encounter_index, boolean respawn);
+void encounter_set_deaf(long encounter_index, boolean deaf);
+void encounter_set_blind(long encounter_index, boolean blind);
+boolean encounter_force_activate(long encounter_index);
+void encounter_squad_timer_expire(long encounter_index, short squad_index);
+void encounters_update_dirty_status(void);
+void encounter_attach_actor(long actor_index, long encounter_index, short squad_index, boolean has_previous_team);
+void encounter_detach_actor(long actor_index, boolean died);
+void encounterless_attach_actor(long actor_index);
+void encounterless_detach_actor(long actor_index);
+short encounter_get_actor_starting_location(long encounter_index, long squad_index, boolean spawn);
+boolean encounter_link_activation(long encounter_index, short link_encounter_index);
+void encounter_attach_unit(long encounter_index, long unit_index);
+void encounter_verify_firing_position_owner_actor_indices(long encounter_index);
+boolean encounter_mark_examined_pursuit_position(long encounter_index, long actor_index, short firing_position_index, long history_start_time);
+void encounter_modify_pursuit_desires(long encounter_index, short squad_index, boolean *pursue_tenacious, short *group_pursuit_restriction, boolean *group_pursuit_controller, short *desired_target_search, short *desired_pursuit, short *desired_pursuit_search);
+void encounter_determine_pursuit_availability(long encounter_index, long actor_index, short group_pursuit_restriction, boolean is_pursuit_controller, boolean *allow_target_uncover, boolean *allow_indefinite_target_uncover, boolean *allow_target_search, boolean *allow_pursuit, boolean *allow_pursuit_search, boolean *controlling_group_pursuit, boolean *controlled_by_group_pursuit, boolean *wait_after_pursuit);
+void encounterless_activate(long actor_index);
+void encounter_stand_down(long encounter_index);
+void encounter_update_status(long encounter_index);
 
 /* ---------- globals */
 
@@ -171,7 +221,7 @@ __inline struct platoon_datum *encounter_get_platoon(
 	match_assert("c:\\halo\\source\\ai\\encounters.h", 234, platoon_index>=0 && platoon_index<MAXIMUM_PLATOONS_PER_ENCOUNTER && platoon_index<encounter->platoon_count);
 
 	platoon_absolute_index = platoon_index + encounter->platoon_base;
-	match_assert("c:\\halo\\source\\ai\\encounters.h", 237, platoon_absolute_index>=0 && platoon_absolute_index<MAXIMUM_SQUADS_PER_MAP);
+	match_assert("c:\\halo\\source\\ai\\encounters.h", 237, platoon_absolute_index>=0 && platoon_absolute_index<MAXIMUM_PLATOONS_PER_MAP);
 
 	return &platoon_array[platoon_absolute_index];
 }

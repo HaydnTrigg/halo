@@ -1,102 +1,85 @@
 /*
 RENDER_MEDIA.C
-
-symbols in this file:
-0017A6F0 0020:
-	_render_media_initialize_for_new_map (0000)
-0017A710 0010:
-	_render_media_dispose_from_old_map (0000)
-0017A720 0010:
-	_render_media_build_render_target (0000)
-0017A730 0010:
-	_render_media (0000)
-0029FEAC 0004:
-	_media_wave_amplitude (0000)
-0030D4D8 00ac:
-	_standard_frame_level_of_detail (0000)
-	_render_target_frame_level_of_detail (0058)
-004C004C 002c:
-	_bss_004c004c (0000)
 */
 
 /* ---------- headers */
 
 #include "cseries.h"
+#include "render.h"
 
 /* ---------- constants */
+
+enum
+{
+	MAXIMUM_FRAME_LEVELS_OF_DETAIL = 5,			/* fake name */
+	MAXIMUM_RENDER_TARGET_LEVELS_OF_DETAIL = 3,	/* fake name */
+};
 
 /* ---------- macros */
 
 /* ---------- structures */
 
-struct render_media_globals
+struct frame_level_of_detail	/* fake name */
 {
-	boolean initialized;
-	byte unused[3];
-	long render_target_index;
-	byte unknown[36];
+	long level_count;														/* fake name */
+	real minimum_fraction;													/* fake name */
+	real fractions[MAXIMUM_FRAME_LEVELS_OF_DETAIL];							/* fake name */
+	real unused[3];															/* fake name */
+	real render_target_fractions[MAXIMUM_RENDER_TARGET_LEVELS_OF_DETAIL];	/* fake name */
+	real minimum_distance;													/* fake name */
+	real distances[MAXIMUM_FRAME_LEVELS_OF_DETAIL];							/* fake name */
+	real maximum_level;														/* fake name */
+	real minimum_level;														/* fake name */
 };
 
-typedef char render_media_globals_size_assert[
-	sizeof(struct render_media_globals) == 44 ? 1 : -1];
-
-struct frame_level_of_detail
+struct render_media_globals	/* fake name */
 {
-	long level_count;
-	real base_fraction;
-	real frame_fraction_thresholds[5];
-	real reserved_thresholds[3];
-	real detail_fraction_thresholds[3];
-	real distance_bias;
-	real distance_thresholds[5];
-	real maximum_level;
-	real minimum_level;
+	boolean initialized;		/* fake name */
+	long render_target_index;	/* fake name */
+	long unused[9];				/* fake name */
 };
-
-typedef char frame_level_of_detail_size_assert[
-	sizeof(struct frame_level_of_detail) == 84 ? 1 : -1];
 
 /* ---------- prototypes */
 
 /* ---------- globals */
 
-static struct render_media_globals bss_004c004c = {0};
-
-const real media_wave_amplitude = 0.05f;
+real const media_wave_amplitude = 0.05f;
 
 struct frame_level_of_detail standard_frame_level_of_detail =
 {
 	4,
-	0.0f,
-	{ 0.33f, 0.66f, 1.0f, 0.0f, 0.0f },
-	{ 0.0f, 0.0f, 0.0f },
-	{ 0.0f, 0.0f, 0.0f },
-	0.0f,
-	{ 200.0f, 400.0f, 700.0f, 0.0f, 0.0f },
-	3.0f,
-	2.0f
+	0.f,
+	{ 0.33f, 0.66f, 1.f },
+	{ 0.f },
+	{ 0.f },
+	0.f,
+	{ 200.f, 400.f, 700.f },
+	3.f,
+	2.f
 };
 
 struct frame_level_of_detail render_target_frame_level_of_detail =
 {
 	6,
-	0.0f,
-	{ 0.2f, 0.4f, 0.6f, 0.8f, 1.0f },
-	{ 0.0f, 0.0f, 0.0f },
-	{ 0.4f, 0.7f, 1.0f },
-	0.0f,
-	{ 50.0f, 70.0f, 125.0f, 250.0f, 500.0f },
-	6.0f,
-	4.0f
+	0.f,
+	{ 0.2f, 0.4f, 0.6f, 0.8f, 1.f },
+	{ 0.f },
+	{ 0.4f, 0.7f, 1.f },
+	0.f,
+	{ 50.f, 70.f, 125.f, 250.f, 500.f },
+	6.f,
+	4.f
 };
+
+static struct render_media_globals render_media_globals;
 
 /* ---------- public code */
 
 void render_media_initialize_for_new_map(
 	void)
 {
-	bss_004c004c.initialized = TRUE;
-	bss_004c004c.render_target_index = 0;
+	render_media_globals.initialized = TRUE;
+	render_media_globals.render_target_index = 0;
 
 	return;
 }
@@ -104,7 +87,7 @@ void render_media_initialize_for_new_map(
 void render_media_dispose_from_old_map(
 	void)
 {
-	bss_004c004c.initialized = FALSE;
+	render_media_globals.initialized = FALSE;
 
 	return;
 }

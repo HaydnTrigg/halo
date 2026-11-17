@@ -29,21 +29,6 @@ enum
 
 enum
 {
-	_profile_sort_name = 0, /* fake name */
-	_profile_sort_average_time, /* fake name */
-	_profile_sort_total_time, /* fake name */
-	NUMBER_OF_PROFILE_SORT_MODES
-};
-
-enum
-{
-	_profile_dump_format_text = 0, /* fake name */
-	_profile_dump_format_table, /* fake name */
-	NUMBER_OF_PROFILE_DUMP_FORMAT_MODES
-};
-
-enum
-{
 	_profile_frame_value_none = 0, /* fake name */
 	_profile_frame_value_frame, /* fake name */
 	_profile_frame_value_load, /* fake name */
@@ -271,7 +256,7 @@ static void profile_internal_step(
 
 void profile_rasterizer_stats(
 	real value,
-	unsigned long count)
+	__int64 count)
 {
 	profile_globals.current_frame.gpu_msec = value;
 	profile_globals.current_frame.pushbuffer_clocks = count;
@@ -1088,7 +1073,8 @@ short profile_find_game_value(
 
 real profile_frame_get_value(
 	struct profile_frame_iterator const *iterator,
-	short value)
+	short value,
+	short section_index)
 {
 	struct profile_frame *frame = &profile_globals.frames[iterator->current_buffer_index];
 	real result = 0.f;
@@ -1296,7 +1282,12 @@ boolean profile_frame_iterator_next(
 }
 
 void profile_frame_get_messages(
-	struct profile_frame_iterator const *iterator)
+	struct profile_frame_iterator const *iterator,
+	short *message_count,
+	short maximum_message_count,
+	char **message_strings,
+	point2d *message_locations,
+	real_argb_color const **message_colors)
 {
 	match_assert("c:\\halo\\SOURCE\\cseries\\profile.c", 1463, iterator);
 	match_assert("c:\\halo\\SOURCE\\cseries\\profile.c", 1464, (iterator->current_buffer_index >= 0) && (iterator->current_buffer_index < profile_globals.current_frame_history_count));

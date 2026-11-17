@@ -1,9 +1,5 @@
 /*
 ACTION_SLEEP.C
-
-symbols in this file:
-00008660 0030:
-	_action_sleep_control (0000)
 */
 
 /* ---------- headers */
@@ -34,7 +30,11 @@ enum
 void action_sleep_control(
 	long actor_index)
 {
-	*(short *)((byte *)actor_get(actor_index) + _actor_persistent_control_ticks_offset) = 0;
+	struct actor_datum *actor = actor_get(actor_index);
+
+	actor->orders.look.idle_look_type = _idle_look_none;
+
+	return;
 }
 
 /* ---------- private code */

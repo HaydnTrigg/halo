@@ -29,6 +29,14 @@ enum
 	NUMBER_OF_FOG_DEFINITION_FLAGS
 };
 
+enum
+{
+	_fog_screen_no_environment_multipass_bit = 0, /* fake name */
+	_fog_screen_no_model_multipass_bit, /* fake name */
+	_fog_screen_no_texture_based_falloff_bit, /* fake name */
+	NUMBER_OF_FOG_SCREEN_FLAGS /* fake name */
+};
+
 /* ---------- macros */
 
 #define fog_definition_get(index) ((struct fog_definition *)tag_get(PLANAR_FOG_DEFINITION_TAG, (index))) /* fake name */
@@ -38,7 +46,7 @@ enum
 
 struct fog_screen
 {
-	unsigned short flags;
+	word flags;
 	short layer_count;
 	real near_distance;
 	real far_distance;

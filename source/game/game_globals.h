@@ -10,6 +10,7 @@ header included in hcex build.
 
 /* ---------- headers */
 
+#include "game.h"
 
 /* ---------- constants */
 
@@ -17,6 +18,12 @@ enum
 {
 	GAME_GLOBALS_DEFINITION_TAG = 'matg',
 	GAME_GLOBALS_DEFINITION_VERSION = 3
+};
+
+enum
+{
+	_rasterizer_active_camouflage_tint_edge_density_bit = 0,
+	NUMBER_OF_RASTERIZER_ACTIVE_CAMOUFLAGE_FLAGS,
 };
 
 /* referenced in game_globals.c? */
@@ -96,6 +103,7 @@ enum
 	_game_difficulty_unused2,
 	_game_difficulty_unused3,
 	_game_difficulty_unused4,
+	NUMBER_OF_GAME_DIFFICULTY_VALUES
 };
 
 enum
@@ -146,11 +154,24 @@ enum
 	NUMBER_OF_MULTIPLAYER_SOUNDS,
 };
 
+enum
+{
+	_multiplayer_vehicle_warthog = 0,
+	_multiplayer_vehicle_ghost,
+	_multiplayer_vehicle_scorpion,
+	NUMBER_OF_MULTIPLAYER_VEHICLES	/* fake name */
+};
+
 /* ---------- macros */
 
 #define game_globals_definition_get(index) ((struct game_globals *)tag_get(GAME_GLOBALS_DEFINITION_TAG, index)) /* fake name */
 
 /* ---------- structures */
+
+struct game_globals_tag_reference
+{
+	struct tag_reference reference;
+};
 
 struct breakable_surface
 {
@@ -321,6 +342,12 @@ struct game_globals_falling_damage
 	real runtime_maximum_damage_velocity;
 };
 
+struct game_globals_difficulty_information
+{
+	real game_difficulty_values[NUMBER_OF_GAME_DIFFICULTY_VALUES][NUMBER_OF_GAME_DIFFICULTY_LEVELS];
+	unsigned long unused[21];
+};
+
 struct game_globals
 {
 	unsigned long flags;
@@ -331,7 +358,7 @@ struct game_globals
 	struct tag_block difficulty_information;
 	struct tag_block grenades;					// game_globals_grenade
 	struct tag_block rasterizer_data;			// game_globals_rasterizer_data
-	struct tag_block interface_tag_references;
+	struct tag_block interface_tag_references;	// game_globals_interface_tag_references
 	struct tag_block weapon_list;
 	struct tag_block cheat_powerups;
 	struct tag_block multiplayer_information;
@@ -351,5 +378,14 @@ real game_difficulty_get_value(short value_type);
 /* ---------- globals */
 
 /* ---------- public code */
+
+__inline long game_globals_get_weapon(
+	struct game_globals *game_globals,
+	long index)
+{
+	struct game_globals_tag_reference *weapon = TAG_BLOCK_GET_ELEMENT(&game_globals->weapon_list, index, struct game_globals_tag_reference);
+
+	return weapon->reference.index;
+}
 
 #endif // __GAME_GLOBALS_H

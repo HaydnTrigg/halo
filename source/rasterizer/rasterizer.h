@@ -74,6 +74,16 @@ enum
 
 enum
 {
+	_screen_multitexture_blend_func_add = 0,
+	_screen_multitexture_blend_func_multiply,
+	_screen_multitexture_blend_func_subtract,
+	_screen_multitexture_blend_func_multiply2X,
+	_screen_multitexture_blend_func_dot,
+	_screen_multitexture_blend_func_phatty_plasma,
+};
+
+enum
+{
 	_rasterizer_profile_clear = 0,
 	_rasterizer_profile_model_sky,
 	_rasterizer_profile_models,
@@ -149,11 +159,44 @@ enum
 	NUMBER_OF_RENDER_PLANAR_FOG_MODES,
 };
 
+enum
+{
+	_rasterizer_stall_unknown = 0,			/* fake name */
+	_rasterizer_stall_pushbuffer,			/* fake name */
+	_rasterizer_stall_object_lock0,		/* fake name */
+	_rasterizer_stall_object_lock1,		/* fake name */
+	_rasterizer_stall_object_lock2,		/* fake name */
+	_rasterizer_stall_object_lock3,		/* fake name */
+	_rasterizer_stall_object_lock4,		/* fake name */
+	_rasterizer_stall_object_lock5,		/* fake name */
+	_rasterizer_stall_object_lock6,		/* fake name */
+	_rasterizer_stall_object_lock7,		/* fake name */
+	_rasterizer_stall_object_lock8,		/* fake name */
+	_rasterizer_stall_object_lock9,		/* fake name */
+	_rasterizer_stall_object_lock10,		/* fake name */
+	_rasterizer_stall_object_lock11,		/* fake name */
+	_rasterizer_stall_object_lock12,		/* fake name */
+	_rasterizer_stall_object_lock13,		/* fake name */
+	_rasterizer_stall_object_lock14,		/* fake name */
+	_rasterizer_stall_object_lock15,		/* fake name */
+	_rasterizer_stall_object_lock16,		/* fake name */
+	_rasterizer_stall_object_lock17,		/* fake name */
+	_rasterizer_stall_unknown20,			/* fake name */
+	_rasterizer_stall_present,				/* fake name */
+	_rasterizer_stall_block_until_idle,		/* fake name */
+	_rasterizer_stall_block_until_vblank,	/* fake name */
+	_rasterizer_stall_block_on_fence,		/* fake name */
+	_rasterizer_stall_cpu,					/* fake name */
+	_rasterizer_stall_occlusion_test,		/* fake name */
+	NUMBER_OF_RASTERIZER_STALL_TYPES		/* fake name */
+};
 
 /* ---------- macros */
 
 #define RASTERIZER_TARGET_RENDER_PRIMARY_WIDTH 640
 #define RASTERIZER_TARGET_RENDER_PRIMARY_HEIGHT 480
+#define RASTERIZER_TARGET_RENDER_SECONDARY_WIDTH 320
+#define RASTERIZER_TARGET_RENDER_SECONDARY_HEIGHT 240
 
 /* ---------- structures */
 
@@ -166,8 +209,8 @@ struct rasterizer_frame_begin_parameters
 struct dynamic_unlit_vertex
 {
 	real_point3d position;
-	pixel32 color;
 	real_point2d texcoord;
+	pixel32 color;
 };
 
 struct dynamic_screen_vertex
@@ -175,6 +218,18 @@ struct dynamic_screen_vertex
 	real_point2d position;
 	real_point2d texcoord;
 	pixel32 color;
+};
+
+struct rasterizer_meter_parameters
+{
+	unsigned long gradient_min_color;
+	unsigned long gradient_max_color;
+	unsigned long background_color;
+	unsigned long flash_color;
+	boolean flash_color_is_negative;
+	boolean tint_mode_2;
+	unsigned long tint_color;
+	real gradient;
 };
 
 struct rasterizer_dynamic_screen_geometry_parameters
@@ -299,10 +354,7 @@ struct rasterizer_frame_statistics_s
 	real fps_average;
 	real fps_min;
 	real fps_max;
-	long fogged_count;
-	long normal_count;
-	long fast_count;
-	long scenery_count;
+	long model_vertex_counts[4]; /* fake name */
 	long environment_lightmap_vertex_count;
 	long environment_lightmap_triangle_count;
 	long environment_lightmap_primitive_count;
@@ -318,12 +370,68 @@ struct rasterizer_frame_statistics_s
 	long decal_primitive_count;
 	long decal_shader_count;
 	long decal_texture_count;
-	long __unknown60[56];
+	long environment_texture_vertex_count; /* fake name */
+	long environment_texture_triangle_count; /* fake name */
+	long environment_texture_primitive_count; /* fake name */
+	long environment_specular_light_vertex_count; /* fake name */
+	long environment_specular_light_triangle_count; /* fake name */
+	long environment_specular_light_primitive_count; /* fake name */
+	long environment_specular_lightmap_vertex_count; /* fake name */
+	long environment_specular_lightmap_triangle_count; /* fake name */
+	long environment_specular_lightmap_primitive_count; /* fake name */
+	long environment_reflection_lightmap_mask_vertex_count; /* fake name */
+	long environment_reflection_lightmap_mask_triangle_count; /* fake name */
+	long environment_reflection_lightmap_mask_primitive_count; /* fake name */
+	long environment_reflection_vertex_count; /* fake name */
+	long environment_reflection_triangle_count; /* fake name */
+	long environment_reflection_primitive_count; /* fake name */
+	long environment_transparent_vertex_count; /* fake name */
+	long environment_transparent_triangle_count; /* fake name */
+	long environment_transparent_maximum_primitive_triangle_count; /* fake name */
+	long environment_transparent_primitive_count; /* fake name */
+	long environment_fog_vertex_count; /* fake name */
+	long environment_fog_triangle_count; /* fake name */
+	long environment_fog_primitive_count; /* fake name */
+	long environment_fog_screen_vertex_count; /* fake name */
+	long environment_fog_screen_triangle_count; /* fake name */
+	long environment_fog_screen_primitive_count; /* fake name */
+	long environment_fog_screen_model_count; /* fake name */
+	long environment_fog_screen_model_vertex_count; /* fake name */
+	long environment_fog_screen_model_triangle_count; /* fake name */
+	long environment_fog_screen_model_primitive_count; /* fake name */
+	long model_count; /* fake name */
+	long model_vertex_count; /* fake name */
+	long model_triangle_count; /* fake name */
+	long model_primitive_count; /* fake name */
+	long model_transparent_vertex_count; /* fake name */
+	long model_transparent_triangle_count; /* fake name */
+	long model_transparent_maximum_primitive_triangle_count; /* fake name */
+	long model_transparent_primitive_count; /* fake name */
+	long model_shadow_count; /* fake name */
+	long model_shadow_vertex_count; /* fake name */
+	long model_shadow_triangle_count; /* fake name */
+	long model_shadow_primitive_count; /* fake name */
+	long dynamic_unlit_primitive_count; /* fake name */
+	long dynamic_unlit_triangle_count; /* fake name */
+	long dynamic_unlit_maximum_primitive_triangle_count; /* fake name */
+	long dynamic_unlit_vertex_count; /* fake name */
+	long __unknown114[7];
+	long dynamic_vertex_count; /* fake name */
+	long dynamic_vertex_buffer_count; /* fake name */
+	long dynamic_triangle_count; /* fake name */
+	long dynamic_triangle_buffer_count; /* fake name */
 	long debug_primitive_count; /* fake name */
 	long __unknown144;
 	long dynamic_light_count; /* fake name */
 	long lens_flare_count; /* fake name */
-	long __unknown150[8];
+	long skinning_bytes; /* fake name */
+	long lighting_bytes; /* fake name */
+	long vertex_shader_bytes; /* fake name */
+	long pixel_shader_bytes; /* fake name */
+	long model_skinning_bytes; /* fake name */
+	long model_lighting_bytes; /* fake name */
+	long model_vertex_shader_bytes; /* fake name */
+	long __unknown16C;
 };
 
 struct rasterizer_model_begin_parameters
@@ -407,6 +515,11 @@ struct rasterizer_lens_flare_submit_parameters
 	byte compressed_window_index;
 	byte compressed_light_scale;
 	long internal__occlusion_pixels;
+};
+
+struct rasterizer_triangle
+{
+	word vertex_indices[3];
 };
 
 /* ---------- prototypes/RASTERIZER.C */
@@ -557,6 +670,18 @@ void rasterizer_debug_triangle_shaded(real_point3d const *p0, real_point3d const
 void rasterizer_debug_test(void);
 void rasterizer_debug_draw(void);
 
+/* ---------- prototypes/RASTERIZER_FRAME_STATISTICS.C */
+
+boolean rasterizer_frame_statistics_initialize(void);
+void rasterizer_frame_statistics_begin(void);
+void rasterizer_frame_statistics_get_fps(struct rasterizer_frame_statistics_s *frame_statistics);
+void rasterizer_fps_accumulate(void);
+long rasterizer_frame_statistics_count_static_vertices(struct triangle_buffer const *triangle_buffer, struct vertex_buffer const *vertex_buffer);
+long rasterizer_frame_statistics_count_dynamic_vertices(long dynamic_triangle_buffer_index, long first_triangle_index, long triangle_count);
+void rasterizer_frame_statistics_end(void);
+void rasterizer_frame_statistics_draw(void);
+void rasterizer_frame_statistics_dispose(void);
+
 /* ---------- prototypes/RASTERIZER_TRANSPARENT_GEOMETRY.C */
 
 boolean rasterizer_transparent_geometry_initialize(void);
@@ -629,12 +754,12 @@ struct rasterizer_globals_struct
 	real z_far;
 	real z_near_first_person;
 	real z_far_first_person;
-	void *default_white_hardware_format;
 	void *default_2d_hardware_format;
 	void *default_3d_hardware_format;
 	void *default_cm_hardware_format;
 	short lightmap_mode;
 	short maximum_nodes_per_model;
+	short max_simultaneous_textures;
 };
 
 extern struct rasterizer_globals_struct rasterizer_globals;
@@ -650,6 +775,8 @@ extern struct rasterizer_frame_statistics_s rasterizer_frame_statistics;
 extern struct rasterizer_debug_options_struct rasterizer_debug_options;
 extern boolean rasterizer_model_cortana_hack;
 extern struct rasterizer_window_begin_parameters global_window_parameters;
+extern short blip_player_index;
+extern real_point2d center_point;
 
 /* ---------- public code */
 

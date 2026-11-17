@@ -46,6 +46,7 @@ enum
 /* ---------- macros */
 
 #define PIXEL32_ALPHA(pixel) ((pixel)>>24) /* fake name */
+#define PIXEL32_FROM_ALPHA(alpha) ((alpha)<<24) /* fake name */
 #define PIXEL32_TO_PIXEL16_565(pixel) ((word)((((pixel)&0xff)>>3) | (((((pixel)>>8)&0xff)>>2)<<5) | (((((pixel)>>16)&0xff)>>3)<<11))) /* fake name */
 #define REAL_ARGB_COLOR_TO_PIXEL32(color) ((((((pixel32)((color)->alpha*255.f)<<8) | (pixel32)((color)->red*255.f))<<8 | (pixel32)((color)->green*255.f))<<8) | (pixel32)((color)->blue*255.f)) /* fake name */
 
@@ -117,6 +118,9 @@ enum
 	(((((pixel)>>11)&0x1f)<<3 | (((pixel)>>11)&0x1f)>>2)<<16) | \
 	(((((pixel)>>5)&0x3f)<<2 | (((pixel)>>5)&0x3f)>>4)<<8) | \
 	((((pixel)&0x1f)<<3) | (((pixel)&0x1f)>>2))) /* fake name */
+#define PIXEL16_565_TO_PIXEL32_RED(pixel) ((((pixel)>>8)&0xf8) | (((pixel)>>13)&0x7)) /* fake name */
+#define PIXEL16_565_TO_PIXEL32_GREEN(pixel) ((((pixel)>>3)&0xfc) | (((pixel)>>9)&0x3)) /* fake name */
+#define PIXEL16_565_TO_PIXEL32_BLUE(pixel) ((((pixel)<<3)&0xf8) | (((pixel)>>2)&0x7)) /* fake name */
 
 #define PIXEL16_4444_COMPONENT(pixel, shift) (((pixel)>>(shift))&0xf) /* fake name */
 #define PIXEL16_4444_ALPHA(pixel) (PIXEL16_4444_COMPONENT(pixel, 12) | (PIXEL16_4444_COMPONENT(pixel, 12)<<4)) /* fake name */

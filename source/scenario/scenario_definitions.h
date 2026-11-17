@@ -57,7 +57,50 @@ enum
 	NUMBER_OF_TRIGGER_VOLUME_TYPES
 };
 
+enum
+{
+	_netgame_flag_ctf_flag = 0,
+	_netgame_flag_ctf_vehicle,
+	_netgame_flag_oddball_ball_spawn,
+	_netgame_flag_race_track,
+	_netgame_flag_race_vehicle,
+	_netgame_flag_vegas_bank,
+	_netgame_flag_teleporter_source,
+	_netgame_flag_teleporter_target,
+	_netgame_flag_hill,
+	NUMBER_OF_NETGAME_FLAG_TYPES
+};
+
+enum
+{
+	_netgame_equipment_flag_float = 0,
+	NUMBER_OF_NETGAME_EQUIPMENT_FLAGS
+};
+
+enum
+{
+	_netgame_starting_equipment_flag_no_grenades_bit = 0,
+	_netgame_starting_equipment_flag_plasma_greandes_bit,
+	NUMBER_OF_NETGAME_STARTING_EQUIPMENT_FLAGS
+};
+
+enum
+{
+	MAXIMUM_NETGAME_EQUIPMENT_GAME_TYPES = 4,	/* fake name */
+	MAXIMUM_STARTING_EQUIPMENT_GAME_TYPES = 4,	/* fake name */
+	MAXIMUM_STARTING_EQUIPMENT_ITEM_COLLECTIONS = 5	/* fake name */
+};
+
+enum
+{
+	_scenario_unit_dead_bit = 0,
+	NUMBER_OF_SCENARIO_UNIT_FLAGS
+};
+
 /* ---------- macros */
+
+#define MAXIMUM_STARTING_WEAPONS_PER_PROFILE 2 /* fake name */
+#define MAXIMUM_STARTING_GRENADE_COUNTS_PER_PROFILE 4 /* fake name */
 
 #define scenario_definition_get(index) ((struct scenario *)tag_get(SCENARIO_GROUP_TAG, index)) /* fake name */
 
@@ -198,6 +241,23 @@ struct scenario_object_name
 	short runtime_scenario_datum_index;
 };
 
+struct starting_weapon_info
+{
+	struct tag_reference weapon;
+	short rounds_loaded;
+	short rounds_total;
+};
+
+struct scenario_starting_profile
+{
+	char name[TAG_STRING_LENGTH+1];
+	real starting_health;
+	real starting_shield;
+	struct starting_weapon_info starting_weapons[MAXIMUM_STARTING_WEAPONS_PER_PROFILE];
+	byte starting_grenade_counts[MAXIMUM_STARTING_GRENADE_COUNTS_PER_PROFILE];
+	long unused[5];
+};
+
 struct scenario_player
 {
 	real_point3d position;
@@ -206,6 +266,38 @@ struct scenario_player
 	short bsp_index;
 	short game_type[4];
 	long unused[6];
+};
+
+struct scenario_netgame_flag
+{
+	real_point3d position;
+	real facing;
+	short type;
+	short team_index;
+	long unused[32];
+};
+
+struct scenario_netgame_equipment
+{
+	unsigned long flags;
+	short game_type[MAXIMUM_NETGAME_EQUIPMENT_GAME_TYPES];
+	short team_index;
+	short spawn_time;
+	long run_time_spawned_item_index;
+	long unused1[11];
+	real_point3d position;
+	real facing;
+	struct tag_reference item_collection;
+	long unused2[12];
+};
+
+struct scenario_starting_equipment
+{
+	unsigned long flags;
+	short game_type[MAXIMUM_STARTING_EQUIPMENT_GAME_TYPES];
+	long unused1[12];
+	struct tag_reference item_collection[MAXIMUM_STARTING_EQUIPMENT_ITEM_COLLECTIONS];
+	long unused2[16];
 };
 
 struct scenario_structure_bsp_reference
@@ -240,6 +332,14 @@ struct scenario_trigger_volume
 	};
 };
 
+struct scenario_bsp_switch_trigger_volume
+{
+	short trigger_volume_index;
+	short source_bsp_index;
+	short destination_bsp_index;
+	short safe_flag_index;
+};
+
 struct scenario_cutscene_flag
 {
 	long flags;
@@ -260,6 +360,11 @@ struct scenario_cutscene_camera_point
 	long unused[9];
 };
 
+struct scenario_decal_palette_entry
+{
+	struct tag_reference reference;	// decal_definition
+};
+
 struct scenario_cutscene_title
 {
 	long flags;
@@ -277,6 +382,12 @@ struct scenario_cutscene_title
 	real up_time;
 	real fade_out_time;
 	long unused[4];
+};
+
+struct scenario_detail_object_collection_palette_entry
+{
+	struct tag_reference reference;		// detail_object_collection_definition
+	long unused[8];
 };
 
 struct scenario

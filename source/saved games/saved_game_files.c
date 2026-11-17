@@ -46,8 +46,6 @@ enum
 #define LAST_PLAYER1_PROFILE_PATH "z:\\lastprof.txt"												/* fake name */
 #define LAST_MULTIPLAYER_VARIANT_PATH "z:\\lastmpvr.txt"											/* fake name */
 #define LAST_MULTIPLAYER_MAP_PATH "z:\\lastmpmp.txt"												/* fake name */
-#define SAVED_GAME_FILE_STRINGS_TAG_NAME "ui\\saved_game_file_strings"								/* fake name */
-#define DEFAULT_PLAYER_PROFILE_NAMES_TAG_NAME "ui\\shell\\strings\\default_player_profile_names"	/* fake name */
 
 /* ---------- structures */
 
@@ -563,7 +561,7 @@ boolean saved_game_file_close(
 	return success;
 }
 
-short saved_game_file_get_type(
+word saved_game_file_get_type(
 	long index)
 {
 	return index & SAVED_GAME_FILE_TYPE_MASK;

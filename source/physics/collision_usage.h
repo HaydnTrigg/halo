@@ -65,8 +65,8 @@ enum
 
 /* ---------- macros */
 
-#define match_collision_log_begin_user(file, line, user) do { match_assert(file, line, global_current_collision_user_depth < MAXIMUM_COLLISION_USER_STACK_DEPTH); global_current_collision_users[global_current_collision_user_depth++] = (user); } while (FALSE) /* fake name */
-#define match_collision_log_end_user(file, line) do { match_assert(file, line, global_current_collision_user_depth > 1); global_current_collision_user_depth--; } while (FALSE) /* fake name */
+#define match_collision_log_begin_user(file, line, user) match_assert(file, line, global_current_collision_user_depth < MAXIMUM_COLLISION_USER_STACK_DEPTH); global_current_collision_users[global_current_collision_user_depth++] = (user) /* fake name */
+#define match_collision_log_end_user(file, line) match_assert(file, line, global_current_collision_user_depth > 1); global_current_collision_user_depth-- /* fake name */
 
 #define collision_log_begin_user(user) match_collision_log_begin_user(__FILE__, __LINE__, user) /* fake name */
 #define collision_log_end_user() match_collision_log_end_user(__FILE__, __LINE__) /* fake name */
@@ -88,5 +88,11 @@ void collision_log_end_period(void);
 
 extern short global_current_collision_user_depth;
 extern short global_current_collision_users[MAXIMUM_COLLISION_USER_STACK_DEPTH];
+
+extern boolean collision_log_render_enable;
+extern boolean collision_log_detailed;
+extern boolean collision_log_extended;
+extern boolean collision_log_totals_only;
+extern boolean collision_log_time;
 
 #endif // __COLLISION_USAGE_H

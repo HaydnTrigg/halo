@@ -24,12 +24,12 @@ enum
 
 enum
 {
-	_vibrate_frequency_low = 0,
-	_vibrate_frequency_high,
-	NUMBER_OF_vibrate_FREQUENCIES,
+	_rumble_frequency_low = 0,
+	_rumble_frequency_high,
+	NUMBER_OF_RUMBLE_FREQUENCIES,
 
-	_vibrate_frequency_left = 0,
-	_vibrate_frequency_right,
+	_rumble_frequency_left = 0,
+	_rumble_frequency_right,
 };
 
 enum
@@ -83,9 +83,30 @@ enum
 	NUMBER_OF_DAMAGE_DEFINITION_FLAGS,
 };
 
+enum
+{
+	_screen_flash_type_none = 0,
+	_screen_flash_type_lighten,
+	_screen_flash_type_darken,
+	_screen_flash_type_max,
+	_screen_flash_type_min,
+	_screen_flash_type_invert,
+	_screen_flash_type_tint,
+	NUMBER_OF_SCREEN_FLASH_TYPES,
+};
+
+enum
+{
+	_screen_flash_low_priority = 0,
+	_screen_flash_medium_priority,
+	_screen_flash_high_priority,
+	NUMBER_OF_SCREEN_FLASH_PRIORITIES,
+};
+
 /* ---------- macros */
 
 #define damage_effect_definition_get(index) ((struct damage_effect_definition *)tag_get(DAMAGE_EFFECT_DEFINITION_TAG, index))
+#define continuous_damage_effect_definition_get(index) ((struct continuous_damage_effect_definition *)tag_get(CONTINUOUS_DAMAGE_EFFECT_DEFINITION_TAG, index))
 
 /* ---------- structures */
 
@@ -169,7 +190,7 @@ struct screen_flash_definition
 	real_argb_color screen_flash_color;
 };
 
-struct continuous_vibrate_definition
+struct continuous_rumble_definition /* fake name */
 {
 	real frequencies[2];
 	unsigned long unused[6];
@@ -181,13 +202,13 @@ struct continuous_damage_effect_definition
 	real cutoff_radius;
 	real cutoff_scale;
 	unsigned long area_of_effect_unused[6];
-	struct continuous_vibrate_definition vibrate;
+	struct continuous_rumble_definition rumble;
 	struct continuous_camera_shake_definition camera_shake;
 	unsigned long unused[40];
 	struct damage_definition damage;
 };
 
-struct vibrate_frequency_definition
+struct rumble_frequency_definition
 {
 	real frequency;
 	real duration;
@@ -196,9 +217,9 @@ struct vibrate_frequency_definition
 	unsigned long unused[2];
 };
 
-struct vibrate_definition
+struct rumble_definition
 {
-	struct vibrate_frequency_definition vibrate_frequencies[NUMBER_OF_vibrate_FREQUENCIES];
+	struct rumble_frequency_definition rumble_frequencies[NUMBER_OF_RUMBLE_FREQUENCIES];
 	real zero_scale_factor;
 	unsigned long unused[4];
 };
@@ -223,7 +244,7 @@ struct damage_effect_definition
 	unsigned long flags;
 	unsigned long area_of_effect_unused[5];
 	struct screen_flash_definition screen_flash;
-	struct vibrate_definition vibrate;
+	struct rumble_definition rumble;
 	struct camera_impulse_definition camera_impulse;
 	struct camera_shake_definition camera_shake;
 	struct tag_reference sound;

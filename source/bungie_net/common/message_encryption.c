@@ -55,7 +55,7 @@ void message_encrypt(
 	flags = GET_MESSAGE_FLAGS(*msgptr);
 	length = GET_MESSAGE_SIZE(*msgptr);
 
-	if (!TEST_FLAG(flags, _message_encrypted_bit))
+	if (!TEST_FLAG(flags, _message_flag_encrypted_bit))
 	{
 		long tea_key[TEA_KEY_LONGS];
 		word i;
@@ -79,7 +79,7 @@ void message_encrypt(
 			reversible_crypt((byte *)block, tail_size, (byte const *)key, MESSAGE_KEY_SIZE);
 		}
 
-		SET_FLAG(flags, _message_encrypted_bit, TRUE);
+		SET_FLAG(flags, _message_flag_encrypted_bit, TRUE);
 		match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 76, (0<=flags) && ((flags)<=MESSAGE_FLAG_BITS_MASK));
 		SET_MESSAGE_FLAGS(*msgptr, flags);
 	}
@@ -99,7 +99,7 @@ void message_decrypt(
 	flags = GET_MESSAGE_FLAGS(*msgptr);
 	length = GET_MESSAGE_SIZE(*msgptr);
 
-	if (TEST_FLAG(flags, _message_encrypted_bit))
+	if (TEST_FLAG(flags, _message_flag_encrypted_bit))
 	{
 		long tea_key[TEA_KEY_LONGS];
 		word i;
@@ -123,7 +123,7 @@ void message_decrypt(
 			reversible_crypt((byte *)block, tail_size, (byte const *)key, MESSAGE_KEY_SIZE);
 		}
 
-		SET_FLAG(flags, _message_encrypted_bit, FALSE);
+		SET_FLAG(flags, _message_flag_encrypted_bit, FALSE);
 		match_assert("c:\\halo\\SOURCE\\bungie_net\\common\\message_encryption.c", 131, (0<=flags) && ((flags)<=MESSAGE_FLAG_BITS_MASK));
 		SET_MESSAGE_FLAGS(*msgptr, flags);
 	}

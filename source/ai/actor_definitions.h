@@ -59,6 +59,59 @@ enum
 	NUMBER_OF_ACTOR_DEFINITION_FLAGS,
 };
 
+enum
+{
+	_actor_definition_flags2_avoid_all_enemy_attack_vectors_bit = 0,
+	_actor_definition_flags2_must_stand_to_fire_bit,
+	_actor_definition_flags2_must_stop_to_fire_bit,
+	_actor_definition_flags2_disallow_vehicle_combat_bit,
+	_actor_definition_flags2_pathfinding_ignores_danger_bit,
+	_actor_definition_flags2_panic_in_groups_bit,
+	_actor_definition_flags2_no_corpse_shooting_bit,
+	NUMBER_OF_ACTOR_DEFINITION_FLAGS2,
+};
+
+enum
+{
+	_actor_variant_definition_can_shoot_while_flying_bit = 0,
+	_actor_variant_definition_color_interpolate_hsv_bit,
+	_actor_variant_definition_has_unlimited_grenades_bit,
+	_actor_variant_definition_movement_switching_try_to_stay_with_friends_bit,
+	_actor_variant_definition_active_camouflage_bit,
+	_actor_variant_definition_super_active_camouflage_bit,
+	_actor_variant_definition_cannot_use_ranged_weapons_bit,
+	_actor_variant_definition_prefer_passenger_seat_bit,
+	NUMBER_OF_ACTOR_VARIANT_DEFINITION_FLAGS,
+};
+
+enum
+{
+	_defensive_crouch_none = 0,
+	_defensive_crouch_danger,
+	_defensive_crouch_shield_low,
+	_defensive_crouch_hide_behind_shield,
+	_defensive_crouch_any_target,
+	_defensive_crouch_flood_shamble,
+	NUMBER_OF_DEFENSIVE_CROUCH_TYPES,
+};
+
+enum
+{
+	_actor_special_fire_mode_none = 0,
+	_actor_special_fire_mode_overcharge,
+	_actor_special_fire_mode_secondary,
+	NUMBER_OF_ACTOR_SPECIAL_FIRE_MODES,
+};
+
+enum
+{
+	_actor_special_fire_situation_never = 0,
+	_actor_special_fire_situation_enemy_visible,
+	_actor_special_fire_situation_enemy_out_of_sight,
+	_actor_special_fire_situation_strafing,
+	NUMBER_OF_ACTOR_SPECIAL_FIRE_SITUATIONS,
+};
+
 
 /* ---------- macros */
 
@@ -382,8 +435,15 @@ struct actor_unit_properties
 	real maximum_shield_vitality;
 	real shield_sapping_radius;
 	short forced_shader_permutation_index;
-	unsigned short pad;
+	word pad;
 	unsigned long unused[4];
+};
+
+struct actor_variant_change_colors
+{
+	real_rgb_color color_lower_bound;
+	real_rgb_color color_upper_bound;
+	unsigned long unused[2];
 };
 
 struct actor_variant_definition

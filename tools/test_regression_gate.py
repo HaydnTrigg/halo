@@ -1273,7 +1273,7 @@ class ProductionSemanticDataManifestTests(unittest.TestCase):
     def test_production_data_units_capture_and_recompare_cleanly(self):
         required = [
             PROJECT_ROOT / "objdiff.json",
-            PROJECT_ROOT / "build" / "report.json",
+            PROJECT_ROOT / "build" / "2342" / "report.json",
         ]
         missing = [str(path) for path in required if not path.is_file()]
         if missing:
@@ -1289,11 +1289,11 @@ class ProductionSemanticDataManifestTests(unittest.TestCase):
         ]
         if absent:
             self.skipTest("SKIPPED: production objects are not built: " + ", ".join(absent[:5]))
-        report = json.loads((PROJECT_ROOT / "build" / "report.json").read_text(encoding="utf-8"))
+        report = json.loads((PROJECT_ROOT / "build" / "2342" / "report.json").read_text(encoding="utf-8"))
         semantic_matches = json.loads(
             (PROJECT_ROOT / "config" / "semantic_matches.json").read_text(encoding="utf-8")
         )
-        symbols = json.loads((PROJECT_ROOT / "config" / "symbols.json").read_text(encoding="utf-8"))
+        symbols = json.loads((PROJECT_ROOT / "config" / "2342" / "symbols.json").read_text(encoding="utf-8"))
 
         first = create_manifest(
             PROJECT_ROOT, "test", units, config, report, semantic_matches, entries,

@@ -79,8 +79,8 @@ class Object:
 
         # Resolve paths
         base_name = self.file_path.with_suffix("")
-        obj.base_obj_path = sln.build_dir / "base" / f"{base_name}.obj"
-        obj.split_obj_path = sln.build_dir / "split" / f"{base_name}.obj"
+        obj.base_obj_path = sln.out_path() / "base" / f"{base_name}.obj"
+        obj.split_obj_path = sln.out_path() / "split" / f"{base_name}.obj"
         return obj
 
 class ProjectConfig:
@@ -120,8 +120,10 @@ class ProjectConfig:
 
 class SolutionConfig:
     def __init__(self) -> None:
-        self.build_dir: Optional[Path] = None
+        self.version: Optional[str] = None  # Version name
+        self.build_dir: Path = Path("build")  # Output build files
         self.config_dir: Optional[Path] = None
+        self.version_config_dir: Optional[Path] = None
         self.project_dir: Optional[Path] = None
         self.tools_dir: Optional[Path] = None
         self.name: Optional[str] = None
@@ -140,6 +142,8 @@ class SolutionConfig:
         
         # Project config
         self.baserom: Optional[Path] = None
+        self.cflags: List[str] = []
+        self.defines: List[str] = []
         
         # Progress output and report.json config
         self.progress = True  # Enable report.json generation and CLI progress output
@@ -157,8 +161,10 @@ class SolutionConfig:
 
     def validate(self) -> None:
         required_attrs = [
+            "version",
             "build_dir",
             "config_dir",
+            "version_config_dir",
             "project_dir",
             "tools_dir",
             "name",
@@ -171,6 +177,10 @@ class SolutionConfig:
                 sys.exit(f"SolutionConfig.{attr} missing")
         for proj in self.projects:
             proj.validate()
+
+    # Gets the output path for build-related files.
+    def out_path(self) -> Path:
+        return self.build_dir / str(self.version)
 
     # Gets the wrapper to use for compiler commands, if set.
     def compiler_wrapper(self) -> Optional[Path]:
@@ -257,8 +267,9 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
     ###
     n.comment("Tooling")
     
-    report_path = sln.build_dir / "report.json"
-    semantic_report_path = sln.build_dir / "semantic_report.json"
+    build_path = sln.out_path()
+    report_path = build_path / "report.json"
+    semantic_report_path = build_path / "semantic_report.json"
     semantic_credit_rejections_path = (
         sln.config_dir / "semantic_credit_rejections.json"
     )
@@ -326,12 +337,13 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
     # Generated headers
     ###
     n.comment("Generated headers")
-    generated_include_dir = sln.build_dir / "include"
+    generated_include_dir = build_path / "include"
+    symbols_json = sln.version_config_dir / "symbols.json"
     dsp_image_script = sln.tools_dir / "dsp_image.py"
     dsp_image_header = generated_include_dir / "sound_dsound_xbox_effects_image.h"
     n.rule(
         name="dsp_image",
-        command=f"$python {dsp_image_script} $in $out",
+        command=f"$python {dsp_image_script} $in $symbols $out",
         description="DSP_IMAGE $out",
         restat=True,
     )
@@ -339,7 +351,23 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
         outputs=dsp_image_header,
         rule="dsp_image",
         inputs=sln.baserom,
-        implicit=dsp_image_script,
+        implicit=[dsp_image_script, sln.tools_dir / "baserom.py", symbols_json],
+        variables={"symbols": symbols_json},
+    )
+    monk_tone_script = sln.tools_dir / "monk_tone.py"
+    monk_tone_header = generated_include_dir / "progress_bar_monk_tone.h"
+    n.rule(
+        name="monk_tone",
+        command=f"$python {monk_tone_script} $in $symbols $out",
+        description="MONK_TONE $out",
+        restat=True,
+    )
+    n.build(
+        outputs=monk_tone_header,
+        rule="monk_tone",
+        inputs=sln.baserom,
+        implicit=[monk_tone_script, sln.tools_dir / "baserom.py", symbols_json],
+        variables={"symbols": symbols_json},
     )
     n.newline()
 
@@ -393,7 +421,7 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
         objects: Dict[str, Object] = proj.resolve(sln)
         n.comment(proj.name)
         pch = proj.options["pch"]
-        pch_path = sln.build_dir / "base" / f"{proj.name}.pch"
+        pch_path = build_path / "base" / f"{proj.name}.pch"
         proj_base_object_targets: List[Path] = []
         for obj_name, obj in objects.items():
             split_object_targets.append(obj.split_obj_path)
@@ -410,11 +438,21 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
                 else:
                     cflags: List[str] = []
                     cflags.extend(obj.options["cflags"])
+                    # Version cflags carry the game's optimisation settings.
+                    # Library objects that choose their own optimisation
+                    # level (libcmt /O1, d3d8 /O2 /Gy, ...) must not have it
+                    # overridden by the trailing game flags.
+                    if not any(
+                        flag.startswith("/O") for flag in obj.options["cflags"] or []
+                    ):
+                        cflags.extend(sln.cflags)
                     cflags.extend([f"/D{define}" for define in obj.options["defines"]])
+                    cflags.extend([f"/D{define}" for define in sln.defines])
                     cflags.extend([f"/I\"{path}\"" for path in obj.options["include_dirs"]])
                     cflags.append(f"/I\"{generated_include_dir}\"")
                     implicit: List[Path] = [wrapper_implicit] if wrapper_implicit else []
                     implicit.append(dsp_image_header)
+                    implicit.append(monk_tone_header)
                     implicit_outputs: List[Path] = []
                     if pch and obj.options["pch"] is not False:
                         header = pch["header"]
@@ -466,25 +504,28 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
     ###
     # Split EXE
     ###
+    n.comment("Split EXE")
     n.rule(
         name="csplit",
-        command=f"{csplit} -i $in -p $config_dir -o $out_dir",
+        command=f"{csplit} -i $in -p $version_config_dir -c $config_json -o $out_dir",
+        description="CSPLIT $in",
     )
     n.build(
         outputs=split_object_targets,
         rule="csplit",
         variables={
-            "out_dir": sln.build_dir / "split",
-            "config_dir": sln.config_dir
+            "out_dir": build_path / "split",
+            "version_config_dir": sln.version_config_dir,
+            "config_json": sln.config_dir / "config.json",
         },
         inputs=sln.baserom,
         implicit=[
             csplit,
             sln.config_dir / "config.json",
-            sln.config_dir / "contribs.json",
-            sln.config_dir / "relocs.json",
-            sln.config_dir / "splits.json",
-            sln.config_dir / "symbols.json",
+            sln.version_config_dir / "contribs.json",
+            sln.version_config_dir / "relocs.json",
+            sln.version_config_dir / "splits.json",
+            sln.version_config_dir / "symbols.json",
         ],
     )
     n.newline()
@@ -495,7 +536,7 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
     n.comment("Calculate progress")
     n.rule(
         name="progress",
-        command=f"$python {configure_script} progress",
+        command=f"$python {configure_script} $configure_args progress",
         description="PROGRESS",
     )
     n.build(
@@ -509,7 +550,7 @@ def generate_build_ninja(sln: SolutionConfig) -> None:
             semantic_credit_rejections_path,
             sln.config_dir / "semantic_matches.json",
             sln.config_dir / "semantic_data_matches.json",
-            sln.config_dir / "symbols.json",
+            sln.version_config_dir / "symbols.json",
             sln.config_dir / "symbol_ownership.json",
             sln.config_dir / "parked.json",
             sln.config_dir / "data_category_reassignments.json",
@@ -683,7 +724,7 @@ def generate_solution(sln: SolutionConfig) -> None:
         vc_proj.uuid = proj.guid
         vc_proj.add_config(vc_config)
         
-        vc_macros: List[str] = proj.options["defines"]
+        vc_macros: List[str] = [*(proj.options["defines"] or []), *sln.defines]
         vc_include_dirs: List[Path] = [relative_root / path for path in proj.options["include_dirs"] or []]
         vc_forced: List[Path] = []
         if proj.options["pch"]:
@@ -706,7 +747,7 @@ def generate_solution(sln: SolutionConfig) -> None:
         
         vc_extras: List[Path] = [
             relative_root / sln.config_dir / "config.json",
-            relative_root / sln.config_dir / "symbols.json",
+            relative_root / sln.version_config_dir / "symbols.json",
         ] + vc_asm_sources
         vc_proj.add_extra_files(vc_extras)
         
@@ -724,10 +765,10 @@ def calculate_progress(sln: SolutionConfig) -> None:
     try:
         # No receipt of an earlier COMMON pool credit run may outlive a
         # progress run that fails before (or without reaching) that step.
-        clear_common_pool_outputs(sln.build_dir, Path.cwd())
+        clear_common_pool_outputs(sln.out_path(), Path.cwd())
     except SemanticProgressError as error:
         sys.exit(f"Semantic progress verification failed: {error}")
-    report_path = sln.build_dir / "report.json"
+    report_path = sln.out_path() / "report.json"
     if not report_path.is_file():
         sys.exit(f"Report file {report_path} does not exist")
 
@@ -748,7 +789,7 @@ def calculate_progress(sln: SolutionConfig) -> None:
     try:
         semantic_rejections = apply_semantic_rejections(
             report_data,
-            sln.build_dir / "semantic_report.json",
+            sln.out_path() / "semantic_report.json",
         )
         semantic_matches = apply_semantic_matches(
             report_data,
@@ -758,14 +799,14 @@ def calculate_progress(sln: SolutionConfig) -> None:
         )
         semantic_accepted = apply_semantic_accepted_ledger(
             report_data,
-            sln.build_dir / "semantic_report.json",
+            sln.out_path() / "semantic_report.json",
         )
         semantic_data_matches = apply_semantic_data_matches(
             report_data,
             Path.cwd(),
             sln.config_dir / "semantic_data_matches.json",
             Path("objdiff.json"),
-            sln.config_dir / "symbols.json",
+            sln.version_config_dir / "symbols.json",
         )
         ownership_snapshots = require_symbol_ownership_snapshots(
             Path.cwd(),
@@ -786,7 +827,7 @@ def calculate_progress(sln: SolutionConfig) -> None:
             Path("objdiff.json"),
             sln.config_dir / "semantic_data_matches.json",
             sln.config_dir / "data_category_reassignments.json",
-            sln.build_dir,
+            sln.out_path(),
         )
         parked = require_valid_parked_functions(
             Path.cwd(),

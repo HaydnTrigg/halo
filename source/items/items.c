@@ -126,7 +126,7 @@ boolean item_update(
 		item->object.parent_object_index == NONE)
 	{
 		if (TEST_FLAG(definition->item.flags, _item_always_maintains_z_up_bit) &&
-			!(fabs(item->object.up.k - 1.f) < _real_epsilon))
+			!realcmp(item->object.up.k, 1.f))
 		{
 			real_vector3d left;
 
@@ -434,7 +434,7 @@ boolean dangerous_items_near_player(
 	struct object_iterator iterator;
 	struct item_datum *item;
 
-	object_iterator_new(&iterator, _object_mask_item, 1);
+	object_iterator_new(&iterator, _object_mask_item, FLAG(_object_header_active_bit));
 
 	while (item = (struct item_datum *)object_iterator_next(&iterator))
 	{

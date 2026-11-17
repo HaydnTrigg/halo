@@ -352,14 +352,14 @@ def audit(project_root, report_path, config_path, rejection_path=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, default=Path.cwd())
-    parser.add_argument("--report", type=Path, default=Path("build/report.json"))
+    parser.add_argument("--report", type=Path, default=Path("build/2342/report.json"))
     parser.add_argument("--config", type=Path, default=Path("objdiff.json"))
     parser.add_argument(
         "--rejections",
         type=Path,
         default=Path("config/semantic_credit_rejections.json"),
     )
-    parser.add_argument("--output", type=Path, default=Path("build/semantic_report.json"))
+    parser.add_argument("--output", type=Path, default=Path("build/2342/semantic_report.json"))
     args = parser.parse_args()
 
     try:

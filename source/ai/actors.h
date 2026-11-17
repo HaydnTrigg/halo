@@ -49,10 +49,21 @@ enum
 
 enum
 {
+	_actor_danger_hostility_enemy = 0,
+	_actor_danger_hostility_friend,
+	_actor_danger_hostility_self,
+	NUMBER_OF_ACTOR_DANGER_ZONE_HOSTILITIES,
+};
+
+enum
+{
 	_primary_priority_none = 0,
+	_primary_priority_face_360,
+	_primary_priority_opportunity_aiming,
 	_primary_priority_facing,
 	_primary_priority_exact_facing,
 	_primary_priority_aiming,
+	_primary_priority_locked_facing,
 	_primary_priority_locked_aiming,
 	NUMBER_OF_PRIMARY_LOOK_TYPES,
 };
@@ -74,6 +85,82 @@ enum
 	_secondary_look_dangerous_object,
 	_secondary_look_scripted,
 	NUMBER_OF_SECONDARY_LOOK_TYPES,
+};
+
+enum
+{
+	_actor_surprise_none = 0,
+	_actor_surprise_unprepared_enemy_shooting,
+	_actor_surprise_unprepared_weapon_impact_close,
+	_actor_surprise_unprepared_enemy_close,
+	_actor_surprise_unprepared_grenade,
+	_actor_surprise_unprepared_damage,
+	_actor_surprise_unexpected_enemy_close_shooting,
+	_actor_surprise_unexpected_enemy_close_flanked_shooting,
+	NUMBER_OF_ACTOR_SURPRISE_TYPES,
+};
+
+enum
+{
+	_actor_panic_none = 0,
+	_actor_panic_damage,
+	_actor_panic_friend_fleeing,
+	_actor_panic_friend_same_type_killed,
+	_actor_panic_no_cover_available,
+	_actor_panic_unopposable_enemy,
+	_actor_panic_platoon_retreating,
+	_actor_panic_surprise,
+	_actor_panic_friend_leader_type_killed,
+	_actor_panic_grenade_attached_to_us,
+	_actor_panic_delayed_projectile_attached_to_us,
+	_actor_panic_melee_attached_to_us,
+	_actor_panic_burning_to_death,
+	_actor_panic_scripted,
+	_actor_panic_never,
+	NUMBER_OF_ACTOR_PANIC_TYPES,
+};
+
+enum
+{
+	_actor_berserk_none = 0,
+	_actor_berserk_attacking,
+	_actor_berserk_proximity,
+	_actor_berserk_damage,
+	_actor_berserk_attached_projectiles,
+	_actor_berserk_never,
+	NUMBER_OF_ACTOR_BERSERK_TYPES,
+};
+
+enum
+{
+	_actor_stimulus_combat_none = 0,
+	_actor_stimulus_combat_friend,
+	_actor_stimulus_combat_body,
+	_actor_stimulus_combat_impact,
+	_actor_stimulus_combat_danger,
+	_actor_stimulus_combat_damage,
+	_actor_stimulus_combat_enemy,
+	NUMBER_OF_ACTOR_COMBAT_TRANSITION_TYPES,
+};
+
+enum
+{
+	_idle_look_none = 0,
+	_idle_look_noncombat,
+	_idle_look_guarding,
+	_idle_look_searching,
+	_idle_look_combat,
+	NUMBER_OF_IDLE_LOOK_TYPES,
+};
+
+enum
+{
+	_actor_vehicle_driver_none = 0,
+	_actor_vehicle_driver_unknown,
+	_actor_vehicle_driver_hovering_ground,
+	_actor_vehicle_driver_nondirectional_ground,
+	_actor_vehicle_driver_directional_flying,
+	NUMBER_OF_ACTOR_VEHICLE_DRIVER_TYPES,
 };
 
 enum
@@ -163,12 +250,46 @@ enum
 
 enum
 {
+	_actor_guard_location_none = 0,
+	_actor_guard_location_current,
+	_actor_guard_location_point,
+	_actor_guard_location_firing_position,
+	NUMBER_OF_ACTOR_GUARD_LOCATION_TYPES,
+};
+
+enum
+{
+	_actor_evade_left = 0,
+	_actor_evade_right,
+	_actor_evade_forward,
+	_actor_evade_back,
+	_actor_evade_random_side,
+};
+
+enum
+{
 	_actor_fire_state_none = 0,
 	_actor_fire_state_holding,
 	_actor_fire_state_bursting,
 	_actor_fire_state_pausing,
 	_actor_fire_state_wild,
 	NUMBER_OF_ACTOR_FIRE_STATES,
+};
+
+enum
+{
+	_actor_grenade_stimulus_none = 0,
+	_actor_grenade_stimulus_visibletarget,
+	_actor_grenade_stimulus_seekcover,
+	NUMBER_OF_ACTOR_GRENADE_STIMULI,
+};
+
+enum
+{
+	_actor_fire_target_none = 0,
+	_actor_fire_target_prop,
+	_actor_fire_target_manual_point,
+	NUMBER_OF_ACTOR_FIRE_TARGETS,
 };
 
 enum
@@ -216,6 +337,16 @@ enum
 	NUMBER_OF_ACTOR_MOVEMENT_TYPES,
 };
 
+enum
+{
+	_actor_facing_forward = 0,
+	_actor_facing_backward,
+	_actor_facing_left,
+	_actor_facing_right,
+	_actor_facing_free,
+	NUMBER_OF_ACTOR_FACINGS,
+};
+
 
 enum
 {
@@ -240,13 +371,76 @@ enum
 	NUMBER_OF_ACTOR_AIMING_OBSTRUCTION_TYPES,
 };
 
+enum
+{
+	_swarm_component_attacking_in_melee_bit = 0,
+	_swarm_component_attached_to_unit_bit,
+	_swarm_component_wander_bit,
+	_swarm_component_obey_bit,
+	_swarm_component_obey_desire_jump_bit,
+	NUMBER_OF_SWARM_COMPONENT_FLAGS,
+};
+
+enum
+{
+	_actor_knowledge_noncombat = 0,
+	_actor_knowledge_guard,
+	_actor_knowledge_searching,
+	_actor_knowledge_definite,
+	NUMBER_OF_ACTOR_KNOWLEDGE_TYPES,
+};
+
+enum
+{
+	_desired_target_none = 0,
+	_desired_target_ai,
+	_desired_target_player,
+	NUMBER_OF_DESIRED_TARGET_TYPES,
+};
+
+enum
+{
+	_actor_acknowledgement_never = 0,
+	_actor_acknowledgement_non_combat,
+	_actor_acknowledgement_guard,
+	_actor_acknowledgement_combat,
+	_actor_acknowledgement_instant,
+	NUMBER_OF_ACTOR_ACKNOWLEDGEMENT_SPEEDS,
+};
+
+enum
+{
+	_destination_none = 0,
+	_destination_halt,
+	_destination_raw_location,
+	_destination_firing_position,
+	_destination_move_position,
+	_destination_prop,
+	NUMBER_OF_DESTINATION_TYPES,
+};
+
 #define MAXIMUM_NUMBER_OF_ACTORS 256
 #define MAXIMUM_NUMBER_OF_ACTOR_PATHS 32
+#define MAXIMUM_NUMBER_OF_ACTIVE_SWARMS 32
+#define MAXIMUM_NUMBER_OF_SWARM_COMPONENTS 256 /* fake name */
 
 #define MAXIMUM_UNIT_INDICES_PER_SWARM 16
 #define MAXIMUM_COMPONENT_INDICES_PER_SWARM 16
+#define MAXIMUM_NUMBER_OF_UNITS_PER_SWARM 16
 
 #define MAXIMUM_NUMBER_OF_AVOIDANCE_OBJECTS 1024
+
+enum
+{
+	_firing_point_evaluation_mode_fight = 0,
+	_firing_point_evaluation_mode_panic,
+	_firing_point_evaluation_mode_cover,
+	_firing_point_evaluation_mode_uncover,
+	_firing_point_evaluation_mode_guard,
+	_firing_point_evaluation_mode_pursue,
+	_firing_point_evaluation_mode_avoid,
+	NUMBER_OF_FIRING_POINT_EVALUATION_MODES,
+};
 
 /* ---------- macros */
 
@@ -255,6 +449,8 @@ enum
 
 #define swarm_get(index)			((struct swarm_datum *)datum_get(swarm_data, (index)))
 #define swarm_try_and_get(index)	((struct swarm_datum *)datum_try_and_get(swarm_data, (index)))
+
+#define swarm_component_get(index)	((struct swarm_component_datum *)datum_get(swarm_component_data, (index))) /* fake name */
 
 /* ---------- structures */
 
@@ -793,6 +989,33 @@ struct swarm_datum
 	long component_indices[MAXIMUM_COMPONENT_INDICES_PER_SWARM];
 };
 
+struct swarm_wander_control
+{
+	byte pause_ticks;
+	byte move_ticks;
+	real_vector3d vector;
+	real angle;
+};
+
+struct swarm_component_datum
+{
+	short identifier;
+	short flags;
+	real_point3d position;
+	long surface_index;
+	long combat_target_prop_index;
+	byte attached_to_unit_ticks;
+	byte ground_ticks;
+	byte attack_delay_ticks;
+	byte pad;
+
+	union
+	{
+		struct swarm_wander_control wander;
+		struct obey_individual_simple_control obey;
+	};
+};
+
 struct vehicle_avoidance_cylinder
 {
 	long object_index;
@@ -825,7 +1048,13 @@ struct actor_debug_info
 	real_point3d burst_last_known_position;
 	real_point3d burst_tracked_position;
 	real_vector3d burst_lead_vector;
-	char __unknown1C[40];
+	long fire_alignment_time; /* fake name */
+	boolean fire_alignment_aligned; /* fake name */
+	boolean fire_alignment_ignored; /* fake name */
+	real_vector3d fire_alignment_weapon_vector; /* fake name */
+	real_vector3d fire_alignment_aim_vector; /* fake name */
+	real fire_alignment_threshold; /* fake name */
+	real fire_alignment_dot_product; /* fake name */
 	long last_projectile_aiming_time;
 	boolean aim_last_by_vector;
 	real_point3d aim_last_origin;
@@ -955,11 +1184,35 @@ struct firing_position_attack_vector
 	real_vector3d vector;
 };
 
+struct panic_evaluation_data
+{
+	boolean forced_to_flee;
+};
+
+struct pursue_evaluation_data
+{
+	long orphan_prop_index;
+	long last_perceived_time;
+	boolean tenacious;
+};
+
+struct cover_evaluation_data
+{
+	boolean allow_occluded_points;
+};
+
 struct firing_position_evaluation_context
 {
 	unsigned long allowed_position_mask;
 	short evaluation_mode;
-	long evaluation_data[3];
+
+	union
+	{
+		struct panic_evaluation_data panic;
+		struct pursue_evaluation_data pursue;
+		struct cover_evaluation_data cover;
+	} evaluation_data;
+
 	boolean allow_rejected_positions;
 	boolean allow_outside_range;
 	real maximum_allowable_range;
@@ -1018,6 +1271,31 @@ struct firing_position_evaluation_context
 
 /* ---------- prototypes/ACTORS.C */
 
+void actors_initialize(void);
+void actors_dispose(void);
+void actors_initialize_for_new_map(void);
+void actors_dispose_from_old_map(void);
+void actors_update(void);
+void actors_freeze(void);
+void actors_move_randomly(void);
+void actors_handle_spatial_effect(long object_index, short effect_type, real_point3d const *position, short volume, short count);
+void actors_handle_unit_effect(long owner_unit_index, short effect_type, short volume);
+long actor_place(long actor_variant_definition_index, long encounter_index, long squad_index, struct actor_starting_location_definition *starting_location, boolean upgrade_major, short variant_number);
+void actor_erase(long actor_index, boolean immediate);
+void actor_swarm_detach_from_unit(long actor_index, long unit_index);
+void actor_swarm_unit_died(long actor_index, long unit_index);
+void actor_switch_props(long actor_index, long prop_index, long replacement_prop_index);
+void actor_flush_structure_indices(long actor_index);
+void actor_handle_damage(long actor_index, long aggressor_unit_index, real damage_fraction, real_vector3d *damage_velocity);
+long actor_create_for_unit(boolean swarm, long unit_index, long actor_variant_definition_index, long encounter_index, short squad_index, boolean allow_addition_to_other_squads, long disallow_actor_index, boolean initially_braindead, short initial_state, short default_state, short initial_command_list_index, char noncombat_sequence_id);
+void actor_delete(long actor_index, boolean died);
+void actor_kill(long actor_index, boolean silent, boolean delayed);
+void actor_braindead(long actor_index, boolean braindead);
+void actor_set_team(long actor_index, short team_index);
+void actor_change_encounter(long actor_index, long encounter_index, short squad_index);
+void actor_flush_position_indices(long actor_index);
+void actor_handle_unit_effect(long actor_index, long prop_index, short effect_type);
+
 real_argb_color const *actor_activation_debug_color(long actor_index);
 
 boolean actor_in_combat(long actor_index);
@@ -1029,26 +1307,103 @@ void actor_handle_communication(long actor_index, long prop_index, struct ai_inf
 
 boolean actor_get_running_blind_vector(long actor_index, real_vector3d *run_vector);
 
+boolean actor_set_active(long actor_index, boolean active);
+void actor_set_dormant(long actor_index, boolean dormant);
+void actor_verify_activation(long actor_index);
+real actor_destination_tolerance(long actor_index);
+long actor_target_unit_index(long actor_index);
+void actor_find_pathfinding_location(long actor_index);
+boolean actor_has_ranged_weapon(long actor_index);
+void actor_input_sample_position(long actor_index, long unit_index, struct actor_position_data *position);
+long actor_get_weapon(long actor_index);
+void actor_unit_control_exact_facing(long actor_index, boolean face_exactly);
+long actor_new(long variant_definition_index);
+void actor_customize_unit(long actor_variant_definition_index, long unit_index);
+short actors_spawn_from_unit(long unit_index, long actor_variant_definition_index, short count, real velocity);
+void actor_attach_unit(long actor_index, long unit_index);
+boolean actor_swarm_attach_unit(long actor_index, long unit_index);
+void actor_detach_from_unit(long actor_index);
+void actor_delete_props(long actor_index);
+long actor_swarm_cache_new(long actor_index);
+void actor_swarm_cache_delete(long actor_index);
+boolean actor_is_noncombat(long actor_index);
+boolean actor_attacking_target(long actor_index, real_vector3d *attack_vector);
+boolean actor_is_leaping(long actor_index);
+void actor_derive_target_information(long actor_index, long friend_actor_index);
+void actor_died(long actor_index);
+void actor_unit_control_crouch(long actor_index, boolean crouch);
+void actor_unit_control_jump(long actor_index);
+void actor_unit_control_primary_trigger(long actor_index, boolean trigger, real analog_value);
+void actor_unit_control_secondary_trigger(long actor_index, boolean trigger);
+void actor_unit_control_throw_grenade(long actor_index);
+void actor_unit_control_stop_animation_impulse(long actor_index);
+
 /* ---------- prototypes/ACTOR_COMBAT.C */
 
 boolean actor_firing_blindly(long actor_index);
 long actor_aim_projectile(long actor_index, real_point3d const *origin, real_vector3d *vector, real *error_reference);
 long actor_aim_grenade(long actor_index, real_point3d const *origin, real_vector3d *vector);
+struct actor_variant_definition *actor_combat_get_firing_variant_definition(long actor_index);
+struct weapon_definition *actor_get_weapon_definition(long actor_index);
+boolean actor_combat_currently_firing_burst(long actor_index);
+boolean actor_combat_plan_grenade_trajectory(long actor_index, short trajectory_type, real_point3d const *grenade_target, long grenade_target_prop_index, long grenade_ignore_object_index);
+void actor_combat_fire_wildly(long actor_index, long fire_ticks);
+void actor_combat_disable_bursts(long actor_index, long disable_timer);
+boolean actor_combat_find_grenade_target(long actor_index, real_point3d *grenade_target, long *grenade_target_prop_index, long *grenade_ignore_object_index);
+boolean actor_combat_check_collateral_damage(long actor_index, real enemy_radius, real collateral_damage_radius, real_point3d const *target_point, short *enemy_count_reference);
+void actor_combat_update(long actor_index);
+
+/* ---------- prototypes/ACTOR_FIRING_POSITION.C */
+
+unsigned long actor_get_firing_position_group(long actor_index, short evaluation_mode, short group_selection_mode);
+short actor_active_select_firing_position(long actor_index, struct firing_position_evaluation_context *evaluation_context, struct firing_position *best_firing_position, long *current_owner, struct path_state *area_path_state, boolean *area_path_state_valid);
+boolean actor_nearby_firing_positions(long actor_index, real_point3d *test_point, long test_surface_index, short group_selection_mode);
+short actor_change_firing_position(long actor_index, short firing_position_index, struct firing_position *firing_position, long previous_owner, struct path_state *cached_path_state, boolean cached_path_available);
+void actor_discard_firing_position(long actor_index, short firing_position_index, boolean temporary);
+void actor_clear_discarded_firing_positions(long actor_index, boolean clear_temporary_only);
+boolean actor_firing_position_discarded(long actor_index, short firing_position_index);
+short actor_select_firing_position(long actor_index, struct firing_position_evaluation_context *evaluation_context, struct firing_position *best_firing_position, long *current_owner, struct path_state *area_path_state, boolean *area_path_state_valid);
 
 /* ---------- prototypes/ACTOR_LOOKING.C */
 
+void actor_look_affect_movement(long actor_index);
 boolean actor_look_secondary(long actor_index, short type, short priority, struct direction_specification *direction);
+void actor_look_secondary_stop(long actor_index);
+real actor_look_compute_prop_interest(long actor_index, long prop_index);
 void actor_looking_test_validity(long actor_index, real_vector3d *test_vector, boolean *valid_aiming, boolean *valid_looking);
+void actor_look_update(long actor_index);
 
 /* ---------- prototypes/ACTOR_MOVING.C */
 
+void actor_move_initialize(void);
 boolean actor_move_animation_busy(long actor_index);
+boolean actor_move_halt(long actor_index);
 
 void actor_move_transform_avoidance_vector(struct vector_avoidance_data *avoidance_data, real_vector3d const *avoidance_vector, real_vector3d *direction_vector);
 void actor_move_get_avoidance_direction(struct vector_avoidance_data *avoidance_data, real direction, real_vector3d *direction_vector);
 
 boolean actor_path_has_path(long actor_index);
 boolean actor_path_at_destination(long actor_index);
+boolean actor_move_to_move_position(long actor_index, short move_position_index);
+boolean actor_move_to_firing_position(long actor_index, short firing_position_index, struct path_state *cached_path_state);
+boolean actor_move_to_prop(long actor_index, long prop_index, real accept_radius);
+boolean actor_move_to_point(long actor_index, real_point3d *destination, long surface_index, long ignore_target_object_index);
+void actor_move_keep_moving_past_destination(long actor_index);
+boolean actor_move_animation_impulse(long actor_index, short animation_impulse, real_vector2d const *animation_alignment);
+boolean actor_move_force_stop(long actor_index);
+void actor_destination_update(long actor_index);
+void actor_move_update(long actor_index);
+boolean actor_move_try_evasion_vector(long actor_index, real_vector2d *evasion_vector, real evade_distance, real maximum_ledge_height, boolean *evasion_is_ledge_reference, struct path_collision_result *result);
+boolean actor_move_try_evasion_direction(long actor_index, real_vector2d *alignment_vector, real evade_distance, short *evade_direction_reference, real maximum_ledge_height, boolean *evasion_is_ledge, struct path_collision_result *result);
+boolean actor_test_destination(long actor_index);
+void actor_get_stopping_distances(long actor_index, real *current_stopping_distance_reference, real *maximum_stopping_distance_reference);
+boolean actor_move_halt_at_firing_position(long actor_index);
+boolean actor_aim_jump(long actor_index, long unit_index, boolean leap, real jump_magnitude, real_vector3d *jump_velocity);
+void actor_path_clear(long actor_index);
+boolean actor_path_refresh(long actor_index, boolean new_destination, struct path_state *cached_path_state);
+short actor_path_get_destination_firing_position_index(long actor_index);
+void actor_path_input_new(long actor_index, struct path_input *input);
+boolean actor_path_3d_available(long actor_index, real_point3d const *destination_point, real *avoidance_distance_reference);
 
 /* ---------- prototypes/ACTOR_PERCEPTION.C */
 
@@ -1060,10 +1415,63 @@ short actor_perception_aiming_vector_test_blockage(real_point3d const *source_po
 short actor_visibility_at_point(long actor_index, struct actor_position_data *sense_position, real_point3d const *position, char lighting, short line_of_sight, boolean use_frustum, boolean store_debugging_information, short combat_knowledge_type);
 short actor_audibility_at_point(long actor_index, struct actor_position_data *sense_position, real_point3d const *position, struct location const *location, short sound_volume, real perception_factor, short line_of_sight);
 void actor_perception_find_sense_position(long actor_index, real_point3d const *position, long prop_index, struct actor_position_data *sense_position);
+void actor_perception_acknowledge(long actor_index, long prop_index, boolean had_orphan, boolean expected);
+boolean actor_perception_desire_prop(long actor_index, short desired_target_state, long unit_index, long unit_actor_index, boolean in_use, boolean player, boolean enemy, boolean dead, short dead_ticks, real suicide_radius, real distance_squared, short required_ticks, boolean *optional_reference);
+void prop_position_refresh(long actor_index, long prop_index, struct actor_position_data *sense_position, boolean forced_position_update, boolean full_status_update);
+boolean actor_expected_acknowledgement(long actor_index, long prop_index);
+void prop_status_refresh(long actor_index, long prop_index, struct actor_position_data *sense_position);
+boolean actor_perception_create_orphan_from_friend(long actor_index, long unit_index, long friend_actor_index, long friend_prop_index);
+
+void actor_berserk(long actor_index, boolean berserk);
+boolean actor_compute_prop_unopposable(long actor_index, long prop_index);
+real actor_compute_prop_target_weight(long actor_index, long prop_index);
+void actor_perception_unreachable(long actor_index, long prop_index, boolean unreachable);
+long actor_perception_find_recent_damaging_prop_index(long actor_index, boolean skip_friendlies);
+boolean actor_situation_try_new_target(long actor_index, long prop_index);
+void actor_perception_find_prop_pathfinding_location(long actor_index, long prop_index);
+void actor_perception_tried_to_uncover(long actor_index, long prop_index);
+void actor_perception_tried_to_search(long actor_index, long prop_index);
+void actor_perception_abandoned_search(long actor_index, long prop_index);
+void actor_perception_update(long actor_index);
+boolean actor_perception_become_acknowledged(long actor_index, long prop_index, boolean *expected_reference);
+void actor_situation_update(long actor_index);
+void actor_emotion_update(long actor_index);
+long actor_perception_find_killer_prop_index(long actor_index, long killed_prop_index, boolean skip_friendlies);
+void actor_perception_forget_recent_damage(long actor_index);
+void actor_perception_retreat_successful(long actor_index);
+void actor_situation_update_target_status(long actor_index);
+void actor_situation_combat_status_update(long actor_index);
+boolean actor_perception_friend_prop_is_attacking(long actor_index, long friend_prop_index, real_vector3d *attack_vector);
+boolean actor_emotion_flee_with_friends(long actor_index, real *flee_chance);
+
+/* ---------- prototypes/ACTOR_STIMULUS.C */
+
+void actor_stimulus_maneuvering(long actor_index, boolean advancing, boolean flee);
+void actor_stimulus_vehicle_eviction(long actor_index);
+void actor_stimulus_abandon_stationary_facing(long actor_index);
+void actor_stimulus_damage(long actor_index, long prop_index, real damage_fraction, real_vector3d *damage_velocity);
+void actor_stimulus_was_surprised(long actor_index);
+void actor_stimulus_clear(long actor_index);
+void actor_stimulus_environmental_noise(long actor_index, long object_index, real_point3d const *position, short count);
+void actor_stimulus_weapon_impact(long actor_index, long object_index, real_point3d const *position, short count);
+void actor_stimulus_weapon_detonation(long actor_index, long object_index, real_point3d const *position, short count);
+void actor_stimulus_bumped(long actor_index, long prop_index);
+void actor_stimulus_heard_shooting(long actor_index, long prop_index);
+void actor_stimulus_prop_just_killed(long actor_index, long prop_index);
+void actor_stimulus_enter_combat_friend_in_combat(long actor_index, long prop_index);
+void actor_stimulus_prop_fleeing(long actor_index, long prop_index);
+void actor_stimulus_surprise(long actor_index, short surprise_level, long prop_index, real_vector3d const *surprise_vector);
+void actor_stimulus_prop_acknowledged(long actor_index, long prop_index, boolean reappearance, boolean expected);
+void actor_stimulus_suspicion(long actor_index, short suspicion_combat_status, long suspicion_timer);
+void actor_stimulus_noticed_danger_zone(long actor_index, short danger_type, short danger_hostility, long danger_object_index, real_point3d const *position);
+void actor_stimulus_prop_sighted(long actor_index, long prop_index, boolean new_enemy);
+void actor_stimulus_enter_combat_found_body(long actor_index, long prop_index);
+void actor_stimulus_enter_combat_perceived_enemy(long actor_index, long prop_index);
 
 /* ---------- globals */
 
 extern struct data_array *swarm_data;
+extern struct data_array *swarm_component_data;
 extern struct data_array *actor_data;
 
 /* ---------- public code */

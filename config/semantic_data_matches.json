@@ -10,6 +10,77 @@
     }
   },
   {
+    "unit": "source/units/unit_dialogue",
+    "symbol": "_global_speech_priority_names",
+    "reason": "January and the rebuilt 44-byte speech-name table have identical payload, 11 relocation sites and types, and independently resolved literal destinations; objdiff undercredits the table because the executable split assigns nine folded SELECT_ANY strings to other objects",
+    "measurements": {
+      "size": 44,
+      "relocation_count": 11,
+      "normalized_sha256": "85759b3811ff7dc47b03792ac85317be51431a3f9e01dcafce317ed736a391b0"
+    }
+  },
+  {
+    "unit": "source/game/game_allegiance",
+    "symbol": "_global_game_team_names",
+    "reason": "The 40-byte January and rebuilt team-name tables have identical normalized payload, owner storage and flags, and all ten relocations resolve independently to the same image destinations; objdiff undercredits this sole unmatched section.",
+    "measurements": {
+      "size": 40,
+      "relocation_count": 10,
+      "normalized_sha256": "2c34ce1df23b838c5abf2a7f6437cca3d3067ed509ff25f11df6b11b582b51eb"
+    }
+  },
+  {
+    "unit": "source/game/game_engine_slayer",
+    "symbol": "_slayer_engine",
+    "reason": "The 136-byte January and rebuilt engine tables have identical normalized payload, external owner storage and section flags, and all 24 relocations resolve independently to the same image destinations; objdiff undercredits this sole unmatched section.",
+    "measurements": {
+      "size": 136,
+      "relocation_count": 24,
+      "normalized_sha256": "cd47b29508fea4e4c11451792c17f629a9ad240b3c3df5c889c0d416c378bc78"
+    }
+  },
+  {
+    "unit": "source/interface/hud_definitions",
+    "symbol": "_global_hud_anchor_names",
+    "reason": "The 20-byte January and rebuilt HUD anchor-name tables have identical normalized payload, owner storage and flags, and all five relocations resolve independently to the same image destinations; objdiff undercredits this sole unmatched section.",
+    "measurements": {
+      "size": 20,
+      "relocation_count": 5,
+      "normalized_sha256": "de47c9b27eb8d300dbb5f2c353e632c393262cf06340c4fa7f1b40c4cbd36f90"
+    }
+  },
+  {
+    "unit": "source/structures/leaf_map",
+    "symbol": "_leaf_map_initialize_section",
+    "allow_incomplete_unit": true,
+    "reason": "January and rebuilt profile-section data have identical 2512-byte payload, section flags and static owner, with all 28 relocations independently resolving to the same image destinations; objdiff undercredits this sole unmatched section.",
+    "measurements": {
+      "size": 2512,
+      "relocation_count": 28,
+      "normalized_sha256": "34570fc43b6cae2795503a6a62861e9a42ce856cb74d895ba7fa6174f1bda68b"
+    }
+  },
+  {
+    "unit": "source/game/game_engine_race",
+    "symbol": "_race_engine",
+    "reason": "January and rebuilt race-engine tables have identical 136-byte payload, section flags and external owner, with all 25 relocations independently resolving to the same image destinations; objdiff undercredits this sole unmatched section.",
+    "measurements": {
+      "size": 136,
+      "relocation_count": 25,
+      "normalized_sha256": "97a4c632a978acafd20933da4504d8ec3fdf3c5afd2f78934bced57dc8f746f4"
+    }
+  },
+  {
+    "unit": "source/game/game_engine_ctf",
+    "symbol": "_ctf_engine",
+    "reason": "January and rebuilt CTF-engine tables have identical 136-byte payload, section flags and external owner, with all 28 relocations independently resolving to the same image destinations; objdiff undercredits this sole unmatched section.",
+    "measurements": {
+      "size": 136,
+      "relocation_count": 28,
+      "normalized_sha256": "45c41730d038fd3f985f7ccfd8a7e04aa02e2db549ac941386e7cd04c1e1d8c1"
+    }
+  },
+  {
     "unit": "source/memory/zlib/zutil",
     "symbol": "_z_errmsg",
     "reason": "The 44-byte January and rebuilt zlib error table has identical payload, flags and external owner, and all ten relocations independently resolve to the same image destinations; objdiff undercredits its sole unmatched section.",
@@ -27,6 +98,36 @@
       "size": 4,
       "relocation_count": 1,
       "normalized_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+    }
+  },
+  {
+    "unit": "source/networking/network_server_manager",
+    "symbol": "_network_game_server_memory_do_not_use_directly_in_use",
+    "reason": "January and rebuilt eight-byte BSS owner have identical extent, flags, external storage and section-relative layout with no relocations; objdiff undercredits this sole unmatched section.",
+    "measurements": {
+      "size": 8,
+      "relocation_count": 0,
+      "normalized_sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+    }
+  },
+  {
+    "unit": "source/game/game_engine_oddball",
+    "symbol": "_oddball_engine",
+    "reason": "January and rebuilt Oddball engine tables have identical 136-byte payload, flags and owner storage, with all 27 relocations independently resolving to the same image destinations; objdiff undercredits the sole unmatched data section.",
+    "measurements": {
+      "size": 136,
+      "relocation_count": 27,
+      "normalized_sha256": "ffe1ef0aa827017276299f3a497655019d91f94374129c31634061500e5ae4b9"
+    }
+  },
+  {
+    "unit": "source/game/game_globals",
+    "symbol": "_global_material_type_strings",
+    "reason": "January and rebuilt material-name tables have identical 132-byte payload, flags and owner storage, with all 33 relocations independently resolving to the same image destinations; objdiff undercredits the sole unmatched data section.",
+    "measurements": {
+      "size": 132,
+      "relocation_count": 33,
+      "normalized_sha256": "115bad14f1c9f2c027a84de21b107015722cb76be8d0abf3760ad8e00d6c24a5"
     }
   },
   {
@@ -60,6 +161,16 @@
     }
   },
   {
+    "unit": "source/render/render_particles",
+    "symbol": "_render_particles_section",
+    "reason": "The January and rebuilt render-particles profile-section owners have equal 1528-byte payload, section flags and external storage, and their sole relocation independently resolves to the same image string; objdiff undercredits the complete section. All three target functions are strict exact, and base-only SELECT_ANY literals have byte-identical January-selected providers with passing ordinary pair links.",
+    "measurements": {
+      "size": 1528,
+      "relocation_count": 1,
+      "normalized_sha256": "806638334fff1341360b4dec7db0987871f376bc3999e26ff4bcd3a1755d2955"
+    }
+  },
+  {
     "unit": "source/bitmaps/bitmaps",
     "symbol": "_global_vector_palette",
     "reason": "January and rebuilt 1116-byte palette data have equal payload, section flags, owner storage and offsets, and all 21 relocations resolve to the same image destinations. All 34 target functions are strict exact; the sole extra fast_ftol COMDAT is byte-identical to its selected January provider and pair-links in either order.",
@@ -67,6 +178,16 @@
       "size": 1116,
       "relocation_count": 21,
       "normalized_sha256": "443063631e6958ff5026be3038f8785d61eee4073cb01b8eaa4fdfcc3b620002"
+    }
+  },
+  {
+    "unit": "source/game/cheats",
+    "symbol": "_cheat_strings",
+    "reason": "January and rebuilt cheats BSS have equal 3201-byte extent, section flags, external owner, zero relocations and matching section-relative symbol layout. The two private function names come from the first-party HCEA SHIP PDB; the string array has a descriptive inferred name, and the trailing unreferenced byte is disclosed as name-unknown rather than credited as a separate owner. All 14 target functions are strict exact and candidate-only providers pass bounded links in both orders.",
+    "measurements": {
+      "size": 3201,
+      "relocation_count": 0,
+      "normalized_sha256": "76d6c353527d212ec3799ea375f945e3ae3760257bd2ef5a75441090df0ddfac"
     }
   },
   {
@@ -80,6 +201,16 @@
     }
   },
   {
+    "unit": "source/effects/particles",
+    "symbol": "_particles_update_section",
+    "reason": "January and rebuilt particles own the same 1536-byte static data section with three image-equivalent relocations, flags and payload. Its eight-byte collision-scale bounds also have identical payload, flags and the external linkage January requires. All 20 target functions are strict exact; genuine shared-header helper providers now link in both orders after removing duplicate hand-written bodies from DebugMemory, Contrails and BoredCamera. Candidate-only folded helper copies receive no separate credit.",
+    "measurements": {
+      "size": 1536,
+      "relocation_count": 3,
+      "normalized_sha256": "6d9398e131ef72b9a6ffc2321c22d27a3e2db1a458385b77b08ba0657a56c74f"
+    }
+  },
+  {
     "unit": "source/ai/ai_scenario_definitions",
     "symbol": "_global_ai_default_state_names",
     "reason": "January and rebuilt 48-byte AI default-state name table (sole .data section) have identical normalized payload and flags (c0300040), a PDB-public external owner at offset 0, and all 12 relocations resolve to the same image addresses. The whole object otherwise matches: 4/4 functions strict exact, every January-owned section and symbol equal, and all candidate-only literals pair-link with their selected providers in both orders. objdiff 3.3.1 misreads the identical '$' literal names.",
@@ -90,6 +221,16 @@
     }
   },
   {
+    "unit": "source/ai/ai_profile",
+    "symbol": "_global_ai_meter_definitions",
+    "reason": "January and rebuilt 236-byte AI meter/profile-name .data section (sole data section; _ai_profile_render_spray_names static at +224 on both sides) have identical normalized payload and flags (c0400040), and all 10 relocations resolve to the same image addresses. The whole object otherwise matches: 23/23 functions strict exact, every January-owned section and symbol equal and consistent with cachebeta.pdb publics, and candidate-only literals pair-link with their selected providers in both orders.",
+    "measurements": {
+      "size": 236,
+      "relocation_count": 10,
+      "normalized_sha256": "3a69a8b8a83037c3277fa86c09c7aa4e9b9da8b480e3facb87275548ee4c88b8"
+    }
+  },
+  {
     "unit": "source/shaders/shader_definitions",
     "symbol": "_global_shader_effect_additive",
     "reason": "January and rebuilt 364-byte shader-effect .data section (the additive and alpha-blended effect definitions, the latter at +184 on both sides) have identical normalized payload and flags (c0400040), and both relocations resolve to the same image addresses. The whole object otherwise matches: 1/1 function strict exact, every January-owned section and symbol equal and consistent with cachebeta.pdb publics, and candidate-only literals pair-link with their selected providers in both orders.",
@@ -97,6 +238,26 @@
       "size": 364,
       "relocation_count": 2,
       "normalized_sha256": "8bbb21a994d2ec5051de3ea76497f648469fe42d5f6aa7da85f3b598bf16bcd0"
+    }
+  },
+  {
+    "unit": "source/units/dialogue_definitions",
+    "symbol": "_dialogue_vocalization_type_name",
+    "reason": "January and rebuilt 1,672-byte dialogue .data section have identical normalized payload and flags (c0400040), and all 418 relocations resolve to the same image addresses. The whole object otherwise matches: 2/2 functions strict exact, all 298 January symbols equal in section, offset and storage and consistent with cachebeta.pdb publics, and all candidate-only literals pair-link with their selected providers in both orders.",
+    "measurements": {
+      "size": 1672,
+      "relocation_count": 418,
+      "normalized_sha256": "256984cb62bc879971463ff0ff7567042dc95d8b0fb2bc676f246c2293c77ae8"
+    }
+  },
+  {
+    "unit": "source/ai/actor_types",
+    "symbol": "_global_actor_type_names",
+    "reason": "January and rebuilt 128-byte actor-type .data section (the static actor_type_definitions table at +0 and the public global_actor_type_names at +64) have identical normalized payload and flags (c0400040), and all 32 relocations resolve to the same image addresses. Ownership was corrected first: cachebeta.pdb publics prove actor_type_definitions and its accessor actor_type_definition_get file-static. January's own assert strings name actor_type_definitions; the Halo CE atlas names the accessor at the same 0x140-byte span. All 13 functions are strict exact and every January-owned section and symbol matches.",
+    "measurements": {
+      "size": 128,
+      "relocation_count": 32,
+      "normalized_sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca"
     }
   },
   {
@@ -140,6 +301,36 @@
     }
   },
   {
+    "unit": "source/hs/hs_scenario_definitions",
+    "symbol": "_hs_script_types_enum",
+    "reason": "January and rebuilt HS scenario .data have identical 628-byte normalized payload, all 33 relocation identities, and 8-byte section alignment (c0400040). The original nine public definitions retain their target offsets and storage. Separate typed field and byte-swap arrays replace invented packed aggregates and padding; the byte-swap function is genuinely file-static. The one target function remains strict exact, and there are no surplus external definitions.",
+    "measurements": {
+      "size": 628,
+      "relocation_count": 33,
+      "normalized_sha256": "a1add12fc2ddd7afb3935997f9e1532b27a3887f8e85e914db954d1665547c09"
+    }
+  },
+  {
+    "unit": "source/hs/hs_globals_external",
+    "symbol": "_screenshot_size_definition",
+    "reason": "January and rebuilt HS external-global .data have identical 7,076-byte normalized payload, section flags (c0400040), and all 1,322 relocation identities. The invented 442-element definition aggregate has been replaced by 442 separate file-static typed definitions in January's proven 12-byte record order; the public hs_external_globals table remains at +5304. The 2011 first-party HCEX PDB independently attests 427 unique definition names and their type; the 15 older-only names are descriptive names derived from their January string records, not claimed originals. January and rebuilt first-record storage are file-static, and the unit emits no code or candidate-only external owner.",
+    "measurements": {
+      "size": 7076,
+      "relocation_count": 1322,
+      "normalized_sha256": "1e4346aef4491a55772f4f51a6989e06074dc5245a2c01aa1be97fb2e221ae8c"
+    }
+  },
+  {
+    "unit": "source/interface/ui_widget_event_handler_functions",
+    "symbol": "_event_handler_functions",
+    "reason": "January and rebuilt 934-byte event-handler .data section (the static event_handler_function_list name/function table at +0 and the public event_handler_functions at +816) have identical normalized payload and flags (c0400040), and all 228 relocations resolve to the same image addresses. The 366-byte .bss is also identical. Ownership was corrected first: 98 handler functions, event_handler_function_list and new_campaign_profile_name are absent from cachebeta.pdb publics and referenced by no other January object, so they are file-static. All 100 functions are strict exact and all 452 January symbols match. The three stock D3D SDK .rdata tables it also emits are byte-identical to January's selected copies and pair-link in both orders, as in the 54 already-admitted objects that emit them.",
+    "measurements": {
+      "size": 934,
+      "relocation_count": 228,
+      "normalized_sha256": "c1040d667c392fd772fab34335ade456dac49ae864a8200c4560df63cec186fd"
+    }
+  },
+  {
     "unit": "source/items/projectiles",
     "symbol": "_projectile_update_section",
     "allow_incomplete_unit": true,
@@ -148,6 +339,17 @@
       "size": 1548,
       "relocation_count": 6,
       "normalized_sha256": "7bfaf5fb0b0c9e0593153885a81788bc8b118a9651a60a8a94e5ffd9fd203cf2"
+    }
+  },
+  {
+    "unit": "source/math/periodic_functions",
+    "symbol": "_global_periodic_functions_enum_strings",
+    "allow_incomplete_unit": true,
+    "reason": "The January and rebuilt 96-byte periodic/transition enum .data have identical normalized payload, owner storage and flags, and all 20 relocations resolve to the same image destinations. Objdiff 3.3.1 undercredits folded string literals. The variable-period builder remains parked and earns no code credit.",
+    "measurements": {
+      "size": 96,
+      "relocation_count": 20,
+      "normalized_sha256": "8fdd4bf9e8be002fe8938ee0849dfec244c27138f7b77eff28ec8ba7b4538614"
     }
   },
   {
@@ -191,6 +393,17 @@
       "size": 56,
       "relocation_count": 11,
       "normalized_sha256": "3ba0a54a0875e71a01972b13dcf574a4d16d0f1ea3531ef51d98311b5ac7eee5"
+    }
+  },
+  {
+    "unit": "source/game/game_engine_king",
+    "symbol": "_king_engine",
+    "allow_incomplete_unit": true,
+    "reason": "January and rebuilt King engine tables have identical 136-byte payload, section flags (c0400040) and public owner storage (_king_engine is a cachebeta.pdb public), and all 23 relocations (22 engine callbacks and the 'king' name literal) independently resolve to the same image destinations. January's split leaves the 'king' literal undefined because the linker selected game_engine's copy, while the rebuilt object emits an identical select-any copy, so objdiff 3.3.1's '$'-literal name defect undercredits this sole unmatched section; renaming only the '$' inside literal names on both sides scores it 100.0 with the production objdiff binary. All 29 functions are strict exact; the unit stays NonMatching until the owner rules on the whole-object packet (owner queue #13: _find_next_hill's preserved uninitialised no-candidate return, plus the cachebeta storage fix), so this entry opts in explicitly as an incomplete unit, credits only the table's data bytes and certifies nothing about _find_next_hill or object completion.",
+    "measurements": {
+      "size": 136,
+      "relocation_count": 23,
+      "normalized_sha256": "4009f5b6117e9f00cb001a23b9a56b9dc51a694206c442ce715e2bed2d5465a7"
     }
   },
   {

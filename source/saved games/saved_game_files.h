@@ -89,6 +89,8 @@ enum
 #define PLAYER_PROFILE_FILE_NAME "blam.sav"																/* fake name */
 #define PLAYLIST_PROFILE_FILE_NAME "blam.lst"															/* fake name */
 #define DEFAULT_MULTIPLAYER_GAME_SETTING_NAMES_TAG_NAME "ui\\default_multiplayer_game_setting_names"	/* fake name */
+#define SAVED_GAME_FILE_STRINGS_TAG_NAME "ui\\saved_game_file_strings"								/* fake name */
+#define DEFAULT_PLAYER_PROFILE_NAMES_TAG_NAME "ui\\shell\\strings\\default_player_profile_names"	/* fake name */
 
 /* ---------- structures */
 
@@ -102,7 +104,7 @@ long create_enumerated_saved_game_file(word saved_game_file_type, short local_pl
 boolean delete_enumerated_saved_game_file(long index);
 boolean saved_game_file_open(struct file_reference *saved_game_file, long index);
 boolean saved_game_file_close(struct file_reference *saved_game_file, long index);
-short saved_game_file_get_type(long index);
+word saved_game_file_get_type(long index);
 void saved_game_files_delete_all_custom_profiles(void);
 void saved_game_files_notify_memory_units_changed(void);
 void saved_game_file_get_useable_untitled_profile_name(wchar_t *display_name);

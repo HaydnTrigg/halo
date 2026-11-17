@@ -277,12 +277,17 @@ long tag_block_add_element(struct tag_block *block);
 boolean tag_block_resize(struct tag_block *block, long element_count);
 boolean tag_data_resize(struct tag_data *data, long size);
 
+// compiled out of the xbox build
+#define tag_groups_dump_memory()
+
 /* ---------- prototypes/CACHE_FILES.C */
 
 long tag_loaded(long group_tag, const char *name);
+long tag_load(unsigned long group_tag, char const *name, unsigned long flags);
 
 void *tag_get(long group_tag, long tag_index);
 void tag_block_delete_element(struct tag_block *block, long index);
+void tag_reference_set(struct tag_reference *reference, unsigned long group_tag, char const *name);
 
 void tag_iterator_new(struct tag_iterator *iterator, unsigned long key_group_tag);
 long tag_iterator_next(struct tag_iterator *iterator);

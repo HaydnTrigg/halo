@@ -38,6 +38,13 @@ enum
 
 enum
 {
+	_encounter_version_0 = 0,
+	_encounter_version_1,
+	_encounter_version_current = _encounter_version_1,
+};
+
+enum
+{
 	_firing_position_group_attacking = 0,
 	_firing_position_group_attacking_search,
 	_firing_position_group_attacking_guard,
@@ -81,6 +88,150 @@ enum
 	_ai_atom_set_radius,
 	_ai_atom_teleport,
 	NUMBER_OF_AI_ATOM_TYPES,
+};
+
+enum
+{
+	_ai_atom_go_to_modifier_stop_at_point = 0,
+	_ai_atom_go_to_modifier_keep_moving,
+	NUMBER_OF_AI_ATOM_GO_TO_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_move_direction_modifier_forward = 0,
+	_ai_atom_move_direction_modifier_left,
+	_ai_atom_move_direction_modifier_right,
+	_ai_atom_move_direction_modifier_backward,
+	_ai_atom_move_direction_modifier_most_convenient,
+	NUMBER_OF_AI_ATOM_MOVE_DIRECTION_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_move_immediate_modifier_forward = 0,
+	_ai_atom_move_immediate_modifier_left,
+	_ai_atom_move_immediate_modifier_right,
+	_ai_atom_move_immediate_modifier_backward,
+	NUMBER_OF_AI_ATOM_MOVE_IMMEDIATE_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_look_modifier_idle_aim = 0,
+	_ai_atom_look_modifier_idle_turn_around,
+	_ai_atom_look_modifier_idle_look,
+	_ai_atom_look_modifier_force_facing,
+	_ai_atom_look_modifier_force_aim_weapon,
+	NUMBER_OF_AI_ATOM_LOOK_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_animation_mode_modifier_noncombat = 0,
+	_ai_atom_animation_mode_modifier_asleep,
+	_ai_atom_animation_mode_modifier_combat,
+	_ai_atom_animation_mode_modifier_panic,
+	NUMBER_OF_AI_ATOM_ANIMATION_MODE_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_crouch_modifier_disable = 0,
+	_ai_atom_crouch_modifier_enable,
+	NUMBER_OF_AI_ATOM_CROUCH_MODIFIERS,
+};
+
+enum
+{
+	_actor_atom_grenade_modifier_toss = 0,
+	_actor_atom_grenade_modifier_lob,
+	_actor_atom_grenade_modifier_bounce,
+	NUMBER_OF_AI_ATOM_GRENADE_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_vehicle_modifier_any_non_driver = 0,
+	_ai_atom_vehicle_modifier_gunner,
+	_ai_atom_vehicle_modifier_passenger,
+	_ai_atom_vehicle_modifier_driver,
+	_ai_atom_vehicle_modifier_any_seat,
+	NUMBER_OF_AI_ATOM_VEHICLE_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_animate_modifier_relative_movement = 0,
+	_ai_atom_animate_modifier_absolute_movement,
+	_ai_atom_animate_modifier_absolute_movement_no_collision,
+	_ai_atom_animate_modifier_no_interpolation_relative_movement,
+	_ai_atom_animate_modifier_no_interpolation_absolute_movement,
+	_ai_atom_animate_modifier_no_interpolation_absolute_movement_no_collision,
+	NUMBER_OF_AI_ATOM_ANIMATE_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_action_modifier_berserk = 0,
+	_ai_atom_action_modifier_surprise_front,
+	_ai_atom_action_modifier_surprise_back,
+	_ai_atom_action_modifier_evade_left,
+	_ai_atom_action_modifier_evade_right,
+	_ai_atom_action_modifier_dive_forward,
+	_ai_atom_action_modifier_dive_back,
+	_ai_atom_action_modifier_dive_left,
+	_ai_atom_action_modifier_dive_right,
+	_ai_atom_action_modifier_vehicle_woohoo,
+	_ai_atom_action_modifier_vehicle_scared,
+	NUMBER_OF_AI_ATOM_ACTION_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_targeting_modifier_enable = 0,
+	_ai_atom_targeting_modifier_disable,
+	NUMBER_OF_AI_ATOM_TARGETING_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_initiative_modifier_enable = 0,
+	_ai_atom_initiative_modifier_disable,
+	NUMBER_OF_AI_ATOM_INITIATIVE_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_wait_modifier_alerted = 0,
+	_ai_atom_wait_modifier_visible_enemy,
+	_ai_atom_wait_modifier_told_to_advance,
+	NUMBER_OF_AI_ATOM_WAIT_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_loop_modifier_always = 0,
+	_ai_atom_loop_modifier_until_told_to_advance,
+	NUMBER_OF_AI_ATOM_LOOP_MODIFIERS,
+};
+
+enum
+{
+	_ai_atom_die_modifier_normal = 0,
+	_ai_atom_die_modifier_silent,
+	NUMBER_OF_AI_ATOM_DIE_MODIFIERS,
+};
+
+enum
+{
+	_ai_command_list_allow_initiative_bit = 0,
+	_ai_command_list_allow_targeting_bit,
+	_ai_command_list_disable_looking_bit,
+	_ai_command_list_disable_communication_bit,
+	_ai_command_list_disable_falling_damage_bit,
+	_ai_command_list_manual_structure_bsp_bit,
+	NUMBER_OF_AI_COMMAND_LIST_FLAGS,
 };
 
 enum
@@ -136,6 +287,39 @@ enum
 	NUMBER_OF_CONVERSATION_ADDRESS_TYPES,
 };
 
+enum
+{
+	_actor_default_state_none = 0,
+	_actor_default_state_asleep,
+	_actor_default_state_alert,
+	_actor_default_state_moving_repeat_position,
+	_actor_default_state_moving_loop,
+	_actor_default_state_moving_loop_back_and_forth,
+	_actor_default_state_moving_loop_randomly,
+	_actor_default_state_moving_randomly,
+	_actor_default_state_guarding,
+	_actor_default_state_guarding_at_guard_point,
+	_actor_default_state_searching,
+	_actor_default_state_fleeing,
+	NUMBER_OF_ACTOR_DEFAULT_STATES,
+};
+
+enum
+{
+	_squad_major_upgrade_normal = 0,
+	_squad_major_upgrade_few,
+	_squad_major_upgrade_many,
+	SQUAD_RANDOM_MAJOR_UPGRADE_MAX_TYPE = _squad_major_upgrade_many,
+	_squad_major_upgrade_none,
+	_squad_major_upgrade_all,
+	NUMBER_OF_SQUAD_MAJOR_UPGRADE_TYPES,
+};
+
+enum
+{
+	MAXIMUM_MOVE_POSITIONS_PER_SQUAD = 32, /* fake name */
+};
+
 #define MAXIMUM_CONVERSATIONS_PER_MAP 128
 #define MAXIMUM_PARTICIPANTS_PER_CONVERSATION 8
 #define MAXIMUM_DIALOGUE_VARIANTS_PER_CONVERSATION_PARTICIPANT 6
@@ -145,6 +329,11 @@ enum
 #define ai_conversation_definition_get(index) TAG_BLOCK_GET_ELEMENT(&global_scenario_get()->ai_conversations, (index), struct ai_conversation) /* fake name */
 
 /* ---------- structures */
+
+struct actor_palette_entry
+{
+	struct tag_reference reference;
+};
 
 struct actor_starting_location_definition
 {
@@ -239,6 +428,25 @@ struct encounter_definition
 	struct tag_block player_starting_locations;
 };
 
+struct ai_animation_reference_definition
+{
+	char animation_name[TAG_STRING_LENGTH+1];
+	struct tag_reference animation_graph;
+	unsigned long unused[3];
+};
+
+struct ai_script_reference_definition
+{
+	char script_name[TAG_STRING_LENGTH+1];
+	unsigned long unused[2];
+};
+
+struct ai_recording_reference_definition
+{
+	char recording_name[TAG_STRING_LENGTH+1];
+	unsigned long unused[2];
+};
+
 struct ai_command_definition
 {
 	short atom_type;
@@ -317,7 +525,14 @@ struct ai_conversation
 
 /* ---------- prototypes/AI_SCENARIO_DEFINITIONS.C */
 
+short choose_random_array_element(void const *array, short element_size, short element_count, short weight_field_offset, unsigned long const *used_bit_vector);
+long scenario_get_encounter_by_name(struct scenario const *scenario, char const *encounter_name);
+long encounter_definition_get_squad_by_name(struct encounter_definition const *encounter, char const *squad_name);
+long encounter_definition_get_platoon_by_name(struct encounter_definition const *encounter, char const *platoon_name);
+
 /* ---------- globals */
+
+extern char const *global_ai_default_state_names[NUMBER_OF_ACTOR_DEFAULT_STATES];
 
 /* ---------- public code */
 

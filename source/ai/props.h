@@ -32,11 +32,45 @@ enum
 	NUMBER_OF_PROP_LIGHTING_STATES,
 };
 
+#define MAXIMUM_NUMBER_OF_PROPS 768 /* fake name */
+
+enum
+{
+	_prop_distance_melee = 0,
+	_prop_distance_near,
+	_prop_distance_middle,
+	_prop_distance_far,
+	_prop_distance_distant,
+	NUMBER_OF_PROP_DISTANCES,
+};
+
+enum
+{
+	_prop_speed_stopped = 0,
+	_prop_speed_walking,
+	_prop_speed_running,
+	_prop_speed_driving,
+	NUMBER_OF_PROP_SPEEDS,
+};
+
+enum
+{
+	_prop_facing_direct = 0,
+	_prop_facing_nearby,
+	_prop_facing_central,
+	_prop_facing_peripheral,
+	_prop_facing_behind,
+	NUMBER_OF_PROP_FACINGS,
+};
 
 /* ---------- macros */
 
 #define prop_get(index)			((struct prop_datum *)datum_get(prop_data, (index)))
 #define prop_try_and_get(index)	((struct prop_datum *)datum_try_and_get(prop_data, (index)))
+
+#define prop_orphaned(prop)		((prop)->state>=_prop_state_uninspected_orphan && (prop)->state<=_prop_state_inspected_orphan)
+#define prop_acknowledged(prop)	((prop)->state>=_prop_state_becoming_unacknowledged && (prop)->state<=_prop_state_acknowledged)
+#define prop_unacknowledged(prop)	((prop)->state>=_prop_state_unacknowledged && (prop)->state<=_prop_state_becoming_acknowledged)
 
 /* ---------- structures */
 
@@ -152,10 +186,19 @@ struct prop_iterator
 
 /* ---------- prototypes/PROPS.C */
 
+void props_initialize(void);
+void props_dispose(void);
+void props_initialize_for_new_map(void);
+void props_dispose_from_old_map(void);
+void prop_delete(long actor_index, long prop_index);
 void prop_iterator_new(struct prop_iterator *iterator, long actor_index);
 struct prop_datum *prop_iterator_next(struct prop_iterator *iterator);
 long prop_get_active_by_unit_index(long actor_index, long unit_index);
 long prop_get_base_by_unit_index(long actor_index, long unit_index, boolean acquire, boolean refresh_upon_acquisition);
+long prop_new_unacknowledged(long actor_index, long unit_index, boolean enemy);
+long prop_orphan_transition(long actor_index, long parent_prop_index);
+long prop_orphan_from_friend(long actor_index, long unacknowledged_prop_index, long friend_acknowledged_prop_index);
+void prop_orphan_update_information(long actor_index, long orphan_prop_index, long friend_acknowledged_prop_index);
 
 /* ---------- globals */
 

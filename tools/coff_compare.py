@@ -485,7 +485,7 @@ def image_symbol_addresses(entries):
     ambiguous = set()
     for entry in entries:
         name = entry["name"]
-        address = int(entry["file_offset"])
+        address = int(entry["address"] if "address" in entry else entry["file_offset"])
         if name in addresses and addresses[name] != address:
             ambiguous.add(name)
         addresses[name] = address

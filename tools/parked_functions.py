@@ -159,10 +159,13 @@ def validate_parked_functions(project_root, report_path, config_path, manifest_p
                 continue
 
             try:
+                # The per-version layout (config/2342/) replaced config/;
+                # fall back for fixtures that still use the flat layout.
+                symbol_path = project_root / "config" / "2342" / "symbols.json"
+                if not symbol_path.is_file():
+                    symbol_path = project_root / "config" / "symbols.json"
                 symbol_entries = json.loads(
-                    (project_root / "config" / "symbols.json").read_text(
-                        encoding="utf-8"
-                    )
+                    symbol_path.read_text(encoding="utf-8")
                 )
                 if not isinstance(symbol_entries, list):
                     raise ValueError("symbol manifest must be a list")
@@ -268,7 +271,7 @@ def require_valid_parked_functions(project_root, report_path, config_path, manif
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, default=Path.cwd())
-    parser.add_argument("--report", type=Path, default=Path("build/report.json"))
+    parser.add_argument("--report", type=Path, default=Path("build/2342/report.json"))
     parser.add_argument("--config", type=Path, default=Path("objdiff.json"))
     parser.add_argument("--manifest", type=Path, default=Path("config/parked.json"))
     parser.add_argument("--output", type=Path)

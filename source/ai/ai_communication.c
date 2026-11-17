@@ -49,16 +49,6 @@ enum
 
 enum
 {
-	_comm_hostility_none = 0,
-	_comm_hostility_self,
-	_comm_hostility_friend,
-	_comm_hostility_enemy,
-	_comm_hostility_traitor,
-	NUMBER_OF_AI_COMMUNICATION_HOSTILITIES,
-};
-
-enum
-{
 	_comm_enemy_never = 0,
 	_comm_enemy_dead,
 	_comm_enemy_lost,
@@ -169,9 +159,7 @@ enum
 
 /* ---------- macros */
 
-#define ai_print_conversations (ai_debug.print_conversations)
-#define ai_conversation_driver_get(index) \
-	((struct conversation_datum *)datum_get(conversation_data, (index)))
+#define SECONDS_PER_TICK (1.f/TICKS_PER_SECOND) /* fake name */
 
 /* ---------- structures */
 

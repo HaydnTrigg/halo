@@ -47,6 +47,34 @@ enum
 
 enum
 {
+	_shader_model_self_illumination_no_random_phase_bit = 0,
+	NUMBER_OF_SHADER_MODEL_SELF_ILLUMINATION_FLAGS
+};
+
+enum
+{
+	_shader_model_detail_function_double_biased_multiply = 0, /* fake name */
+	_shader_model_detail_function_multiply, /* fake name */
+	_shader_model_detail_function_double_biased_add, /* fake name */
+	NUMBER_OF_SHADER_MODEL_DETAIL_FUNCTIONS /* fake name */
+};
+
+enum
+{
+	_shader_model_detail_mask_none = 0,
+	_shader_model_detail_mask_reflection_mask_inverse,
+	_shader_model_detail_mask_reflection_mask,
+	_shader_model_detail_mask_self_illumination_mask_inverse,
+	_shader_model_detail_mask_self_illumination_mask,
+	_shader_model_detail_mask_change_color_mask_inverse,
+	_shader_model_detail_mask_change_color_mask,
+	_shader_model_detail_mask_multipurpose_alpha_mask_inverse,
+	_shader_model_detail_mask_multipurpose_alpha_mask,
+	NUMBER_OF_SHADER_MODEL_DETAIL_MASKS
+};
+
+enum
+{
 	_shader_radiosity_simple_parameterization_bit = 0,
 	_shader_radiosity_ignore_normals_bit,
 	_shader_radiosity_FILTHY_transparent_lit_bit,
@@ -76,6 +104,14 @@ enum
 
 enum
 {
+	_shader_effect_sort_bias_bit = 0,
+	_shader_effect_uses_nonlinear_tint_bit,
+	_shader_effect_flags_dont_overdraw_first_person_weapon_bit,
+	NUMBER_OF_SHADER_EFFECT_FLAGS
+};
+
+enum
+{
 	_shader_effect_secondary_map_anchor_with_primary = 0,
 	_shader_effect_secondary_map_anchor_screen_space,
 	_shader_effect_secondary_map_zsprite,
@@ -84,8 +120,70 @@ enum
 
 enum
 {
+	_shader_environment_alpha_tested_bit = 0,
+	_shader_environment_bump_map_is_specular_mask_bit,
+	_shader_environment_true_atmospheric_fog_bit,
+	NUMBER_OF_SHADER_ENVIRONMENT_FLAGS
+};
+
+enum
+{
 	_shader_environment_reflection_mirror_bit = 0,
 	NUMBER_OF_SHADER_ENVIRONMENT_REFLECTION_FLAGS
+};
+
+enum
+{
+	_shader_environment_type_normal = 0, /* fake name */
+	_shader_environment_type_blended, /* fake name */
+	_shader_environment_type_blended_base_specular, /* fake name */
+	NUMBER_OF_SHADER_ENVIRONMENT_TYPES /* fake name */
+};
+
+enum
+{
+	_shader_environment_diffuse_rescale_detail_maps_bit = 0,
+	_shader_environment_diffuse_rescale_bump_map_bit,
+	NUMBER_OF_SHADER_ENVIRONMENT_DIFFUSE_FLAGS
+};
+
+enum
+{
+	_shader_environment_detail_function_double_biased_multiply = 0, /* fake name */
+	_shader_environment_detail_function_multiply, /* fake name */
+	_shader_environment_detail_function_double_biased_add, /* fake name */
+	NUMBER_OF_SHADER_ENVIRONMENT_DETAIL_FUNCTIONS /* fake name */
+};
+
+enum
+{
+	_shader_environment_self_illumination_map_point_sampled_bit = 0,
+	NUMBER_OF_SHADER_ENVIRONMENT_SELF_ILLUMINATION_FLAGS
+};
+
+enum
+{
+	_shader_environment_specular_overbright_bit = 0,
+	_shader_environment_specular_extra_shiny_bit,
+	_shader_environment_specular_lightmap_bit,
+	NUMBER_OF_SHADER_ENVIRONMENT_SPECULAR_FLAGS
+};
+
+enum
+{
+	_shader_environment_reflection_type_bumped = 0,
+	_shader_environment_reflection_type_flat,
+	_shader_environment_reflection_type_radiosity,
+	NUMBER_OF_SHADER_ENVIRONMENT_REFLECTION_TYPES
+};
+
+enum
+{
+	_shader_transparent_water_base_map_alpha_modulates_reflection_bit = 0,
+	_shader_transparent_water_base_map_color_modulates_background_bit,
+	_shader_transparent_water_atmospheric_fog_bit,
+	_shader_transparent_water_draw_before_fog_bit,
+	NUMBER_OF_SHADER_TRANSPARENT_WATER_FLAGS
 };
 
 enum
@@ -159,9 +257,113 @@ enum
 	NUMBER_OF_SHADER_TRANSPARENT_METER_FLAGS
 };
 
+enum
+{
+	_shader_effect_map_point_sampled_bit = 0,
+	NUMBER_OF_SHADER_EFFECT_MAP_USER_FLAGS,
+	_shader_effect_map_u_clamp_bit = NUMBER_OF_SHADER_EFFECT_MAP_USER_FLAGS,
+	_shader_effect_map_v_clamp_bit,
+	NUMBER_OF_SHADER_EFFECT_MAP_FLAGS
+};
+
+enum
+{
+	_shader_transparent_chicago_dont_fade_active_camouflage_bit = 0,
+	_shader_transparent_chicago_numeric_countdown_timer_bit,
+	NUMBER_OF_SHADER_TRANSPARENT_CHICAGO_EXTRA_FLAGS
+};
+
+enum
+{
+	MAXIMUM_MAPS_PER_SHADER_TRANSPARENT_CHICAGO = 4,
+	MAXIMUM_MAPS_PER_SHADER_TRANSPARENT_GENERIC = 4,
+	MAXIMUM_RIPPLES_PER_SHADER_TRANSPARENT_WATER = 4
+};
+
+enum
+{
+	_shader_transparent_chicago_map_point_sampled_bit = 0,
+	_shader_transparent_chicago_map_alpha_replicate_bit,
+	_shader_transparent_chicago_map_u_clamped_bit,
+	_shader_transparent_chicago_map_v_clamped_bit,
+	NUMBER_OF_SHADER_TRANSPARENT_CHICAGO_MAP_FLAGS
+};
+
+enum
+{
+	_shader_transparent_chicago_map_function_current = 0,
+	_shader_transparent_chicago_map_function_next_map,
+	_shader_transparent_chicago_map_function_multiply,
+	_shader_transparent_chicago_map_function_double_multiply,
+	_shader_transparent_chicago_map_function_add,
+	_shader_transparent_chicago_map_function_add_signed_current,
+	_shader_transparent_chicago_map_function_add_signed_next_map,
+	_shader_transparent_chicago_map_function_subtract_current,
+	_shader_transparent_chicago_map_function_subtract_next_map,
+	_shader_transparent_chicago_map_function_alpha_blend_current,
+	_shader_transparent_chicago_map_function_alpha_blend_current_inverse,
+	_shader_transparent_chicago_map_function_alpha_blend_next_map,
+	_shader_transparent_chicago_map_function_alpha_blend_next_map_inverse,
+	NUMBER_OF_SHADER_TRANSPARENT_CHICAGO_MAP_FUNCTIONS
+};
+
+enum
+{
+	_shader_transparent_generic_map_point_sampled_bit = 0, /* fake name */
+	_shader_transparent_generic_map_u_clamped_bit, /* fake name */
+	_shader_transparent_generic_map_v_clamped_bit /* fake name */
+};
+
+enum
+{
+	_shader_transparent_generic_stage_color_mux_bit = 0, /* fake name */
+	_shader_transparent_generic_stage_alpha_mux_bit, /* fake name */
+	_shader_transparent_generic_stage_a_out_controls_color0_animation_bit /* fake name */
+};
+
+enum
+{
+	NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_CONSTANT_INPUTS = 5, /* fake name */
+	NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_INPUTS = 25,
+	NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_INPUT_MAPPINGS = 8,
+	NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_OUTPUT_MAPPINGS = 6
+};
+
+enum
+{
+	_shader_transparent_generic_stage_output_discard = 0, /* fake name */
+	_shader_transparent_generic_stage_output_scratch_0, /* fake name */
+	_shader_transparent_generic_stage_output_scratch_1, /* fake name */
+	_shader_transparent_generic_stage_output_vertex_0_fog, /* fake name */
+	_shader_transparent_generic_stage_output_vertex_1, /* fake name */
+	_shader_transparent_generic_stage_output_map_0, /* fake name */
+	_shader_transparent_generic_stage_output_map_1, /* fake name */
+	_shader_transparent_generic_stage_output_map_2, /* fake name */
+	_shader_transparent_generic_stage_output_map_3, /* fake name */
+	NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_OUTPUTS
+};
+
+enum
+{
+	_shader_transparent_generic_stage_output_function_multiply = 0, /* fake name */
+	_shader_transparent_generic_stage_output_function_dot_product, /* fake name */
+	NUMBER_OF_SHADER_TRANSPARENT_GENERIC_STAGE_OUTPUT_FUNCTIONS
+};
+
 /* ---------- macros */
 
 #define shader_definition_get(index) ((struct shader *)tag_get(SHADER_DEFINITION_TAG, (index))) /* fake name */
+
+#define shader_effect_get(shader) ((struct shader_effect *)shader_get_and_verify_type((shader), _shader_type_effect)) /* fake name */
+#define shader_decal_get(shader) ((struct shader_decal *)shader_get_and_verify_type((shader), _shader_type_decal)) /* fake name */
+#define shader_environment_get(shader) ((struct shader_environment *)shader_get_and_verify_type((shader), _shader_type_environment)) /* fake name */
+#define shader_model_get(shader) ((struct shader_model *)shader_get_and_verify_type((shader), _shader_type_model)) /* fake name */
+#define shader_transparent_generic_get(shader) ((struct shader_transparent_generic *)shader_get_and_verify_type((shader), _shader_type_transparent_generic)) /* fake name */
+#define shader_transparent_chicago_get(shader) ((struct shader_transparent_chicago *)shader_get_and_verify_type((shader), _shader_type_transparent_chicago)) /* fake name */
+#define shader_transparent_water_get(shader) ((struct shader_transparent_water *)shader_get_and_verify_type((shader), _shader_type_transparent_water)) /* fake name */
+#define shader_transparent_glass_get(shader) ((struct shader_transparent_glass *)shader_get_and_verify_type((shader), _shader_type_transparent_glass)) /* fake name */
+#define shader_transparent_meter_get(shader) ((struct shader_transparent_meter *)shader_get_and_verify_type((shader), _shader_type_transparent_meter)) /* fake name */
+#define shader_transparent_plasma_get(shader) ((struct shader_transparent_plasma *)shader_get_and_verify_type((shader), _shader_type_transparent_plasma)) /* fake name */
 
 /* ---------- structures */
 
@@ -413,6 +615,73 @@ struct shader_model
 	struct _shader_model model;
 };
 
+struct shader_transparent_chicago_map
+{
+	word flags;
+	short type;
+	long unused1[10];
+	short color_function;
+	short alpha_function;
+	long unused2[9];
+	real_vector2d scale;
+	real_vector2d offset;
+	real rotation;
+	real mipmap_bias;
+	struct tag_reference map;
+	long unused3[10];
+	struct shader_texture_animation animation;
+};
+
+struct shader_transparent_generic_map
+{
+	word flags; /* fake name */
+	word pad;
+	real_vector2d scale; /* fake name */
+	real_vector2d offset; /* fake name */
+	real rotation; /* fake name */
+	real mipmap_bias; /* fake name */
+	struct tag_reference map; /* fake name */
+	struct shader_texture_animation animation; /* fake name */
+};
+
+struct shader_transparent_generic_stage
+{
+	word flags; /* fake name */
+	word pad;
+	short constant_color0_source; /* fake name */
+	short constant_color0_animation_function; /* fake name */
+	real constant_color0_animation_period;
+	real_argb_color constant_color0_animation_lower_bound; /* fake name */
+	real_argb_color constant_color0_animation_upper_bound; /* fake name */
+	real_argb_color constant_color1; /* fake name */
+	short color_input_A; /* fake name */
+	short color_input_A_mapping; /* fake name */
+	short color_input_B; /* fake name */
+	short color_input_B_mapping; /* fake name */
+	short color_input_C; /* fake name */
+	short color_input_C_mapping; /* fake name */
+	short color_input_D; /* fake name */
+	short color_input_D_mapping; /* fake name */
+	short color_output_AB; /* fake name */
+	short color_output_AB_function;
+	short color_output_CD; /* fake name */
+	short color_output_CD_function;
+	short color_output_AB_CD_mux_sum; /* fake name */
+	short color_output_mapping;
+	short alpha_input_A; /* fake name */
+	short alpha_input_A_mapping; /* fake name */
+	short alpha_input_B; /* fake name */
+	short alpha_input_B_mapping; /* fake name */
+	short alpha_input_C; /* fake name */
+	short alpha_input_C_mapping; /* fake name */
+	short alpha_input_D; /* fake name */
+	short alpha_input_D_mapping; /* fake name */
+	short alpha_output_AB; /* fake name */
+	short alpha_output_CD; /* fake name */
+	short alpha_output_AB_CD_mux_sum; /* fake name */
+	short alpha_output_mapping;
+};
+
 struct _shader_transparent_generic
 {
 	byte numeric_counter_limit;
@@ -456,6 +725,51 @@ struct shader_transparent_chicago
 {
 	struct _shader shader;
 	struct _shader_transparent_chicago chicago;
+};
+
+struct shader_transparent_water_ripple
+{
+	word flags;
+	short type;
+	real contibution_factor;
+	long unused1[8];
+	real animation_angle;
+	real animation_velocity;
+	real_vector2d map_offset;
+	short map_repeats;
+	short map_index;
+	long unused2[4];
+};
+
+struct _shader_transparent_water
+{
+	word flags;
+	short type;
+	long unused1[8];
+	struct tag_reference base_map;
+	long unused2[4];
+	real_argb_color view_perpendicular_tint_color;
+	real_argb_color view_parallel_tint_color;
+	long unused3[4];
+	struct tag_reference reflection_map;
+	long unused4[4];
+	real ripple_animation_angle;
+	real ripple_animation_velocity;
+	real ripple_scale;
+	struct tag_reference ripple_maps;
+	short ripple_mipmap_levels;
+	word pad2;
+	real ripple_mipmap_fade_factor;
+	real ripple_mipmap_lod_bias;
+	long unused5[16];
+	struct tag_block ripples;		// shader_transparent_water_ripple
+	long unused6[4];
+};
+
+struct shader_transparent_water
+{
+	struct _shader shader;
+	struct _shader_transparent_water water;
 };
 
 struct _shader_transparent_glass
@@ -525,6 +839,47 @@ struct shader_transparent_meter
 {
 	struct _shader shader;
 	struct _shader_transparent_meter meter;
+};
+
+struct _shader_transparent_plasma
+{
+	word flags;
+	short type;
+	short intensity_source;
+	word intensity_pad;
+	real intensity_exponent;
+	short offset_source;
+	word offset_pad;
+	real offset_amount;
+	real offset_exponent;
+	long unused1[8];
+	real_argb_color view_perpendicular_color;
+	real_argb_color view_parallel_color;
+	short tint_color_source;
+	word tint_color_pad;
+	long unused2[8];
+	short thickness;
+	word pad;
+	long unused3[4];
+	real mipmap_lod_bias;
+	long primary_noise_map_animation_unused;
+	real primary_noise_map_animation_period;
+	real_vector3d primary_noise_map_animation_direction;
+	real primary_noise_map_scale;
+	struct tag_reference primary_noise_map;
+	long unused4[8];
+	long secondary_noise_map_animation_unused;
+	real secondary_noise_map_animation_period;
+	real_vector3d secondary_noise_map_animation_direction;
+	real secondary_noise_map_scale;
+	struct tag_reference secondary_noise_map;
+	long unused5[8];
+};
+
+struct shader_transparent_plasma
+{
+	struct _shader shader;
+	struct _shader_transparent_plasma plasma;
 };
 
 /* ---------- prototypes/SHADER_DEFINITIONS.C */

@@ -12,9 +12,13 @@ header included in hcex build.
 
 /* ---------- macros */
 
+#define RANDOM_PLAYER_NAMES_TAG_NAME "ui\\random_player_names" /* fake name */
+
 /* ---------- structures */
 
-/* ---------- prototypes/EXAMPLE.C */
+/* ---------- prototypes/NETWORK_GAME_UI.C */
+
+wchar_t const *network_game_get_random_player_name(void);
 
 /* ---------- globals */
 

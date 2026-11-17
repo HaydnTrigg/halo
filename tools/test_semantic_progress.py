@@ -3122,7 +3122,7 @@ class ActionsHelperConstantProductionTests(unittest.TestCase):
 
     def setUp(self):
         objdiff = self.ROOT / "objdiff.json"
-        symbols = self.ROOT / "config" / "symbols.json"
+        symbols = self.ROOT / "config" / "2342" / "symbols.json"
         if not objdiff.is_file() or not symbols.is_file():
             self.skipTest("SKIPPED: local build inputs are unavailable")
         self.config_units = {unit["name"]: unit for unit in json.loads(
@@ -3171,10 +3171,10 @@ class ProductionSemanticDataManifestTests(unittest.TestCase):
 
     def setUp(self):
         self.paths = {
-            "report": self.ROOT / "build" / "report.json",
+            "report": self.ROOT / "build" / "2342" / "report.json",
             "objdiff": self.ROOT / "objdiff.json",
             "manifest": self.ROOT / "config" / "semantic_data_matches.json",
-            "symbols": self.ROOT / "config" / "symbols.json",
+            "symbols": self.ROOT / "config" / "2342" / "symbols.json",
         }
         missing = [str(path) for path in self.paths.values() if not path.is_file()]
         if missing:
